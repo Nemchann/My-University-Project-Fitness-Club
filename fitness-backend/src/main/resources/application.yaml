@@ -1,0 +1,40 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: fitness-backend
+
+  # 1. PostgreSQL (Основная логика)
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/fitness_club}
+    username: ${COMMON_DB_USER:postgres}
+    password: ${COMMON_DB_PASSWORD:password}
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: update # Автоматически создаст таблицы, если их нет
+    show-sql: true # Полезно для отладки, видишь запросы в консоли
+    properties:
+      hibernate:
+        format_sql: true
+
+  # 2. MongoDB (История уведомлений)
+  data:
+    mongodb:
+      uri: ${SPRING_DATA_MONGODB_URI:mongodb://admin:password@localhost:27017/notificatiion_db?authSource=admin}
+
+  # 3. RabbitMQ (События)
+  rabbitmq:
+    host: ${SPRING_RABBITMQ_HOST:localhost}
+    port: 5672
+    username: ${COMMON_DB_USER:admin}
+    password: ${COMMON_DB_PASSWORD:password}
+
+# Настройки Swagger
+springdoc:
+  api-docs:
+    path: /api-docs
+  swagger-ui:
+    path: /swagger-ui.html
