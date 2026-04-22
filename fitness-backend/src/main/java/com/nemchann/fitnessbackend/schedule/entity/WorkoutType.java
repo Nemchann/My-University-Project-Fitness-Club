@@ -13,6 +13,6 @@ public class WorkoutType {
     @GeneratedValue(strategy = GenerationType.AUTO)
     private Integer id;
 
-    @Column(name = "type_name")
+    @Column(name = "type_name", nullable = false, unique = true)
     private String typeName;
 }

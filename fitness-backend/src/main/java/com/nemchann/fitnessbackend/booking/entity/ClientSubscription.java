@@ -17,22 +17,22 @@ public class ClientSubscription {
     @GeneratedValue(strategy = GenerationType.AUTO)
     private Integer id;
 
-    @Column(name = "client_id")
+    @Column(name = "client_id", nullable = false)
     private UUID clientId;
 
-    @Column(name = "subscription_id")
+    @Column(name = "subscription_id", nullable = false)
     private Integer subscriptionId;
 
-    @Column(name = "start_date")
+    @Column(name = "start_date", nullable = false)
     private Date startDate;
 
-    @Column(name = "end_date")
+    @Column(name = "end_date", nullable = false)
     private Date endDate;
 
-    @Column(name = "remaining_visits")
+    @Column(name = "remaining_visits", nullable = false)
     private Integer remainingVisits;
 
-    @Column(name = "subscription_status")
+    @Column(name = "subscription_status", nullable = false)
     private Integer subscriptionStatus;
 
 }

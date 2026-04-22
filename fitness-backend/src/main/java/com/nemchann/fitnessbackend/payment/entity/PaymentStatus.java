@@ -14,6 +14,6 @@ public class PaymentStatus {
     @GeneratedValue(strategy = GenerationType.AUTO)
     private Integer Id;
 
-    @Column (name = "payment_status_name")
+    @Column (name = "payment_status_name", nullable = false, unique = true)
     private String paymentStatusName;
 }

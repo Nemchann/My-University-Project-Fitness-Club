@@ -16,13 +16,13 @@ public class Booking {
     @GeneratedValue(strategy = GenerationType.AUTO)
     private Integer id;
 
-    @Column(name = "schedule_id")
+    @Column(name = "schedule_id", nullable = false)
     private Integer scheduleId;
 
-    @Column(name = "client_id")
+    @Column(name = "client_id", nullable = false)
     private UUID clientId;
 
-    @Column(name = "status_id")
+    @Column(name = "status_id", nullable = false)
     private Integer statusId;
 
     @Column(name = "created_at")

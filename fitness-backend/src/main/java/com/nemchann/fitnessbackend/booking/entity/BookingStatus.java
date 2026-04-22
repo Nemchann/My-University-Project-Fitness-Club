@@ -13,7 +13,7 @@ public class BookingStatus {
     @GeneratedValue(strategy = GenerationType.AUTO)
     private Integer id;
 
-    @Column(name="booking_status_name")
+    @Column(name="booking_status_name", nullable = false, unique = true)
     private String bookingStatusName;
 
 

@@ -14,10 +14,10 @@ public class Subscription {
     @GeneratedValue(strategy = GenerationType.AUTO)
     private Integer id;
 
-    @Column(name = "subscription_name")
+    @Column(name = "subscription_name", nullable = false)
     private String subscriptionName;
 
-    @Column(name = "price")
+    @Column(name = "price", nullable = false)
     private Double price;
 
     @Column(name = "duration_days")

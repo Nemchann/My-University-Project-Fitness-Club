@@ -14,10 +14,10 @@ public class Room {
     @GeneratedValue(strategy = GenerationType.AUTO)
     private Integer id;
 
-    @Column(name = "room_name")
+    @Column(name = "room_name", nullable = false, unique = true)
     private String roomName;
 
-    @Column(name = "capacity")
+    @Column(name = "capacity", nullable = false)
     private Integer capacity;
 
 }

@@ -12,10 +12,10 @@ public class Workout {
     @GeneratedValue(strategy = GenerationType.AUTO)
     private Integer id;
 
-    @Column(name = "workout_name")
+    @Column(name = "workout_name", nullable = false, unique = true)
     private String workoutName;
 
-    @Column(name = "workout_type_id")
+    @Column(name = "workout_type_id", nullable = false)
     private Integer workoutTypeId;
 
     @Column(name = "description")

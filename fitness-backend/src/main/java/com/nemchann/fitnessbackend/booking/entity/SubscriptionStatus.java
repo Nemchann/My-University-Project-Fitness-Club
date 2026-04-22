@@ -13,6 +13,6 @@ public class SubscriptionStatus {
     @GeneratedValue(strategy = GenerationType.AUTO)
     private Integer id;
 
-    @Column(name = "subscription_status_name")
+    @Column(name = "subscription_status_name", nullable = false, unique = true)
     private String subscriptionStatusName;
 }

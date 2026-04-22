@@ -27,13 +27,13 @@ public class Profile {
     @Column (name = "patronymic")
     private String patronymic;
 
-    @Column (name = "birthday")
+    @Column (name = "birthday", nullable = false)
     private Date birthday;
 
-    @Column (name = "phone")
+    @Column (name = "phone", unique = true, nullable = false)
     private String phone;
 
-    @Column (name = "email")
+    @Column (name = "email", unique = true)
     private String email;
 
 }
