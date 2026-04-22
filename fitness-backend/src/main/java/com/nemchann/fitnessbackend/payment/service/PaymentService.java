@@ -8,4 +8,9 @@ import org.springframework.stereotype.Service;
 public class PaymentService {
     private PaymentRepository paymentRepository;
     private PaymentStatusRepository paymentStatusRepository;
+
+    public PaymentService(PaymentRepository paymentRepository, PaymentStatusRepository paymentStatusRepository){
+        this.paymentRepository = paymentRepository;
+        this.paymentStatusRepository = paymentStatusRepository;
+    }
 }

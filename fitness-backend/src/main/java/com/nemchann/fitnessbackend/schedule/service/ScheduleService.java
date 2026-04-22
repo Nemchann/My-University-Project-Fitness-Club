@@ -12,4 +12,12 @@ public class ScheduleService {
     private ScheduleRepository scheduleRepository;
     private WorkoutRepository workoutRepository;
     private WorkoutTypeRepository workoutTypeRepository;
+
+    public ScheduleService(RoomRepository roomRepository, ScheduleRepository scheduleRepository,
+                           WorkoutRepository workoutRepository, WorkoutTypeRepository workoutTypeRepository){
+        this.roomRepository = roomRepository;
+        this.scheduleRepository = scheduleRepository;
+        this.workoutRepository = workoutRepository;
+        this.workoutTypeRepository = workoutTypeRepository;
+    }
 }
