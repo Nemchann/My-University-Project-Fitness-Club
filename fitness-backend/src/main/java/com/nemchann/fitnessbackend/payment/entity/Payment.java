@@ -20,8 +20,9 @@ public class Payment {
     @Column(name = "client_id", nullable = false)
     private UUID clientId;
 
-    @Column(name = "payment_status", nullable = false)
-    private Integer paymentStatus;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "payment_status", nullable = false)
+    private PaymentStatus paymentStatus;
 
     @Column(name = "amount", nullable = false)
     private Double amount;

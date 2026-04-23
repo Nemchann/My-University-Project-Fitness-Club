@@ -4,10 +4,7 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
 import java.time.OffsetDateTime;
-import java.util.HexFormat;
 import java.util.UUID;
 
 @Entity
@@ -25,8 +22,9 @@ public class User {
     @Column(nullable = false)
     private String password;
 
-    @Column(name = "role_id")
-    private Integer roleId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "role_id")
+    private Role role;
 
     @Column(name = "created_at")
     private OffsetDateTime createdAt;

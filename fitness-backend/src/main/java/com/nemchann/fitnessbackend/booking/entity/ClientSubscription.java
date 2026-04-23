@@ -1,11 +1,11 @@
 package com.nemchann.fitnessbackend.booking.entity;
 
+import com.nemchann.fitnessbackend.users.entity.User;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
 import java.util.Date;
-import java.util.UUID;
 
 @Entity
 @Table(name = "client_subscriptions")
@@ -17,11 +17,13 @@ public class ClientSubscription {
     @GeneratedValue(strategy = GenerationType.AUTO)
     private Integer id;
 
-    @Column(name = "client_id", nullable = false)
-    private UUID clientId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "client_id", nullable = false)
+    private User client;
 
-    @Column(name = "subscription_id", nullable = false)
-    private Integer subscriptionId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "subscription_id", nullable = false)
+    private Subscription subscription;
 
     @Column(name = "start_date", nullable = false)
     private Date startDate;

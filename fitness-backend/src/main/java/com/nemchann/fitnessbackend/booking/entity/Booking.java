@@ -1,11 +1,12 @@
 package com.nemchann.fitnessbackend.booking.entity;
 
+import com.nemchann.fitnessbackend.schedule.entity.Schedule;
+import com.nemchann.fitnessbackend.users.entity.User;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
 import java.time.OffsetDateTime;
-import java.util.UUID;
 
 @Entity
 @Table(name = "bookings")
@@ -16,14 +17,17 @@ public class Booking {
     @GeneratedValue(strategy = GenerationType.AUTO)
     private Integer id;
 
-    @Column(name = "schedule_id", nullable = false)
-    private Integer scheduleId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "schedule_id", nullable = false)
+    private Schedule schedule;
 
-    @Column(name = "client_id", nullable = false)
-    private UUID clientId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "client_id", nullable = false)
+    private User client;
 
-    @Column(name = "status_id", nullable = false)
-    private Integer statusId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "status_id", nullable = false)
+    private BookingStatus bookingStatus;
 
     @Column(name = "created_at")
     private OffsetDateTime createdAt;

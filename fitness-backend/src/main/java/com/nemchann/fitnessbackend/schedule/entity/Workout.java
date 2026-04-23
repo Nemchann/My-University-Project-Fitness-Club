@@ -15,8 +15,9 @@ public class Workout {
     @Column(name = "workout_name", nullable = false, unique = true)
     private String workoutName;
 
-    @Column(name = "workout_type_id", nullable = false)
-    private Integer workoutTypeId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "workout_type_id", nullable = false)
+    private WorkoutType workoutType;
 
     @Column(name = "description")
     private String description;
