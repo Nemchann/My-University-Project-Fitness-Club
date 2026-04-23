@@ -14,7 +14,7 @@ public class Subscription {
     @GeneratedValue(strategy = GenerationType.AUTO)
     private Integer id;
 
-    @Column(name = "subscription_name", nullable = false)
+    @Column(name = "subscription_name", nullable = false, unique = true)
     private String subscriptionName;
 
     @Column(name = "price", nullable = false)
