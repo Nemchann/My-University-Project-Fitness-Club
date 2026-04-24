@@ -1,5 +1,6 @@
 package com.nemchann.fitnessbackend.booking.entity;
 
+import com.nemchann.fitnessbackend.booking.enums.BookingStatusEnum;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -16,8 +17,10 @@ public class BookingStatus {
     @GeneratedValue(strategy = GenerationType.AUTO)
     private Integer id;
 
+    //ACCEPTED, PROCESSING, CANCELLED
+    @Enumerated(EnumType.STRING)
     @Column(name="booking_status_name", nullable = false, unique = true)
-    private String bookingStatusName;
+    private BookingStatusEnum bookingStatusName;
 
     @OneToMany(mappedBy = "bookingStatus", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<Booking> bookingList = new ArrayList<>();

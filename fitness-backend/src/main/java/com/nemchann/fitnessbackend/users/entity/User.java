@@ -50,6 +50,10 @@ public class User {
     @OneToMany(mappedBy = "client", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<Payment> clientPayments = new ArrayList<>();
 
+    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL)
+    @PrimaryKeyJoinColumn
+    private Profile profile;
+
     public User(String login, String password, Role role){
         this.login = login;
         this.password = password;
@@ -63,9 +67,7 @@ public class User {
         this.isActive = true;
     }
 
-    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL)
-    @PrimaryKeyJoinColumn
-    private Profile profile;
+
 
 //    {
 //        try {
