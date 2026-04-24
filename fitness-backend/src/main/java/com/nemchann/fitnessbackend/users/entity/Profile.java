@@ -50,4 +50,8 @@ public class Profile {
         this.email = email;
     }
 
+    public Profile(){
+
+    }
+
 }

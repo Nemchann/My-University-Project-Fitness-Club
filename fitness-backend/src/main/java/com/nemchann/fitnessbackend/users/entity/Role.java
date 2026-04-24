@@ -1,5 +1,6 @@
 package com.nemchann.fitnessbackend.users.entity;
 
+import com.nemchann.fitnessbackend.users.enums.UserRole;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -16,14 +17,12 @@ public class Role {
     @GeneratedValue(strategy = GenerationType.AUTO)
     private Integer id;
 
-    // CLIENT, TRAINER, ADMINISTRATOR
-    @Column(name = "role_name", unique = true)
-    private String roleName;
+    // CLIENT, TRAINER, ADMIN
+    @Enumerated(EnumType.STRING)
+    @Column(name = "role_name", unique = true, nullable = false)
+    private UserRole roleName;
 
     @OneToMany(mappedBy = "role", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<User> userList = new ArrayList<>();
 
-    public Role(String roleName){
-        this.roleName = roleName;
-    }
 }

@@ -55,6 +55,12 @@ public class User {
         this.password = password;
         this.role = role;
         this.isActive = true;
+        this.createdAt = OffsetDateTime.now();
+    }
+
+
+    public User(){
+        this.isActive = true;
     }
 
     @OneToOne(mappedBy = "user", cascade = CascadeType.ALL)
