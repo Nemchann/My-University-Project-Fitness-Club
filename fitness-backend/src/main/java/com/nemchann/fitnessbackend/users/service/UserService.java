@@ -12,6 +12,7 @@ import com.nemchann.fitnessbackend.users.enums.UserRole;
 import com.nemchann.fitnessbackend.users.repository.ProfileRepository;
 import com.nemchann.fitnessbackend.users.repository.RoleRepository;
 import com.nemchann.fitnessbackend.users.repository.UserRepository;
+import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -115,6 +116,7 @@ public class UserService {
     }
 
     //Поменять профиль
+    @Transactional
     public UserResponseDto editProfile(UserEditingDto userEditingDto){
         Optional<User> userOptional = userRepository.findById(userEditingDto.getId());
         if(userOptional.isPresent()){
@@ -144,6 +146,7 @@ public class UserService {
     }
 
 
+    //Метод поменять пароль
     public void changePassword(String oldPassword, String newPassword, User user){
 
         String hashedPassword = passwordHash(oldPassword);
@@ -157,11 +160,21 @@ public class UserService {
         }
     }
 
-    public void deleteUser(User user){
-        Profile profile = user.getProfile();
+    //Метод удаление пользователя с его профилем
+    @Transactional
+    public void deleteUser(UserEditingDto userEditingDto){
+        Optional<User> userOptional = userRepository.findById(userEditingDto.getId());
 
-        profileRepository.delete(profile);
-        userRepository.delete(user);
+        if(userOptional.isPresent()){
+            User user = userOptional.get();
+            Profile profile = user.getProfile();
+
+            profileRepository.delete(profile);
+            userRepository.delete(user);
+
+        }else{
+            throw new RuntimeException("User not found");
+        }
     }
 
     //Метод для входа в систему
