@@ -1,9 +1,13 @@
 package com.nemchann.fitnessbackend.users.service;
 
 import com.nemchann.fitnessbackend.booking.entity.Booking;
+import com.nemchann.fitnessbackend.common.InvalidPasswordException;
+import com.nemchann.fitnessbackend.users.dto.UserRegistrationDto;
+import com.nemchann.fitnessbackend.users.dto.UserResponseDto;
 import com.nemchann.fitnessbackend.users.entity.Profile;
 import com.nemchann.fitnessbackend.users.entity.Role;
 import com.nemchann.fitnessbackend.users.entity.User;
+import com.nemchann.fitnessbackend.users.enums.UserRole;
 import com.nemchann.fitnessbackend.users.repository.ProfileRepository;
 import com.nemchann.fitnessbackend.users.repository.RoleRepository;
 import com.nemchann.fitnessbackend.users.repository.UserRepository;
@@ -13,6 +17,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 
+//Исправить методы, чтобы в передаваемых значениях были dto
 @Service
 public class UserService {
     private final ProfileRepository profileRepository;
@@ -27,90 +32,86 @@ public class UserService {
     }
 
 
-    //Метод хеширования пароля вызывать здесь
-    public void createUser(String login, String password, Role role, String surname, String selfname,
-                           String patronymic, Date birthday, String phone, String email){
-        String roleName = role.getRoleName();
-        String hashedPassword = passwordHash(password);
+    //Создает обычного пользователя типа CLIENT
+    public UserResponseDto createUser(UserRegistrationDto userRegistrationDto){
+        User user = new User();
+        Profile profile = new Profile();
 
-        if (!isExistsLoginEmail(login, email)){
-            if ("CLIENT".equals(roleName)){
-                User user = createClient(login, hashedPassword);
-                createProfile(user, surname, selfname, patronymic, birthday, phone, email);
-            }else if ("TRAINER".equals(roleName)){
-                User user = createTrainer(login, hashedPassword);
-                createProfile(user, surname, selfname, patronymic, birthday, phone, email);
-            }else if("ADMINISTRATOR".equals(roleName)){
-                User user = createAdministrator(login, hashedPassword);
-                createProfile(user, surname, selfname, patronymic, birthday, phone, email);
-            }else{
-                return;
-            }
-        }
+        rewriteUserDtoToUser(userRegistrationDto, user);
+        rewriteUserDtoToProfile(userRegistrationDto, profile);
 
+        Role defaultRole = roleRepository.findByRoleName(UserRole.CLIENT)
+                .orElseThrow(() -> new RuntimeException("Error: Role CLIENT not found."));
 
+        user.setRole(defaultRole);
+        profile.setUser(user);
+
+        userRepository.save(user);
+        //Заодно сохраняем и профиль пользователя
+        profileRepository.save(profile);
+
+        return mapToResponseDto(user);
     }
+
+    //Методы для переписания из dto в entity
+    //Метод хеширования пароля вызывать здесь
+    private void rewriteUserDtoToUser(UserRegistrationDto userRegistrationDto, User user){
+        if(isExistsLogin(userRegistrationDto.getLogin())){
+            user.setLogin(userRegistrationDto.getLogin());
+
+            String hashedPassword = passwordHash(userRegistrationDto.getPassword());
+            user.setPassword(hashedPassword);
+        }else{
+            throw new RuntimeException("This login is used");
+        }
+    }
+
+    private void rewriteUserDtoToProfile(UserRegistrationDto registrationDto, Profile profile){
+        if(isExistsEmail(registrationDto.getEmail())){
+            profile.setSurname(registrationDto.getSurname());
+            profile.setSelfname(registrationDto.getSelfname());
+            profile.setPatronymic(registrationDto.getPatronymic());
+
+            profile.setBirthday(registrationDto.getBirthday());
+            profile.setPhone(registrationDto.getPhone());
+            profile.setEmail(registrationDto.getEmail());
+        }else{
+            throw new RuntimeException("This email is used");
+        }
+    }
+
+    //Метод для преобразования обычного entity в dto
+    private UserResponseDto mapToResponseDto(User user){
+        UserResponseDto userResponseDto = new UserResponseDto();
+        Profile profile = user.getProfile();
+
+        userResponseDto.setId(user.getId());
+        userResponseDto.setSurname(profile.getSurname());
+        userResponseDto.setSelfname(profile.getSelfname());
+        userResponseDto.setLogin(user.getLogin());
+        userResponseDto.setEmail(profile.getEmail());
+
+        return userResponseDto;
+    }
+
 
     //Проверка на наличие таких же логина и электронной почты в бд
-    private boolean isExistsLoginEmail(String login, String email){
+    private boolean isExistsLogin(String login){
         Optional<User> userOptionalLogin = userRepository.findByLogin(login);
-        Optional<User> userOptionalEmail = userRepository.findByEmail(email);
 
-        return (userOptionalLogin.isPresent() || userOptionalEmail.isPresent());
-
+        return (userOptionalLogin.isPresent());
     }
 
-    private User createClient(String login, String password){
-        String roleName = "CLIENT";
-        Optional<Role> roleOptional = roleRepository.findByRoleName(roleName);
-        if (roleOptional.isPresent()){
-            Role role = roleOptional.get();
-            User user = new User(login, password, role);
+    private boolean isExistsEmail(String email){
+        Optional<User> userOptionalEmail = userRepository.findByLogin(email);
 
-            userRepository.save(user);
-            return user;
-        }
-        return null;
-    }
-
-    private User createTrainer(String login, String password){
-        String roleName = "TRAINER";
-        Optional<Role> roleOptional = roleRepository.findByRoleName(roleName);
-        if (roleOptional.isPresent()){
-            Role role = roleOptional.get();
-            User user = new User(login, password, role);
-
-            userRepository.save(user);
-
-            return user;
-        }
-        return null;
-    }
-
-    private User createAdministrator(String login, String password){
-        String roleName = "ADMINISTRATOR";
-        Optional<Role> roleOptional = roleRepository.findByRoleName(roleName);
-        if (roleOptional.isPresent()){
-            Role role = roleOptional.get();
-            User user = new User(login, password, role);
-
-            userRepository.save(user);
-
-            return user;
-        }
-        return null;
-    }
-
-    private void createProfile(User user, String surname, String selfname,
-                               String patronymic, Date birthday, String phone, String email){
-        Profile profile = new Profile(user, surname, selfname, patronymic, birthday, phone, email);
-        profileRepository.save(profile);
+        return (userOptionalEmail.isPresent());
     }
 
 
-    //Сделать из этого возвращаемое значение String
+    //Исправить логику, пока что так, чтоб не было ошибок в коде
     private String passwordHash(String password){
-        return password.hashCode();
+        return "fwjlws" + password + "sfsdssv";
     }
 
 
@@ -122,6 +123,8 @@ public class UserService {
             user.setPassword(newHashedPassword);
 
             userRepository.save(user);
+        }else {
+            throw new InvalidPasswordException("Invalid password");
         }
     }
 
@@ -133,20 +136,24 @@ public class UserService {
     }
 
     //Метод для входа в систему
-    public User authentification(String login, String password){
+    public UserResponseDto authentification(String login, String password){
         Optional<User> userOpt = userRepository.findByLogin(login);
 
         if (userOpt.isPresent()){
             User user = userOpt.get();
+            UserResponseDto userResponseDto = mapToResponseDto(user);
             String userHashedPassword = user.getPassword();
 
             String hashedPassword = passwordHash(password);
 
             if (userHashedPassword.equals(hashedPassword)){
-                return user;
+                return userResponseDto;
+            }else{
+                throw new InvalidPasswordException("Invalid password");
             }
+        }else{
+            throw new RuntimeException("Invalid login");
         }
-        return null;
     }
 
     public List<Booking> getUserBookings(User user){
