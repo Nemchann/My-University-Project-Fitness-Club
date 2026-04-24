@@ -4,6 +4,9 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @Entity
 @Table(name = "workout_types")
 @Getter
@@ -15,4 +18,7 @@ public class WorkoutType {
 
     @Column(name = "type_name", nullable = false, unique = true)
     private String typeName;
+
+    @OneToMany(mappedBy = "workoutType", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<Workout> workoutList = new ArrayList<>();
 }

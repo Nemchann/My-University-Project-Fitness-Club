@@ -6,7 +6,9 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.time.OffsetDateTime;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 
 @Entity
 @Table(name = "schedule")
@@ -46,5 +48,8 @@ public class Schedule {
 
     @Column(name = "created_at")
     private OffsetDateTime createdAt;
+
+    @OneToMany(mappedBy = "schedule", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<Schedule> scheduleList = new ArrayList<>();
 
 }

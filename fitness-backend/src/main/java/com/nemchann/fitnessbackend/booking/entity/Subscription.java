@@ -4,6 +4,9 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @Entity
 @Table(name = "subscriptions")
 @Getter
@@ -25,6 +28,9 @@ public class Subscription {
 
     @Column(name = "visits_count")
     private Integer visitsCount;
+
+    @OneToMany(mappedBy = "subscription", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<ClientSubscription> clientSubscriptionList = new ArrayList<>();
 
 
 }

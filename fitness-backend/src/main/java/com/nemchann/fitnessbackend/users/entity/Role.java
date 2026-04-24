@@ -4,6 +4,9 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @Entity
 @Table(name = "roles")
 @Getter
@@ -15,4 +18,7 @@ public class Role {
 
     @Column(name = "role_name", unique = true)
     private String roleName;
+
+    @OneToMany(mappedBy = "role", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<User> userList = new ArrayList<>();
 }

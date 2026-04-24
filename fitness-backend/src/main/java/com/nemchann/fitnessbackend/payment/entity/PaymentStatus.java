@@ -5,6 +5,9 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @Entity
 @Table(name = "payment_statuses")
 @Getter @Setter
@@ -16,4 +19,7 @@ public class PaymentStatus {
 
     @Column (name = "payment_status_name", nullable = false, unique = true)
     private String paymentStatusName;
+
+    @OneToMany(mappedBy = "paymentStatus", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<Payment> paymentList = new ArrayList<>();
 }

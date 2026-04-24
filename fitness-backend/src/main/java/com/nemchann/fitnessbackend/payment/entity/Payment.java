@@ -1,11 +1,11 @@
 package com.nemchann.fitnessbackend.payment.entity;
 
+import com.nemchann.fitnessbackend.users.entity.User;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
 import java.time.OffsetDateTime;
-import java.util.UUID;
 
 @Entity
 @Table(name = "payments")
@@ -17,8 +17,9 @@ public class Payment {
     @GeneratedValue(strategy = GenerationType.AUTO)
     private Integer Id;
 
-    @Column(name = "client_id", nullable = false)
-    private UUID clientId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "client_id", nullable = false)
+    private User client;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "payment_status", nullable = false)

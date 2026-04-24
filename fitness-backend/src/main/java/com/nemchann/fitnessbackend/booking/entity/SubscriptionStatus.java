@@ -4,6 +4,9 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @Entity
 @Table(name = "subscription_statuses")
 @Getter @Setter
@@ -15,4 +18,7 @@ public class SubscriptionStatus {
 
     @Column(name = "subscription_status_name", nullable = false, unique = true)
     private String subscriptionStatusName;
+
+    @OneToMany(mappedBy = "subscriptionStatus", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<ClientSubscription> subscriptionList = new ArrayList<>();
 }
