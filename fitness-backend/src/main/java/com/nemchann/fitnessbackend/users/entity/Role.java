@@ -16,9 +16,14 @@ public class Role {
     @GeneratedValue(strategy = GenerationType.AUTO)
     private Integer id;
 
+    // CLIENT, TRAINER, ADMINISTRATOR
     @Column(name = "role_name", unique = true)
     private String roleName;
 
     @OneToMany(mappedBy = "role", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<User> userList = new ArrayList<>();
+
+    public Role(String roleName){
+        this.roleName = roleName;
+    }
 }

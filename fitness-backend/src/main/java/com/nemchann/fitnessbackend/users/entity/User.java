@@ -50,9 +50,16 @@ public class User {
     @OneToMany(mappedBy = "client", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<Payment> clientPayments = new ArrayList<>();
 
-//    Тут додумать
-//    @OneToOne()
-//    List<Profile>
+    public User(String login, String password, Role role){
+        this.login = login;
+        this.password = password;
+        this.role = role;
+        this.isActive = true;
+    }
+
+    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL)
+    @PrimaryKeyJoinColumn
+    private Profile profile;
 
 //    {
 //        try {
