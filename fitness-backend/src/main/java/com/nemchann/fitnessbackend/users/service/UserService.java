@@ -2,6 +2,7 @@ package com.nemchann.fitnessbackend.users.service;
 
 import com.nemchann.fitnessbackend.booking.entity.Booking;
 import com.nemchann.fitnessbackend.common.InvalidPasswordException;
+import com.nemchann.fitnessbackend.users.dto.UserEditingDto;
 import com.nemchann.fitnessbackend.users.dto.UserRegistrationDto;
 import com.nemchann.fitnessbackend.users.dto.UserResponseDto;
 import com.nemchann.fitnessbackend.users.entity.Profile;
@@ -13,7 +14,6 @@ import com.nemchann.fitnessbackend.users.repository.RoleRepository;
 import com.nemchann.fitnessbackend.users.repository.UserRepository;
 import org.springframework.stereotype.Service;
 
-import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 
@@ -112,6 +112,35 @@ public class UserService {
     //Исправить логику, пока что так, чтоб не было ошибок в коде
     private String passwordHash(String password){
         return "fwjlws" + password + "sfsdssv";
+    }
+
+    //Поменять профиль
+    public UserResponseDto editProfile(UserEditingDto userEditingDto){
+        Optional<User> userOptional = userRepository.findById(userEditingDto.getId());
+        if(userOptional.isPresent()){
+            User user = userOptional.get();
+            rewriteFromUserEditingDtoToUser(userEditingDto, user);
+
+            userRepository.save(user);
+
+            return mapToResponseDto(user);
+
+        }else{
+            throw new RuntimeException("User not found");
+        }
+    }
+
+    private void rewriteFromUserEditingDtoToUser(UserEditingDto userEditingDto, User user){
+        Profile profile = user.getProfile();
+
+        profile.setSurname(userEditingDto.getSurname());
+        profile.setSelfname(userEditingDto.getSelfname());
+        profile.setPatronymic(userEditingDto.getPatronymic());
+        profile.setBirthday(userEditingDto.getBirthday());
+        profile.setPhone(userEditingDto.getPhone());
+        profile.setEmail(userEditingDto.getEmail());
+
+        profileRepository.save(profile);
     }
 
 
