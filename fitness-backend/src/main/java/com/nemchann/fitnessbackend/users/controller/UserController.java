@@ -31,6 +31,6 @@ public class UserController {
     @Operation(summary = "Удалить пользователя")
     public ResponseEntity<Void> delete(@Valid @RequestBody UserEditingDto userEditingDto){
         service.deleteUser(userEditingDto);
-        return new ResponseEntity<>(HttpStatus.OK);
+        return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
 }
