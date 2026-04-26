@@ -1,4 +1,4 @@
-package com.nemchann.fitnessbackend.common;
+package com.nemchann.fitnessbackend.common.config;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
