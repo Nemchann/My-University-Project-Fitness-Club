@@ -1,7 +1,9 @@
 package com.nemchann.fitnessbackend.users.service;
 
 import com.nemchann.fitnessbackend.booking.entity.Booking;
-import com.nemchann.fitnessbackend.common.InvalidPasswordException;
+import com.nemchann.fitnessbackend.common.exception.InvalidPasswordException;
+import com.nemchann.fitnessbackend.common.exception.UserAlreadyExistsException;
+import com.nemchann.fitnessbackend.common.exception.UserNotFoundException;
 import com.nemchann.fitnessbackend.users.dto.UserEditingDto;
 import com.nemchann.fitnessbackend.users.dto.UserRegistrationDto;
 import com.nemchann.fitnessbackend.users.dto.UserResponseDto;
@@ -63,7 +65,7 @@ public class UserService {
             String hashedPassword = passwordHash(userRegistrationDto.getPassword());
             user.setPassword(hashedPassword);
         }else{
-            throw new RuntimeException("This login is used");
+            throw new UserAlreadyExistsException("This login is already used");
         }
     }
 
@@ -77,7 +79,7 @@ public class UserService {
             profile.setPhone(registrationDto.getPhone());
             profile.setEmail(registrationDto.getEmail());
         }else{
-            throw new RuntimeException("This email is used");
+            throw new UserAlreadyExistsException("This email is already used");
         }
     }
 
@@ -128,7 +130,7 @@ public class UserService {
             return mapToResponseDto(user);
 
         }else{
-            throw new RuntimeException("User not found");
+            throw new UserNotFoundException("User is not found");
         }
     }
 
@@ -198,6 +200,7 @@ public class UserService {
         }
     }
 
+    //Доработать
     public List<Booking> getUserBookings(User user){
         return user.getClientBookings();
     }
