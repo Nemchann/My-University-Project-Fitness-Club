@@ -26,7 +26,7 @@ public class User {
     @Column(nullable = false, unique = true)
     private String login;
 
-    @Column(nullable = false)
+    @Column(nullable = false, name = "password_hash")
     private String password;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -42,7 +42,7 @@ public class User {
     @OneToMany(mappedBy = "client", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<Booking> clientBookings = new ArrayList<>();
 
-    @OneToMany(mappedBy = "subscription", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "client", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<ClientSubscription> clientSubscriptions = new ArrayList<>();
 
     @OneToMany(mappedBy = "trainer", cascade = CascadeType.ALL, fetch = FetchType.LAZY)

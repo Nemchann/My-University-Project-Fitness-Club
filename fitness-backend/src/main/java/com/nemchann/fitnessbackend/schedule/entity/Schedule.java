@@ -1,5 +1,6 @@
 package com.nemchann.fitnessbackend.schedule.entity;
 
+import com.nemchann.fitnessbackend.booking.entity.Booking;
 import com.nemchann.fitnessbackend.users.entity.User;
 import jakarta.persistence.*;
 import lombok.Getter;
@@ -52,6 +53,6 @@ public class Schedule {
     private OffsetDateTime createdAt;
 
     @OneToMany(mappedBy = "schedule", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private List<Schedule> scheduleList = new ArrayList<>();
+    private List<Booking> bookingList = new ArrayList<>();
 
 }

@@ -61,7 +61,7 @@ public class UserService {
     //Методы для переписания из dto в entity
     //Метод хеширования пароля вызывать здесь
     private void rewriteUserDtoToUser(UserRegistrationDto userRegistrationDto, User user){
-        if(isExistsLogin(userRegistrationDto.getLogin())){
+        if(!isExistsLogin(userRegistrationDto.getLogin())){
             user.setLogin(userRegistrationDto.getLogin());
 
             String hashedPassword = passwordHash(userRegistrationDto.getPassword());
@@ -72,7 +72,7 @@ public class UserService {
     }
 
     private void rewriteUserDtoToProfile(UserRegistrationDto registrationDto, Profile profile){
-        if(isExistsEmail(registrationDto.getEmail())){
+        if(!isExistsEmail(registrationDto.getEmail())){
             profile.setSurname(registrationDto.getSurname());
             profile.setSelfname(registrationDto.getSelfname());
             profile.setPatronymic(registrationDto.getPatronymic());
