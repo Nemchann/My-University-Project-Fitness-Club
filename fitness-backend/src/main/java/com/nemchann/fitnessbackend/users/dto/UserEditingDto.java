@@ -3,11 +3,13 @@ package com.nemchann.fitnessbackend.users.dto;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.util.Date;
 import java.util.UUID;
 
 @Data
+@NoArgsConstructor
 public class UserEditingDto {
 
     private UUID id;

@@ -4,11 +4,13 @@ import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.util.Date;
 
 //передается от фронтенда для регистрации пользователя
 @Data
+@NoArgsConstructor
 public class UserRegistrationDto {
 
     @NotBlank(message = "Логин не может быть пустым")

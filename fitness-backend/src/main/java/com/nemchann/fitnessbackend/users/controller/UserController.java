@@ -1,5 +1,6 @@
 package com.nemchann.fitnessbackend.users.controller;
 
+import com.nemchann.fitnessbackend.users.dto.PasswordChangeDto;
 import com.nemchann.fitnessbackend.users.dto.UserEditingDto;
 import com.nemchann.fitnessbackend.users.dto.UserRegistrationDto;
 import com.nemchann.fitnessbackend.users.dto.UserResponseDto;
@@ -12,6 +13,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
 import org.springframework.web.bind.annotation.*;
+
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/fitness-club/users")
@@ -33,4 +36,21 @@ public class UserController {
         service.deleteUser(userEditingDto);
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
+
+    @GetMapping("/{id}")
+    @Operation(summary = "Получить пользователя по id")
+    public ResponseEntity<UserResponseDto> getUser(@PathVariable UUID id){
+        UserResponseDto userResponseDto = service.getUser(id);
+
+        return ResponseEntity.ok(userResponseDto);
+    }
+
+    @PutMapping("/change_password/{id}")
+    @Operation(summary = "")
+    public ResponseEntity<Void> changePassword(@PathVariable UUID id,
+                                                          @Valid @RequestBody PasswordChangeDto dto){
+        service.changePassword(id, dto);
+        return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+    }
+
 }

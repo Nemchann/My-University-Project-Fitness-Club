@@ -4,6 +4,7 @@ import com.nemchann.fitnessbackend.booking.entity.Booking;
 import com.nemchann.fitnessbackend.common.exception.InvalidPasswordException;
 import com.nemchann.fitnessbackend.common.exception.UserAlreadyExistsException;
 import com.nemchann.fitnessbackend.common.exception.UserNotFoundException;
+import com.nemchann.fitnessbackend.users.dto.PasswordChangeDto;
 import com.nemchann.fitnessbackend.users.dto.UserEditingDto;
 import com.nemchann.fitnessbackend.users.dto.UserRegistrationDto;
 import com.nemchann.fitnessbackend.users.dto.UserResponseDto;
@@ -19,6 +20,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 //Исправить методы, чтобы в передаваемых значениях были dto
 @Service
@@ -117,6 +119,18 @@ public class UserService {
         return "fwjlws" + password + "sfsdssv";
     }
 
+    public UserResponseDto getUser(UUID id){
+        Optional<User> userOptional = userRepository.findById(id);
+
+        if(userOptional.isPresent()){
+            User user = userOptional.get();
+
+            return mapToResponseDto(user);
+        }else{
+            throw new UserNotFoundException("User is not found");
+        }
+    }
+
     //Поменять профиль
     @Transactional
     public UserResponseDto editProfile(UserEditingDto userEditingDto){
@@ -149,17 +163,32 @@ public class UserService {
 
 
     //Метод поменять пароль
-    public void changePassword(String oldPassword, String newPassword, User user){
+    public void changePassword(UUID id, PasswordChangeDto passwordChangeDto){
+        Optional<User> userOptional = userRepository.findById(id);
 
-        String hashedPassword = passwordHash(oldPassword);
-        if (user.getPassword().equals(hashedPassword)){
-            String newHashedPassword = passwordHash(newPassword);
-            user.setPassword(newHashedPassword);
+        if(userOptional.isPresent()){
+            User user = userOptional.get();
+            String actualPassword = user.getPassword();
 
-            userRepository.save(user);
-        }else {
-            throw new InvalidPasswordException("Invalid password");
+            String oldDtoPassword = passwordHash(passwordChangeDto.getOldPassword());
+
+            if(actualPassword.equals(oldDtoPassword)){
+                String newHashedPassword = passwordHash(passwordChangeDto.getNewPassword());
+
+                user.setPassword(newHashedPassword);
+
+                userRepository.save(user);
+
+            }else{
+                throw new InvalidPasswordException("Not correct password");
+            }
+
+
+        }else{
+            throw new UserNotFoundException("User is not found");
         }
+
+
     }
 
     //Метод удаление пользователя с его профилем
