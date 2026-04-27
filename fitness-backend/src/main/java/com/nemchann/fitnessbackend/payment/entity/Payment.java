@@ -3,6 +3,7 @@ package com.nemchann.fitnessbackend.payment.entity;
 import com.nemchann.fitnessbackend.users.entity.User;
 import jakarta.persistence.*;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.time.OffsetDateTime;
@@ -11,6 +12,7 @@ import java.time.OffsetDateTime;
 @Table(name = "payments")
 @Getter
 @Setter
+@NoArgsConstructor
 public class Payment {
 
     @Id

@@ -3,6 +3,7 @@ package com.nemchann.fitnessbackend.booking.entity;
 import com.nemchann.fitnessbackend.users.entity.User;
 import jakarta.persistence.*;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.util.Date;
@@ -11,6 +12,7 @@ import java.util.Date;
 @Table(name = "client_subscriptions")
 @Getter
 @Setter
+@NoArgsConstructor
 public class ClientSubscription {
 
     @Id

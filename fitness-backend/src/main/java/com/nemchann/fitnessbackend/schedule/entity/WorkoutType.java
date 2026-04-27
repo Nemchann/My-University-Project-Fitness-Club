@@ -3,6 +3,7 @@ package com.nemchann.fitnessbackend.schedule.entity;
 import com.nemchann.fitnessbackend.schedule.enums.WorkoutTypeEnum;
 import jakarta.persistence.*;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.util.ArrayList;
@@ -12,6 +13,7 @@ import java.util.List;
 @Table(name = "workout_types")
 @Getter
 @Setter
+@NoArgsConstructor
 public class WorkoutType {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)

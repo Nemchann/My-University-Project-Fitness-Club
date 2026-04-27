@@ -116,7 +116,7 @@ public class UserService {
 
     //Исправить логику, пока что так, чтоб не было ошибок в коде
     private String passwordHash(String password){
-        return "fwjlws" + password + "sfsdssv";
+        return "good" + password.hashCode() + "fitness";
     }
 
     public UserResponseDto getUser(UUID id){
@@ -209,6 +209,7 @@ public class UserService {
     }
 
     //Метод для входа в систему
+    //Добавить dto
     public UserResponseDto authentification(String login, String password){
         Optional<User> userOpt = userRepository.findByLogin(login);
 
@@ -230,7 +231,7 @@ public class UserService {
     }
 
     //Доработать
-    public List<Booking> getUserBookings(User user){
-        return user.getClientBookings();
-    }
+//    public List<Booking> getUserBookings(User user){
+//        return user.getClientBookings();
+//    }
 }

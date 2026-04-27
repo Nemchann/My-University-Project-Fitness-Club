@@ -3,6 +3,7 @@ package com.nemchann.fitnessbackend.schedule.entity;
 import com.nemchann.fitnessbackend.users.entity.User;
 import jakarta.persistence.*;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.time.OffsetDateTime;
@@ -13,6 +14,7 @@ import java.util.List;
 @Entity
 @Table(name = "schedule")
 @Getter @Setter
+@NoArgsConstructor
 public class Schedule {
 
     @Id

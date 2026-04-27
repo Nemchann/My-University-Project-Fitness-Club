@@ -2,6 +2,7 @@ package com.nemchann.fitnessbackend.users.entity;
 
 import jakarta.persistence.*;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
 
@@ -10,6 +11,7 @@ import java.util.Date;
 @Entity
 @Table(name = "profiles")
 @Getter @Setter
+@NoArgsConstructor
 public class Profile {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
@@ -50,8 +52,5 @@ public class Profile {
         this.email = email;
     }
 
-    public Profile(){
-
-    }
 
 }
