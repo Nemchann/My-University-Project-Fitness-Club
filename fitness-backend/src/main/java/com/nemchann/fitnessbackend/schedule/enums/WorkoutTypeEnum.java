@@ -1,9 +1,9 @@
 package com.nemchann.fitnessbackend.schedule.enums;
 
 public enum WorkoutTypeEnum {
-    STRETCH,
-    YOGA,
+    MIND_AND_BODY,
     STRENGTH,
     CARDIO,
-    DANCE
+    DANCE,
+    WOMEN_HEALTH
 }

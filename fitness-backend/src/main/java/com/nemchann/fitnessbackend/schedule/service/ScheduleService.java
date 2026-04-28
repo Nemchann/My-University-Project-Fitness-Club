@@ -20,4 +20,6 @@ public class ScheduleService {
         this.workoutRepository = workoutRepository;
         this.workoutTypeRepository = workoutTypeRepository;
     }
+
+
 }
