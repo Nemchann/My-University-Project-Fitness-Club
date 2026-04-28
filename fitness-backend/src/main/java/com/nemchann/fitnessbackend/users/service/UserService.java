@@ -235,9 +235,17 @@ public class UserService {
         }
     }
 
+    public void deactivateUser(UUID id){
+        Optional<User> userOptional = userRepository.findById(id);
 
-    //Доработать
-//    public List<Booking> getUserBookings(User user){
-//        return user.getClientBookings();
-//    }
+        if (userOptional.isPresent()){
+            User user = userOptional.get();
+            user.setActive(false);
+
+            userRepository.save(user);
+
+        }else{
+            throw new UserNotFoundException("User is not found");
+        }
+    }
 }

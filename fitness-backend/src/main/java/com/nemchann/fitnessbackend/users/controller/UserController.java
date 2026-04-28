@@ -75,21 +75,27 @@ public class UserController {
         return ResponseEntity.ok(userResponseDto);
     }
 
-    @GetMapping("/is_exists_login")
-    @Operation(summary = "")
-    public Boolean isExistsLogin(String login){
+    @GetMapping("/exists_by_login")
+    @Operation(summary = "Наличие логина")
+    public Boolean existsByLogin(String login){
         return service.isExistsLogin(login);
     }
 
-    @GetMapping("/is_exists_email")
-    @Operation(summary = "")
-    public Boolean isExistsEmail(String email){
+    @GetMapping("/exists_by_email")
+    @Operation(summary = "Наличие email")
+    public Boolean existsByEmail(String email){
         return service.isExistsEmail(email);
+    }
+
+    @DeleteMapping("/deactivate/{id}")
+    @Operation(summary = "Деактивировать пользователя")
+    public ResponseEntity<Void> deactivateUser(UUID id){
+        service.deactivateUser(id);
+        return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
 
 
     /*To do:
-    методы существования логина и email
     поиск все пользователей для admin
     * */
 
