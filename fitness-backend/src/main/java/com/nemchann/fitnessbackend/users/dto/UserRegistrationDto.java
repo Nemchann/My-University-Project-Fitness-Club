@@ -5,6 +5,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
+import java.time.OffsetDateTime;
 import java.util.Date;
 
 //передается от фронтенда для регистрации пользователя
@@ -36,4 +37,6 @@ public class UserRegistrationDto {
     @NotNull(message = "Дата рождения обязательна")
     @Past(message = "Дата рождения должна быть в прошлом")
     private LocalDate birthday;
+
+    private OffsetDateTime createdAt;
 }

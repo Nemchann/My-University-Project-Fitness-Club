@@ -33,7 +33,7 @@ public class User {
     @JoinColumn(name = "role_id")
     private Role role;
 
-    @Column(name = "created_at")
+    @Column(name = "create_at", insertable = false, updatable = false)
     private OffsetDateTime createdAt;
 
     @Column(name = "is_active")
@@ -51,7 +51,7 @@ public class User {
     @OneToMany(mappedBy = "client", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<Payment> clientPayments = new ArrayList<>();
 
-    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL)
+    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     @PrimaryKeyJoinColumn
     private Profile profile;
 

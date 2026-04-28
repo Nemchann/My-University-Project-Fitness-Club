@@ -1,13 +1,11 @@
 package com.nemchann.fitnessbackend.users.service;
 
 import com.nemchann.fitnessbackend.booking.entity.Booking;
+import com.nemchann.fitnessbackend.common.exception.InvalidLoginException;
 import com.nemchann.fitnessbackend.common.exception.InvalidPasswordException;
 import com.nemchann.fitnessbackend.common.exception.UserAlreadyExistsException;
 import com.nemchann.fitnessbackend.common.exception.UserNotFoundException;
-import com.nemchann.fitnessbackend.users.dto.PasswordChangeDto;
-import com.nemchann.fitnessbackend.users.dto.UserEditingDto;
-import com.nemchann.fitnessbackend.users.dto.UserRegistrationDto;
-import com.nemchann.fitnessbackend.users.dto.UserResponseDto;
+import com.nemchann.fitnessbackend.users.dto.*;
 import com.nemchann.fitnessbackend.users.entity.Profile;
 import com.nemchann.fitnessbackend.users.entity.Role;
 import com.nemchann.fitnessbackend.users.entity.User;
@@ -16,8 +14,10 @@ import com.nemchann.fitnessbackend.users.repository.ProfileRepository;
 import com.nemchann.fitnessbackend.users.repository.RoleRepository;
 import com.nemchann.fitnessbackend.users.repository.UserRepository;
 import jakarta.transaction.Transactional;
+import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Service;
 
+import java.awt.print.Pageable;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -50,6 +50,7 @@ public class UserService {
 
         user.setRole(defaultRole);
         profile.setUser(user);
+        user.setProfile(profile);
 
         userRepository.save(user);
         //Заодно сохраняем и профиль пользователя
@@ -101,16 +102,16 @@ public class UserService {
 
 
     //Проверка на наличие таких же логина и электронной почты в бд
-    private boolean isExistsLogin(String login){
+    public boolean isExistsLogin(String login){
         Optional<User> userOptionalLogin = userRepository.findByLogin(login);
 
         return (userOptionalLogin.isPresent());
     }
 
-    private boolean isExistsEmail(String email){
-        Optional<User> userOptionalEmail = userRepository.findByLogin(email);
+    public boolean isExistsEmail(String email){
+        Optional<Profile> profileOptionalEmail = profileRepository.findByEmail(email);
 
-        return (userOptionalEmail.isPresent());
+        return (profileOptionalEmail.isPresent());
     }
 
 
@@ -161,6 +162,11 @@ public class UserService {
         profileRepository.save(profile);
     }
 
+    //Тут подправить
+//    public Page<UserResponseDto> findAllUsers(Pageable pageable){
+//        return userRepository.findAll(pageable).map(this::mapToResponseDto);
+//    }
+
 
     //Метод поменять пароль
     public void changePassword(UUID id, PasswordChangeDto passwordChangeDto){
@@ -209,16 +215,15 @@ public class UserService {
     }
 
     //Метод для входа в систему
-    //Добавить dto
-    public UserResponseDto authentification(String login, String password){
-        Optional<User> userOpt = userRepository.findByLogin(login);
+    public UserResponseDto authentification(UserAuthentificationDto userAuthentificationDto){
+        Optional<User> userOpt = userRepository.findByLogin(userAuthentificationDto.getLogin());
 
         if (userOpt.isPresent()){
             User user = userOpt.get();
             UserResponseDto userResponseDto = mapToResponseDto(user);
             String userHashedPassword = user.getPassword();
 
-            String hashedPassword = passwordHash(password);
+            String hashedPassword = passwordHash(userAuthentificationDto.getPassword());
 
             if (userHashedPassword.equals(hashedPassword)){
                 return userResponseDto;
@@ -226,9 +231,10 @@ public class UserService {
                 throw new InvalidPasswordException("Invalid password");
             }
         }else{
-            throw new RuntimeException("Invalid login");
+            throw new InvalidLoginException("Invalid login");
         }
     }
+
 
     //Доработать
 //    public List<Booking> getUserBookings(User user){

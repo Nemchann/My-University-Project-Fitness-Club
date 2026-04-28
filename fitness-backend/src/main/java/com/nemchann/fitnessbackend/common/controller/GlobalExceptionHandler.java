@@ -1,5 +1,6 @@
 package com.nemchann.fitnessbackend.common.controller;
 
+import com.nemchann.fitnessbackend.common.exception.InvalidLoginException;
 import com.nemchann.fitnessbackend.common.exception.InvalidPasswordException;
 import com.nemchann.fitnessbackend.common.exception.UserAlreadyExistsException;
 import com.nemchann.fitnessbackend.common.exception.UserNotFoundException;
@@ -16,6 +17,11 @@ import java.util.Map;
 public class GlobalExceptionHandler {
     @ExceptionHandler(InvalidPasswordException.class)
     public ResponseEntity<String> handlePasswordUnauthorized(InvalidPasswordException ex){
+        return new ResponseEntity<>(ex.getMessage(), HttpStatus.UNAUTHORIZED);
+    }
+
+    @ExceptionHandler(InvalidLoginException.class)
+    public ResponseEntity<String> handleLoginUnauthorized(InvalidLoginException ex){
         return new ResponseEntity<>(ex.getMessage(), HttpStatus.UNAUTHORIZED);
     }
 

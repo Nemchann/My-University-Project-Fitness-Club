@@ -1,19 +1,19 @@
 package com.nemchann.fitnessbackend.users.controller;
 
-import com.nemchann.fitnessbackend.users.dto.PasswordChangeDto;
-import com.nemchann.fitnessbackend.users.dto.UserEditingDto;
-import com.nemchann.fitnessbackend.users.dto.UserRegistrationDto;
-import com.nemchann.fitnessbackend.users.dto.UserResponseDto;
+import com.nemchann.fitnessbackend.users.dto.*;
 import com.nemchann.fitnessbackend.users.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
 import org.springframework.web.bind.annotation.*;
 
+import java.awt.print.Pageable;
+import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -46,11 +46,51 @@ public class UserController {
     }
 
     @PutMapping("/change_password/{id}")
-    @Operation(summary = "")
+    @Operation(summary = "Поменять пароль пользователя")
     public ResponseEntity<Void> changePassword(@PathVariable UUID id,
                                                           @Valid @RequestBody PasswordChangeDto dto){
         service.changePassword(id, dto);
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
+
+//    @GetMapping("/get_users")
+//    @Operation(summary = "")
+//    public Page<UserResponseDto> findAllUsers(Pageable pageable){
+//        return userRepository.findAll(pageable).map(this::mapToResponseDto);
+//    }
+
+    @GetMapping("/authentification")
+    @Operation(summary = "Авторизация существующего пользователя")
+    public ResponseEntity<UserResponseDto> authUser(@Valid @RequestBody UserAuthentificationDto dto){
+        UserResponseDto userResponseDto = service.authentification(dto);
+
+        return ResponseEntity.ok(userResponseDto);
+    }
+
+    @PutMapping("/edit_profile/{id}")
+    @Operation(summary = "Поменять профиль пользователя")
+    public ResponseEntity<UserResponseDto> editProfile(@Valid @RequestBody UserEditingDto dto){
+        UserResponseDto userResponseDto = service.editProfile(dto);
+
+        return ResponseEntity.ok(userResponseDto);
+    }
+
+    @GetMapping("/is_exists_login")
+    @Operation(summary = "")
+    public Boolean isExistsLogin(String login){
+        return service.isExistsLogin(login);
+    }
+
+    @GetMapping("/is_exists_email")
+    @Operation(summary = "")
+    public Boolean isExistsEmail(String email){
+        return service.isExistsEmail(email);
+    }
+
+
+    /*To do:
+    методы существования логина и email
+    поиск все пользователей для admin
+    * */
 
 }
