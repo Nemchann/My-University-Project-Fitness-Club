@@ -1,24 +1,193 @@
 package com.nemchann.fitnessbackend.schedule.service;
 
+import com.nemchann.fitnessbackend.common.exception.*;
+import com.nemchann.fitnessbackend.schedule.dto.*;
+import com.nemchann.fitnessbackend.schedule.entity.Room;
+import com.nemchann.fitnessbackend.schedule.entity.Schedule;
+import com.nemchann.fitnessbackend.schedule.entity.Workout;
+import com.nemchann.fitnessbackend.schedule.entity.WorkoutType;
+import com.nemchann.fitnessbackend.schedule.enums.RoomEnum;
+import com.nemchann.fitnessbackend.schedule.enums.WorkoutTypeEnum;
 import com.nemchann.fitnessbackend.schedule.repository.RoomRepository;
 import com.nemchann.fitnessbackend.schedule.repository.ScheduleRepository;
 import com.nemchann.fitnessbackend.schedule.repository.WorkoutRepository;
 import com.nemchann.fitnessbackend.schedule.repository.WorkoutTypeRepository;
+import com.nemchann.fitnessbackend.users.entity.User;
+import com.nemchann.fitnessbackend.users.service.UserService;
+import jakarta.persistence.EntityNotFoundException;
 import org.springframework.stereotype.Service;
+
+import java.util.Optional;
+import java.util.UUID;
+
+import static org.springframework.data.jpa.domain.AbstractPersistable_.id;
 
 @Service
 public class ScheduleService {
-    private RoomRepository roomRepository;
-    private ScheduleRepository scheduleRepository;
-    private WorkoutRepository workoutRepository;
-    private WorkoutTypeRepository workoutTypeRepository;
+    private final RoomRepository roomRepository;
+    private final ScheduleRepository scheduleRepository;
+    private final WorkoutRepository workoutRepository;
+    private final WorkoutTypeRepository workoutTypeRepository;
+    private final UserService userService;
 
     public ScheduleService(RoomRepository roomRepository, ScheduleRepository scheduleRepository,
-                           WorkoutRepository workoutRepository, WorkoutTypeRepository workoutTypeRepository){
+                           WorkoutRepository workoutRepository, WorkoutTypeRepository workoutTypeRepository,
+                           UserService userService){
         this.roomRepository = roomRepository;
         this.scheduleRepository = scheduleRepository;
         this.workoutRepository = workoutRepository;
         this.workoutTypeRepository = workoutTypeRepository;
+        this.userService = userService;
+    }
+
+    public WorkoutResponseDto createWorkout(WorkoutCreateDto workoutCreateDto){
+        WorkoutTypeEnum typeEnum = WorkoutTypeEnum.valueOf(workoutCreateDto.getWorkoutName().toUpperCase());
+
+        Optional<WorkoutType> typeOptional = workoutTypeRepository.findByTypeName(typeEnum);
+
+        if (typeOptional.isPresent()){
+            WorkoutType type = typeOptional.get();
+            Workout workout = new Workout();
+            rewriteWorkoutDtoToWorkout(workoutCreateDto, workout, type);
+
+            workoutRepository.save(workout);
+
+            return mapWorkoutToResponseDto(workout);
+        }else{
+            throw new EntityNotFoundException("WorkoutType is not found");
+        }
+    }
+
+    private void rewriteWorkoutDtoToWorkout(WorkoutCreateDto dto, Workout workout, WorkoutType type){
+
+        workout.setWorkoutName(dto.getWorkoutName());
+        workout.setWorkoutType(type);
+        workout.setDescription(dto.getDescription());
+
+    }
+
+    private WorkoutResponseDto mapWorkoutToResponseDto(Workout workout){
+        WorkoutResponseDto dto = new WorkoutResponseDto();
+
+        dto.setId(workout.getId());
+        dto.setWorkoutName(workout.getWorkoutName());
+        dto.setWorkoutType(workout.getWorkoutTypeNameToString());
+        dto.setDescription(workout.getDescription());
+
+        return dto;
+    }
+
+    public ScheduleResponseDto createSchedule(ScheduleCreateDto createDto) {
+        RoomEnum roomEnum = RoomEnum.valueOf(createDto.getRoomName().toUpperCase());
+
+        Optional<Workout> workoutOptional = workoutRepository.findById(createDto.getWorkoutId());
+        Room room = roomRepository.findByRoomName(roomEnum)
+                .orElseThrow(() -> new RoomIsNotFoundException("Room is not found"));
+
+        if(workoutOptional.isPresent()){
+            Workout workout = workoutOptional.get();
+
+            if (userService.isTrainer(createDto.getTrainerId())){
+                Schedule schedule = rewriteCreateDtoToSchedule(createDto, workout, room);
+
+                scheduleRepository.save(schedule);
+
+                return mapScheduleToResponse(schedule);
+
+            }else {
+                throw new IsNotTrainerException("This user is not trainer");
+            }
+
+        }else{
+            throw new WorkoutIsNotFoundException("Workout is not found");
+        }
+    }
+
+    public Schedule rewriteCreateDtoToSchedule(ScheduleCreateDto dto, Workout workout, Room room){
+        Schedule schedule = new Schedule();
+
+        User trainer = userService.getUser(dto.getTrainerId());
+
+        schedule.setWorkout(workout);
+        schedule.setScheduleDate(dto.getScheduleDate());
+        schedule.setTrainer(trainer);
+        schedule.setRoom(room);
+        schedule.setMaxParticipants(dto.getMaxParticipants());
+        schedule.setStartTime(dto.getStartTime());
+        schedule.setEndTime(dto.getEndTime());
+        schedule.setCurrentParticipants(0);
+        schedule.setActive(true);
+
+        return schedule;
+    }
+
+    private ScheduleResponseDto mapScheduleToResponse(Schedule schedule){
+        ScheduleResponseDto dto = new ScheduleResponseDto();
+
+        dto.setId(schedule.getId());
+        dto.setWorkoutName(schedule.getWorkout().getWorkoutName());
+        dto.setScheduleDate(schedule.getScheduleDate());
+        //Додумать
+        dto.setTrainerSurname(schedule.getTrainer().getProfile().getSurname());
+        dto.setTrainerName(schedule.getTrainer().getProfile().getSelfname());
+
+        dto.setStartTime(schedule.getStartTime());
+        dto.setEndTime(schedule.getEndTime());
+        dto.setMaxParticipants(schedule.getMaxParticipants());
+        dto.setCurrentParticipants(schedule.getCurrentParticipants());
+        dto.setDescription(schedule.getWorkout().getDescription());
+        dto.setWorkoutType(schedule.getWorkout().getWorkoutTypeNameToString());
+
+        return dto;
+    }
+
+    public ScheduleResponseDto getScheduleResponse(Integer id){
+        Schedule schedule = scheduleRepository.findById(id)
+                .orElseThrow(() -> new ScheduleIsNotFoundException("Schedule is not found"));
+
+        return mapScheduleToResponse(schedule);
+    }
+
+    public ScheduleResponseDto appointATrainer(UUID trainerId, Integer scheduleId){
+        User trainer = userService.getUser(trainerId);
+        Schedule schedule = scheduleRepository.findById(scheduleId)
+                .orElseThrow(() -> new ScheduleIsNotFoundException("Schedule is not found"));
+
+        if(userService.isTrainer(trainerId)){
+            schedule.setTrainer(trainer);
+
+            scheduleRepository.save(schedule);
+
+            return mapScheduleToResponse(schedule);
+
+        }else{
+            throw new IsNotTrainerException("This user is not trainer");
+        }
+    }
+
+    public void deleteSchedule(Integer id){
+        Schedule schedule = scheduleRepository.findById(id)
+                        .orElseThrow(() -> new ScheduleIsNotFoundException("Schedule is not found"));
+        scheduleRepository.delete(schedule);
+    }
+
+    public void cancelSchedule(Integer id){
+        Schedule schedule = scheduleRepository.findById(id)
+                .orElseThrow(() -> new ScheduleIsNotFoundException("Schedule is not found"));
+        schedule.setActive(false);
+
+        scheduleRepository.save(schedule);
+    }
+
+    public ScheduleResponseDto editTime(ScheduleEditTimeDto dto){
+        Schedule schedule = scheduleRepository.findById(dto.getId())
+                .orElseThrow(() -> new ScheduleIsNotFoundException("Schedule is not found"));
+
+        schedule.setScheduleDate(dto.getScheduleDate());
+        schedule.setStartTime(dto.getStartTime());
+        schedule.setEndTime(dto.getEndTime());
+
+        return mapScheduleToResponse(schedule);
     }
 
 

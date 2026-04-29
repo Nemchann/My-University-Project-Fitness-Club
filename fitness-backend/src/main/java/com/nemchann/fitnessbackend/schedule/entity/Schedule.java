@@ -52,6 +52,9 @@ public class Schedule {
     @Column(name = "created_at")
     private OffsetDateTime createdAt;
 
+    @Column(name = "is_active")
+    private boolean isActive;
+
     @OneToMany(mappedBy = "schedule", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<Booking> bookingList = new ArrayList<>();
 

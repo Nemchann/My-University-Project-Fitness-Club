@@ -1,5 +1,6 @@
 package com.nemchann.fitnessbackend.schedule.entity;
 
+import com.nemchann.fitnessbackend.schedule.enums.WorkoutTypeEnum;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -29,5 +30,9 @@ public class Workout {
 
     @OneToMany(mappedBy = "workout", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<Schedule> scheduleList = new ArrayList<>();
+
+    public String getWorkoutTypeNameToString(){
+        return workoutType.getTypeName().toString();
+    }
 
 }
