@@ -6,6 +6,6 @@
 
 - [Фронтенд]: React + TS
 - [Бэкенд]: Java Spring Boot + Hibernate
-- [База данных SQL]: PostgreSQL 
-- [База данных NoSQL]: MongoDB
+- [База данных SQL]: PostgreSQL + PostgeSQL Driver
+- [База данных NoSQL]: MongoDB + MongoDB Driver
 
