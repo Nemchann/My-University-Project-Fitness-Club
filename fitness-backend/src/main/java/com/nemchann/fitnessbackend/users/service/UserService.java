@@ -14,10 +14,10 @@ import com.nemchann.fitnessbackend.users.repository.ProfileRepository;
 import com.nemchann.fitnessbackend.users.repository.RoleRepository;
 import com.nemchann.fitnessbackend.users.repository.UserRepository;
 import jakarta.transaction.Transactional;
-import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Service;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Page;
 
-import java.awt.print.Pageable;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -163,9 +163,11 @@ public class UserService {
     }
 
     //Тут подправить
-//    public Page<UserResponseDto> findAllUsers(Pageable pageable){
-//        return userRepository.findAll(pageable).map(this::mapToResponseDto);
-//    }
+    @Transactional
+    public Page<UserResponseDto> findAllUsers(Pageable pageable){
+        return userRepository.findAllByIsActiveTrue(pageable)
+                .map(this::mapToResponseDto);
+    }
 
 
     //Метод поменять пароль
@@ -193,8 +195,6 @@ public class UserService {
         }else{
             throw new UserNotFoundException("User is not found");
         }
-
-
     }
 
     //Метод удаление пользователя с его профилем

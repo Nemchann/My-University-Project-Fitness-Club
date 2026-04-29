@@ -6,13 +6,14 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
 import org.springframework.web.bind.annotation.*;
 
-import java.awt.print.Pageable;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Page;
 import java.util.List;
 import java.util.UUID;
 
@@ -53,11 +54,14 @@ public class UserController {
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
 
-//    @GetMapping("/get_users")
-//    @Operation(summary = "")
-//    public Page<UserResponseDto> findAllUsers(Pageable pageable){
-//        return userRepository.findAll(pageable).map(this::mapToResponseDto);
-//    }
+    @GetMapping("/get_users")
+    @Operation(summary = "Все пользователи")
+    public ResponseEntity<Page<UserResponseDto>> getAllUsers(
+            @PageableDefault(size = 10, sort = "login") Pageable pageable
+    ) {
+        Page<UserResponseDto> users = service.findAllUsers(pageable);
+        return ResponseEntity.ok(users);
+    }
 
     @GetMapping("/authentification")
     @Operation(summary = "Авторизация существующего пользователя")
@@ -93,10 +97,5 @@ public class UserController {
         service.deactivateUser(id);
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
-
-
-    /*To do:
-    поиск все пользователей для admin
-    * */
 
 }
