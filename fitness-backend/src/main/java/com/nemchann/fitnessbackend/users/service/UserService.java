@@ -1,10 +1,7 @@
 package com.nemchann.fitnessbackend.users.service;
 
 import com.nemchann.fitnessbackend.booking.entity.Booking;
-import com.nemchann.fitnessbackend.common.exception.InvalidLoginException;
-import com.nemchann.fitnessbackend.common.exception.InvalidPasswordException;
-import com.nemchann.fitnessbackend.common.exception.UserAlreadyExistsException;
-import com.nemchann.fitnessbackend.common.exception.UserNotFoundException;
+import com.nemchann.fitnessbackend.common.exception.*;
 import com.nemchann.fitnessbackend.users.dto.*;
 import com.nemchann.fitnessbackend.users.entity.Profile;
 import com.nemchann.fitnessbackend.users.entity.Role;
@@ -46,7 +43,7 @@ public class UserService {
         rewriteUserDtoToProfile(userRegistrationDto, profile);
 
         Role defaultRole = roleRepository.findByRoleName(UserRole.CLIENT)
-                .orElseThrow(() -> new RuntimeException("Error: Role CLIENT not found."));
+                .orElseThrow(() -> new RoleNotFoundException("Error: Role CLIENT not found."));
 
         user.setRole(defaultRole);
         profile.setUser(user);
@@ -54,6 +51,27 @@ public class UserService {
 
         userRepository.save(user);
         //Заодно сохраняем и профиль пользователя
+        profileRepository.save(profile);
+
+        return mapToResponseDto(user);
+    }
+
+    public UserResponseDto createTrainer(UserRegistrationDto userRegistrationDto){
+        User user = new User();
+        Profile profile = new Profile();
+
+        rewriteUserDtoToUser(userRegistrationDto, user);
+        rewriteUserDtoToProfile(userRegistrationDto, profile);
+
+        Role trainerRole = roleRepository.findByRoleName(UserRole.TRAINER)
+                .orElseThrow(() -> new RoleNotFoundException("Error: Role TRAINER not found"));
+
+        user.setRole(trainerRole);
+        profile.setUser(user);
+        user.setProfile(profile);
+
+        userRepository.save(user);
+
         profileRepository.save(profile);
 
         return mapToResponseDto(user);
@@ -120,7 +138,7 @@ public class UserService {
         return "good" + password.hashCode() + "fitness";
     }
 
-    public UserResponseDto getUser(UUID id){
+    public UserResponseDto getUserResponse(UUID id){
         Optional<User> userOptional = userRepository.findById(id);
 
         if(userOptional.isPresent()){
@@ -243,6 +261,34 @@ public class UserService {
             user.setActive(false);
 
             userRepository.save(user);
+
+        }else{
+            throw new UserNotFoundException("User is not found");
+        }
+    }
+
+
+    public User getUser(UUID id){
+        Optional<User> userOptional = userRepository.findById(id);
+
+        if(userOptional.isPresent()){
+            return userOptional.get();
+        }else{
+            throw new UserNotFoundException("User is not found");
+        }
+    }
+
+    public boolean isTrainer(UUID id){
+        Optional<User> userOptional = userRepository.findById(id);
+
+        if (userOptional.isPresent()){
+            User user = userOptional.get();
+
+            Role role = user.getRole();
+
+            UserRole userRole = role.getRoleName();
+
+            return UserRole.TRAINER.equals(userRole);
 
         }else{
             throw new UserNotFoundException("User is not found");

@@ -31,6 +31,13 @@ public class UserController {
         return new ResponseEntity<>(userResponseDto, HttpStatus.CREATED);
     }
 
+    @PostMapping("/register_trainer")
+    @Operation(summary = "")
+    public ResponseEntity<UserResponseDto> registerTrainer(@Valid @RequestBody UserRegistrationDto userRegistrationDto){
+        UserResponseDto userResponseDto = service.createTrainer(userRegistrationDto);
+        return new ResponseEntity<>(userResponseDto, HttpStatus.CREATED);
+    }
+
     @DeleteMapping("/delete")
     @Operation(summary = "Удалить пользователя")
     public ResponseEntity<Void> delete(@Valid @RequestBody UserEditingDto userEditingDto){
@@ -41,7 +48,7 @@ public class UserController {
     @GetMapping("/{id}")
     @Operation(summary = "Получить пользователя по id")
     public ResponseEntity<UserResponseDto> getUser(@PathVariable UUID id){
-        UserResponseDto userResponseDto = service.getUser(id);
+        UserResponseDto userResponseDto = service.getUserResponse(id);
 
         return ResponseEntity.ok(userResponseDto);
     }
