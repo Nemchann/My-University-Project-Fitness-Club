@@ -1,6 +1,7 @@
 package com.nemchann.fitnessbackend.schedule.dto;
 
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
 import java.time.OffsetDateTime;
@@ -9,15 +10,16 @@ import java.util.Date;
 @Data
 public class ScheduleEditTimeDto {
 
+    @NotNull
     private Integer id;
 
-    @NotBlank
+    @NotNull
     private Date scheduleDate;
 
-    @NotBlank
+    @NotNull
     private OffsetDateTime startTime;
 
-    @NotBlank
+    @NotNull
     private OffsetDateTime endTime;
 
 }

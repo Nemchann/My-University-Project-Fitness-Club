@@ -4,12 +4,11 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
+import java.util.Date;
+
 @Data
-public class ScheduleEditRoomDto {
+public class ScheduleGetByTimeDto {
 
     @NotNull
-    private Integer id;
-
-    @NotBlank
-    private String room;
+    private Date date;
 }

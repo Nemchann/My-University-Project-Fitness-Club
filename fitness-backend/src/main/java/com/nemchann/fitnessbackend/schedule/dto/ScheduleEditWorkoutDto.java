@@ -5,11 +5,11 @@ import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
 @Data
-public class ScheduleEditRoomDto {
+public class ScheduleEditWorkoutDto {
 
     @NotNull
-    private Integer id;
+    private Integer scheduleId;
 
-    @NotBlank
-    private String room;
+    @NotNull
+    private Integer workoutId;
 }
