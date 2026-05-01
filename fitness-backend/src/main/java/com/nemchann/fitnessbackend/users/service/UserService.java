@@ -11,6 +11,7 @@ import com.nemchann.fitnessbackend.users.repository.ProfileRepository;
 import com.nemchann.fitnessbackend.users.repository.RoleRepository;
 import com.nemchann.fitnessbackend.users.repository.UserRepository;
 import jakarta.transaction.Transactional;
+import org.springframework.data.domain.Example;
 import org.springframework.stereotype.Service;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Page;
@@ -289,6 +290,16 @@ public class UserService {
             UserRole userRole = role.getRoleName();
 
             return UserRole.TRAINER.equals(userRole);
+
+        }else{
+            throw new UserNotFoundException("User is not found");
+        }
+    }
+
+    public String getFullName(User user){
+        if (userRepository.exists(Example.of(user))){
+            Profile profile = user.getProfile();
+            return profile.getSurname() + " " + profile.getSelfname();
 
         }else{
             throw new UserNotFoundException("User is not found");
