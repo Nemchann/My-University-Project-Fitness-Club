@@ -15,9 +15,15 @@ import com.nemchann.fitnessbackend.schedule.repository.WorkoutTypeRepository;
 import com.nemchann.fitnessbackend.users.entity.User;
 import com.nemchann.fitnessbackend.users.service.UserService;
 import jakarta.persistence.EntityNotFoundException;
+import jakarta.persistence.Temporal;
 import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
 
+import java.time.DayOfWeek;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.temporal.TemporalAdjuster;
+import java.time.temporal.TemporalAdjusters;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
@@ -131,9 +137,9 @@ public class ScheduleService {
         dto.setId(schedule.getId());
         dto.setWorkoutName(schedule.getWorkout().getWorkoutName());
         dto.setScheduleDate(schedule.getScheduleDate());
-        //Додумать
-        dto.setTrainerSurname(schedule.getTrainer().getProfile().getSurname());
-        dto.setTrainerName(schedule.getTrainer().getProfile().getSelfname());
+
+        String fullName = userService.getFullName(schedule.getTrainer());
+        dto.setTrainerFullName(fullName);
 
         dto.setStartTime(schedule.getStartTime());
         dto.setEndTime(schedule.getEndTime());
@@ -151,6 +157,14 @@ public class ScheduleService {
                 .orElseThrow(() -> new ScheduleIsNotFoundException("Schedule is not found"));
 
         return mapScheduleToResponse(schedule);
+    }
+
+    //Найти вид тренировки по id
+    public WorkoutResponseDto getWorkoutResponse(Integer id){
+        Workout workout = workoutRepository.findById(id)
+                .orElseThrow(() -> new WorkoutIsNotFoundException("Workout is not found"));
+
+        return mapWorkoutToResponseDto(workout);
     }
 
     //Назначить тренера на тренировку
@@ -224,11 +238,11 @@ public class ScheduleService {
 
     //Поменять вид тренировки
     @Transactional
-    public ScheduleResponseDto editScheduleWorkout(ScheduleEditWorkoutDto scheduleEditWorkoutDto){
+    public ScheduleResponseDto editScheduleWorkout(Integer scheduleId, ScheduleEditWorkoutDto scheduleEditWorkoutDto){
         Workout workout = workoutRepository.findById(scheduleEditWorkoutDto.getWorkoutId())
                 .orElseThrow(() -> new WorkoutIsNotFoundException("WorkoutIsNotFound"));
 
-        Schedule schedule = scheduleRepository.findById(scheduleEditWorkoutDto.getScheduleId())
+        Schedule schedule = scheduleRepository.findById(scheduleId)
                 .orElseThrow(() -> new ScheduleIsNotFoundException("Schedule is not found"));
 
         schedule.setWorkout(workout);
@@ -237,6 +251,7 @@ public class ScheduleService {
         return mapScheduleToResponse(schedule);
     }
 
+    @Transactional
     public List<ScheduleResponseDto> findSchedulesByDate(ScheduleGetByTimeDto scheduleGetByTimeDto){
         Date date = scheduleGetByTimeDto.getDate();
         List<Schedule> schedules = scheduleRepository.findByScheduleDate(date);
@@ -246,7 +261,21 @@ public class ScheduleService {
                 .toList();
     }
 
+    @Transactional
+    public List<ScheduleResponseDto> getWeeklySchedule(LocalDate date){
+        LocalDateTime startOfWeek = date.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
+                .atStartOfDay();
+
+        LocalDateTime endOfWeek = startOfWeek.plusDays(6).with(LocalDateTime.MAX);
+
+        return scheduleRepository.findAllByStartTimeBetweenOrderByStartTimeAsc(startOfWeek, endOfWeek)
+                .stream()
+                .map(this::mapScheduleToResponse)
+                .toList();
+    }
+
     //Сделать метод, который возвращает список тренировок в заданном промежутке времени с валидацией
     //самого промежутка времени
+    // По возможности создать классы-мапперы
 
 }
