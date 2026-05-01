@@ -1,9 +1,6 @@
 package com.nemchann.fitnessbackend.common.controller;
 
-import com.nemchann.fitnessbackend.common.exception.InvalidLoginException;
-import com.nemchann.fitnessbackend.common.exception.InvalidPasswordException;
-import com.nemchann.fitnessbackend.common.exception.UserAlreadyExistsException;
-import com.nemchann.fitnessbackend.common.exception.UserNotFoundException;
+import com.nemchann.fitnessbackend.common.exception.*;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -33,6 +30,31 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(UserNotFoundException.class)
     public ResponseEntity<String> handleUserNotFound(UserNotFoundException ex){
         return new ResponseEntity<>(ex.getMessage(), HttpStatus.NOT_FOUND);
+    }
+
+    @ExceptionHandler(RoleNotFoundException.class)
+    public ResponseEntity<String> handleRoleNotFound(RoleNotFoundException ex){
+        return new ResponseEntity<>(ex.getMessage(), HttpStatus.NOT_FOUND);
+    }
+
+    @ExceptionHandler(RoomIsNotFoundException.class)
+    public ResponseEntity<String> handleRoomNotFound(RoomIsNotFoundException ex){
+        return new ResponseEntity<>(ex.getMessage(), HttpStatus.NOT_FOUND);
+    }
+
+    @ExceptionHandler(ScheduleIsNotFoundException.class)
+    public ResponseEntity<String> handleScheduleNotFound(ScheduleIsNotFoundException ex){
+        return new ResponseEntity<>(ex.getMessage(), HttpStatus.NOT_FOUND);
+    }
+
+    @ExceptionHandler(WorkoutIsNotFoundException.class)
+    public ResponseEntity<String> handleWorkoutNotFound(WorkoutIsNotFoundException ex) {
+        return new ResponseEntity<>(ex.getMessage(), HttpStatus.NOT_FOUND);
+    }
+
+    @ExceptionHandler(IsNotTrainerException.class)
+    public ResponseEntity<String> handleNotTrainer(IsNotTrainerException ex){
+        return new ResponseEntity<>(ex.getMessage(), HttpStatus.FORBIDDEN); //Подумать какой http статус выводить, пока так
     }
 
     //Когда неправильные логин, email
