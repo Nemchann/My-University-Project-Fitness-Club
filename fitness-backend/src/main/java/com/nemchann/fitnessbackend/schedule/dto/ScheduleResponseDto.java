@@ -15,9 +15,7 @@ public class ScheduleResponseDto {
 
     private String workoutName;
 
-    private String trainerSurname;
-
-    private String trainerName;
+    private String trainerFullName;
 
     private String workoutType;
 

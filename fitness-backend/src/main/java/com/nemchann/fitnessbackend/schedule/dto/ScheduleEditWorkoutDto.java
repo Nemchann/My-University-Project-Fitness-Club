@@ -8,8 +8,5 @@ import lombok.Data;
 public class ScheduleEditWorkoutDto {
 
     @NotNull
-    private Integer scheduleId;
-
-    @NotNull
     private Integer workoutId;
 }
