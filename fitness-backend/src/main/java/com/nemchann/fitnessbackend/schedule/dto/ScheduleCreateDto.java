@@ -6,6 +6,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
+import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.Date;
 import java.util.UUID;
@@ -17,7 +18,7 @@ public class ScheduleCreateDto {
     private Integer workoutId;
 
     @NotNull
-    private Date scheduleDate;
+    private LocalDate scheduleDate;
 
     @NotNull
     private UUID trainerId;
@@ -33,5 +34,7 @@ public class ScheduleCreateDto {
 
     @NotNull
     private String roomName;
+
+    private OffsetDateTime createdAt;
 
 }

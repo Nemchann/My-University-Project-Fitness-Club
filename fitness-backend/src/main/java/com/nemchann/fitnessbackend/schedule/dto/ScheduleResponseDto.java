@@ -4,6 +4,7 @@ import com.nemchann.fitnessbackend.schedule.entity.WorkoutType;
 import com.nemchann.fitnessbackend.users.entity.User;
 import lombok.Data;
 
+import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.Date;
 import java.util.UUID;
@@ -21,7 +22,7 @@ public class ScheduleResponseDto {
 
     private String description;
 
-    private Date scheduleDate;
+    private LocalDate scheduleDate;
 
     private OffsetDateTime startTime;
 
