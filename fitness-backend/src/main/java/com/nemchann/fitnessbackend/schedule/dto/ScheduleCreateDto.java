@@ -7,6 +7,7 @@ import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.util.Date;
 import java.util.UUID;
@@ -24,10 +25,10 @@ public class ScheduleCreateDto {
     private UUID trainerId;
 
     @NotNull
-    private OffsetDateTime startTime;
+    private LocalDateTime startTime;
 
     @NotNull
-    private OffsetDateTime endTime;
+    private LocalDateTime endTime;
 
     @NotNull
     private Integer maxParticipants;

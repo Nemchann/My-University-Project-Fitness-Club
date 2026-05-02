@@ -5,6 +5,7 @@ import com.nemchann.fitnessbackend.users.entity.User;
 import lombok.Data;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.util.Date;
 import java.util.UUID;
@@ -24,9 +25,9 @@ public class ScheduleResponseDto {
 
     private LocalDate scheduleDate;
 
-    private OffsetDateTime startTime;
+    private LocalDateTime startTime;
 
-    private OffsetDateTime endTime;
+    private LocalDateTime endTime;
 
     private Integer maxParticipants;
 
