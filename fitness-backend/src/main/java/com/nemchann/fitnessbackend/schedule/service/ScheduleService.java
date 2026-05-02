@@ -1,5 +1,6 @@
 package com.nemchann.fitnessbackend.schedule.service;
 
+import ch.qos.logback.core.util.Loader;
 import com.nemchann.fitnessbackend.common.exception.*;
 import com.nemchann.fitnessbackend.schedule.dto.*;
 import com.nemchann.fitnessbackend.schedule.entity.Room;
@@ -50,7 +51,7 @@ public class ScheduleService {
 
     //Создать вид тренировки
     public WorkoutResponseDto createWorkout(WorkoutCreateDto workoutCreateDto){
-        WorkoutTypeEnum typeEnum = WorkoutTypeEnum.valueOf(workoutCreateDto.getWorkoutName().toUpperCase());
+        WorkoutTypeEnum typeEnum = WorkoutTypeEnum.valueOf(workoutCreateDto.getWorkoutType().toUpperCase());
 
         Optional<WorkoutType> typeOptional = workoutTypeRepository.findByTypeName(typeEnum);
 
@@ -127,6 +128,7 @@ public class ScheduleService {
         schedule.setEndTime(dto.getEndTime());
         schedule.setCurrentParticipants(0);
         schedule.setActive(true);
+        schedule.setCreatedAt(dto.getCreatedAt());
 
         return schedule;
     }
@@ -138,8 +140,13 @@ public class ScheduleService {
         dto.setWorkoutName(schedule.getWorkout().getWorkoutName());
         dto.setScheduleDate(schedule.getScheduleDate());
 
-        String fullName = userService.getFullName(schedule.getTrainer());
-        dto.setTrainerFullName(fullName);
+//        String fullName = userService.getFullName(schedule.getTrainer());
+//        dto.setTrainerFullName(fullName);
+        User trainer = schedule.getTrainer();
+        if (trainer != null && trainer.getProfile() != null) {
+            String fullName = trainer.getProfile().getSurname() + " " + trainer.getProfile().getSelfname();
+            dto.setTrainerFullName(fullName);
+        }
 
         dto.setStartTime(schedule.getStartTime());
         dto.setEndTime(schedule.getEndTime());
@@ -253,7 +260,7 @@ public class ScheduleService {
 
     @Transactional
     public List<ScheduleResponseDto> findSchedulesByDate(ScheduleGetByTimeDto scheduleGetByTimeDto){
-        Date date = scheduleGetByTimeDto.getDate();
+        LocalDate date = scheduleGetByTimeDto.getDate();
         List<Schedule> schedules = scheduleRepository.findByScheduleDate(date);
 
         return schedules.stream()

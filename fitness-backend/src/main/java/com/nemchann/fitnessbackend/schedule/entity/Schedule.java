@@ -7,6 +7,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Date;
@@ -35,7 +36,7 @@ public class Schedule {
     private User trainer;
 
     @Column(name = "schedule_date", nullable = false)
-    private Date scheduleDate;
+    private LocalDate scheduleDate;
 
     @Column(name = "start_time", nullable = false)
     private OffsetDateTime startTime;
