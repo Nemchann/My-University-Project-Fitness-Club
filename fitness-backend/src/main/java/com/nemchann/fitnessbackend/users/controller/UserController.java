@@ -32,7 +32,7 @@ public class UserController {
     }
 
     @PostMapping("/register_trainer")
-    @Operation(summary = "")
+    @Operation(summary = "Зарегистрировать тренера")
     public ResponseEntity<UserResponseDto> registerTrainer(@Valid @RequestBody UserRegistrationDto userRegistrationDto){
         UserResponseDto userResponseDto = service.createTrainer(userRegistrationDto);
         return new ResponseEntity<>(userResponseDto, HttpStatus.CREATED);
