@@ -4,6 +4,7 @@ import com.nemchann.fitnessbackend.schedule.entity.Schedule;
 import com.nemchann.fitnessbackend.users.entity.User;
 import jakarta.persistence.*;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.time.OffsetDateTime;
@@ -12,6 +13,7 @@ import java.time.OffsetDateTime;
 @Table(name = "bookings")
 @Getter
 @Setter
+@NoArgsConstructor
 public class Booking {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)

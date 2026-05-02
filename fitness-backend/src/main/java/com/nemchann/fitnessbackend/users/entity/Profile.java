@@ -1,24 +1,26 @@
 package com.nemchann.fitnessbackend.users.entity;
 
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.Setter;
-import lombok.ToString;
+import lombok.*;
 
+import java.time.LocalDate;
 import java.util.Date;
+import java.util.UUID;
 
 @Entity
 @Table(name = "profiles")
 @Getter @Setter
+@NoArgsConstructor
 public class Profile {
+
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
-    private int id;
+    private UUID id;
 
     @OneToOne
     @MapsId
-    @JoinColumn(name = "user_id")
+    @JoinColumn(name = "id")
     @ToString.Exclude
+    @EqualsAndHashCode.Exclude
     private User user;
 
     @Column (name = "surname", nullable = false)
@@ -31,7 +33,7 @@ public class Profile {
     private String patronymic;
 
     @Column (name = "birthday", nullable = false)
-    private Date birthday;
+    private LocalDate birthday;
 
     @Column (name = "phone", unique = true, nullable = false)
     private String phone;
@@ -40,7 +42,7 @@ public class Profile {
     private String email;
 
     public Profile(User user, String surname, String selfname, String patronymic,
-                   Date birthday, String phone, String email){
+                   LocalDate birthday, String phone, String email){
         this.user = user;
         this.surname = surname;
         this.selfname = selfname;
@@ -50,8 +52,5 @@ public class Profile {
         this.email = email;
     }
 
-    public Profile(){
-
-    }
 
 }

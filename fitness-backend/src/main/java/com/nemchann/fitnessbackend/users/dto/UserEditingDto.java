@@ -3,11 +3,14 @@ package com.nemchann.fitnessbackend.users.dto;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
+import java.time.LocalDate;
 import java.util.Date;
 import java.util.UUID;
 
 @Data
+@NoArgsConstructor
 public class UserEditingDto {
 
     private UUID id;
@@ -27,5 +30,5 @@ public class UserEditingDto {
     private String email;
 
     @NotBlank(message = "Поле Электронная почта не может быть пустым")
-    private Date birthday;
+    private LocalDate birthday;
 }

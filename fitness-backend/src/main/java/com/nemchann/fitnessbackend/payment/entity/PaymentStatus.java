@@ -4,6 +4,7 @@ package com.nemchann.fitnessbackend.payment.entity;
 import com.nemchann.fitnessbackend.payment.PaymentStatusEnum;
 import jakarta.persistence.*;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.util.ArrayList;
@@ -12,6 +13,7 @@ import java.util.List;
 @Entity
 @Table(name = "payment_statuses")
 @Getter @Setter
+@NoArgsConstructor
 public class PaymentStatus {
 
     @Id

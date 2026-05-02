@@ -7,6 +7,7 @@ import com.nemchann.fitnessbackend.schedule.entity.Schedule;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.ToString;
 
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
@@ -17,6 +18,7 @@ import java.util.UUID;
 @Table(name = "users")
 @Getter
 @Setter
+
 public class User {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
@@ -25,14 +27,14 @@ public class User {
     @Column(nullable = false, unique = true)
     private String login;
 
-    @Column(nullable = false)
+    @Column(nullable = false, name = "password_hash")
     private String password;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "role_id")
     private Role role;
 
-    @Column(name = "created_at")
+    @Column(name = "create_at", insertable = false, updatable = false)
     private OffsetDateTime createdAt;
 
     @Column(name = "is_active")
@@ -41,7 +43,7 @@ public class User {
     @OneToMany(mappedBy = "client", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<Booking> clientBookings = new ArrayList<>();
 
-    @OneToMany(mappedBy = "subscription", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "client", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<ClientSubscription> clientSubscriptions = new ArrayList<>();
 
     @OneToMany(mappedBy = "trainer", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
@@ -50,8 +52,9 @@ public class User {
     @OneToMany(mappedBy = "client", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<Payment> clientPayments = new ArrayList<>();
 
-    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL)
+    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     @PrimaryKeyJoinColumn
+    @ToString.Exclude
     private Profile profile;
 
     public User(String login, String password, Role role){
