@@ -169,9 +169,15 @@ public class ScheduleService {
         return mapWorkoutToResponseDto(workout);
     }
 
+    public Schedule getSchedule(Integer id){
+        return scheduleRepository.findById(id)
+                .orElseThrow(() -> new ScheduleIsNotFoundException("Schedule is not found"));
+    }
+
     //Назначить тренера на тренировку
     @Transactional
     public ScheduleResponseDto appointATrainer(UUID trainerId, Integer scheduleId){
+        //Добавить добавление тренировок самому тренеру в UserService, а также их удаление
         User trainer = userService.getUser(trainerId);
         Schedule schedule = scheduleRepository.findById(scheduleId)
                 .orElseThrow(() -> new ScheduleIsNotFoundException("Schedule is not found"));
@@ -191,6 +197,7 @@ public class ScheduleService {
     //Удалить тренировку
     @Transactional
     public void deleteSchedule(Integer id){
+        //Добавить функциональность при бронировании. Что будет с бронированиями, если удалить тренировку?
         Schedule schedule = scheduleRepository.findById(id)
                         .orElseThrow(() -> new ScheduleIsNotFoundException("Schedule is not found"));
         scheduleRepository.delete(schedule);
@@ -199,6 +206,7 @@ public class ScheduleService {
     //Деактивировать тренировку
     @Transactional
     public void cancelSchedule(Integer id){
+        //Сделать бронирования, подписанные на эту тренировку со статусов CANCELLED
         Schedule schedule = scheduleRepository.findById(id)
                 .orElseThrow(() -> new ScheduleIsNotFoundException("Schedule is not found"));
         schedule.setActive(false);
@@ -253,6 +261,7 @@ public class ScheduleService {
         return mapScheduleToResponse(schedule);
     }
 
+    //Получить тренировки данного дня
     @Transactional
     public List<ScheduleResponseDto> findSchedulesByDate(ScheduleGetByTimeDto scheduleGetByTimeDto){
         LocalDate date = scheduleGetByTimeDto.getDate();
@@ -263,6 +272,7 @@ public class ScheduleService {
                 .toList();
     }
 
+    //Получить тренировку на неделю
     @Transactional
     public List<ScheduleResponseDto> getWeeklySchedule(WeeklyScheduleDto dto){
         LocalDate date = dto.getDate();
@@ -277,6 +287,7 @@ public class ScheduleService {
                 .toList();
     }
 
+    //Получить сегодняшние тренировки в заданном промежутке времени
     @Transactional
     public List<ScheduleResponseDto> getTodaySchedulesByTimeRange(ScheduleGetByTimePeriodDto timePeriodDto){
         LocalTime startTime = timePeriodDto.getStart();
@@ -293,6 +304,7 @@ public class ScheduleService {
                 .toList();
     }
 
+    //Посмотреть доступные
     @Transactional
     public Page<ScheduleResponseDto> getAvailableWorkouts(Pageable pageable) {
         LocalDateTime now = LocalDateTime.now();
@@ -302,20 +314,41 @@ public class ScheduleService {
     }
 
     //Метод, который будет использоваться в BookingService
+    //Увеличить счетчик текущих посетителей
     @Transactional
-    public void updateParticipantsCount(Integer scheduleId, Integer delta){
+    public void addParticipant(Integer scheduleId){
         Schedule schedule = scheduleRepository.findById(scheduleId)
                 .orElseThrow(() -> new ScheduleIsNotFoundException("Schedule is not found"));
 
-        Integer currentParticipants = schedule.getCurrentParticipants() + delta;
+
+        if (schedule.getCurrentParticipants() >= schedule.getMaxParticipants()){
+            throw new IllegalStateException("No free slots available");
+        }
+        Integer currentParticipants = schedule.getCurrentParticipants() + 1;
+
         schedule.setCurrentParticipants(currentParticipants);
 
         scheduleRepository.save(schedule);
     }
 
+    //Уменьшить счетчик текущих посетителей
+    @Transactional
+    public void removeParticipant(Integer scheduleId){
+        Schedule schedule = scheduleRepository.findById(scheduleId)
+                .orElseThrow(() -> new ScheduleIsNotFoundException("Schedule is not found"));
 
-    //Сделать метод, который возвращает список тренировок в заданном промежутке времени с валидацией
-    //самого промежутка времени
+        Integer currentParticipants = schedule.getCurrentParticipants() - 1;
+
+        if(currentParticipants < 0){
+            throw new ArithmeticException("Current participants mustn't be negative");
+        }
+
+        schedule.setCurrentParticipants(currentParticipants);
+
+        scheduleRepository.save(schedule);
+    }
+
+    // Добавить метод получения тренировок по типу тренировок (workoutType)
     // По возможности создать классы-мапперы
 
 }
