@@ -1,7 +1,9 @@
 package com.nemchann.fitnessbackend.users.service;
 
 import com.nemchann.fitnessbackend.booking.entity.Booking;
+import com.nemchann.fitnessbackend.booking.entity.BookingStatus;
 import com.nemchann.fitnessbackend.common.exception.*;
+import com.nemchann.fitnessbackend.schedule.entity.Schedule;
 import com.nemchann.fitnessbackend.users.dto.*;
 import com.nemchann.fitnessbackend.users.entity.Profile;
 import com.nemchann.fitnessbackend.users.entity.Role;
@@ -304,5 +306,45 @@ public class UserService {
         }else{
             throw new UserNotFoundException("User is not found");
         }
+    }
+
+    public void addBookingToUser(UUID userId, Booking booking){
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new UserNotFoundException("User is not found"));
+
+        Role role = user.getRole();
+
+        if(!role.getRoleName().equals(UserRole.CLIENT)){
+            throw new NotEnoughPrivilegesException("You're not client");
+        }
+
+        List<Booking> bookingList = user.getClientBookings();
+        bookingList.add(booking);
+
+        userRepository.save(user);
+    }
+
+    public void deleteBookingFromUser(UUID userId, Booking booking){
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new UserNotFoundException("User is not found"));
+
+        Role role = user.getRole();
+
+        if(!role.getRoleName().equals(UserRole.CLIENT)){
+            throw new NotEnoughPrivilegesException("You're not client");
+        }
+        List<Booking> bookingList = user.getClientBookings();
+        bookingList.remove(booking);
+    }
+
+    public void addScheduleToTrainer(UUID trainerId, Schedule schedule){
+        User trainer = userRepository.findById(trainerId)
+                .orElseThrow(() -> new UserNotFoundException("User is not found"));
+
+        List<Schedule> scheduleList = trainer.getTrainerSchedulesList();
+
+        scheduleList.add(schedule);
+
+        userRepository.save(trainer);
     }
 }
