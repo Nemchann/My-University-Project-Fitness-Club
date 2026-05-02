@@ -16,6 +16,8 @@ import com.nemchann.fitnessbackend.users.entity.User;
 import com.nemchann.fitnessbackend.users.service.UserService;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.time.*;
@@ -289,6 +291,26 @@ public class ScheduleService {
                 .stream()
                 .map(this::mapScheduleToResponse)
                 .toList();
+    }
+
+    @Transactional
+    public Page<ScheduleResponseDto> getAvailableWorkouts(Pageable pageable) {
+        LocalDateTime now = LocalDateTime.now();
+
+        return scheduleRepository.findAvailableSchedules(now, pageable)
+                .map(this::mapScheduleToResponse);
+    }
+
+    //Метод, который будет использоваться в BookingService
+    @Transactional
+    public void updateParticipantsCount(Integer scheduleId, Integer delta){
+        Schedule schedule = scheduleRepository.findById(scheduleId)
+                .orElseThrow(() -> new ScheduleIsNotFoundException("Schedule is not found"));
+
+        Integer currentParticipants = schedule.getCurrentParticipants() + delta;
+        schedule.setCurrentParticipants(currentParticipants);
+
+        scheduleRepository.save(schedule);
     }
 
 

@@ -5,6 +5,8 @@ import com.nemchann.fitnessbackend.schedule.service.ScheduleService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -112,6 +114,22 @@ public class ScheduleController {
     @Operation(summary = "Получить все сегодняшние тренировки в заданном промежутке времени")
     public ResponseEntity<List<ScheduleResponseDto>> getSchedulesByTimeRange(ScheduleGetByTimePeriodDto timePeriodDto){
         List<ScheduleResponseDto> scheduleResponseDtos = service.getTodaySchedulesByTimeRange(timePeriodDto);
+
+        return new ResponseEntity<>(scheduleResponseDtos, HttpStatus.OK);
+    }
+
+    @GetMapping("/get_schedules_by_date")
+    @Operation(summary = "Получить тренировки определенной даты")
+    public ResponseEntity<List<ScheduleResponseDto>> getSchedulesByDate(ScheduleGetByTimeDto timeDto){
+        List<ScheduleResponseDto> responseDtos = service.findSchedulesByDate(timeDto);
+
+        return new ResponseEntity<>(responseDtos, HttpStatus.OK);
+    }
+
+    @GetMapping("/get_available_schedules")
+    @Operation(summary = "Получить тренировки, на которые еще можно записаться")
+    public ResponseEntity<Page<ScheduleResponseDto>> getAvailableSchedules(Pageable pageable){
+        Page<ScheduleResponseDto> scheduleResponseDtos = service.getAvailableWorkouts(pageable);
 
         return new ResponseEntity<>(scheduleResponseDtos, HttpStatus.OK);
     }

@@ -22,4 +22,9 @@ public interface ScheduleRepository extends JpaRepository<Schedule, Integer> {
 
     @Query("SELECT s FROM Schedule s WHERE s.startTime >= :start AND s.startTime < :end ORDER BY s.startTime ASC")
     List<Schedule> findAllByStartTimeBetweenOrderByStartTimeAsc(@Param("start") LocalDateTime start, @Param("end") LocalDateTime end);
+
+    @Query("SELECT s FROM Schedule s WHERE s.isActive = true " +
+            "AND s.currentParticipants < s.maxParticipants " +
+            "AND s.startTime > :now")
+    Page<Schedule> findAvailableSchedules(@Param("now") LocalDateTime now, Pageable pageable);
 }
