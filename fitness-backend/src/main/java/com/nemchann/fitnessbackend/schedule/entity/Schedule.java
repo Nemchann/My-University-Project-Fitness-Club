@@ -6,8 +6,11 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.springframework.format.annotation.DateTimeFormat;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Date;
@@ -39,10 +42,12 @@ public class Schedule {
     private LocalDate scheduleDate;
 
     @Column(name = "start_time", nullable = false)
-    private OffsetDateTime startTime;
+    @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
+    private LocalDateTime startTime;
 
     @Column(name = "end_time", nullable = false)
-    private OffsetDateTime endTime;
+    @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
+    private LocalDateTime endTime;
 
     @Column(name = "max_participants", nullable = false)
     private Integer maxParticipants;

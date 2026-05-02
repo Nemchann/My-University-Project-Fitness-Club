@@ -9,6 +9,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -77,26 +78,42 @@ public class ScheduleController {
 
     @PutMapping("/change_time/{id}")
     @Operation(summary = "")
-    public ResponseEntity<ScheduleResponseDto> changeTime(Integer scheduleId, ScheduleEditTimeDto scheduleEditTimeDto){
+    public ResponseEntity<ScheduleResponseDto> changeTime(ScheduleEditTimeDto scheduleEditTimeDto){
         ScheduleResponseDto scheduleResponseDto = service.editTime(scheduleEditTimeDto);
 
         return new ResponseEntity<>(scheduleResponseDto, HttpStatus.OK);
     }
 
     @PutMapping("/change_room/{id}")
-    @Operation(summary = "")
-    public ResponseEntity<ScheduleResponseDto> changeRoom(Integer scheduleId, ScheduleEditRoomDto editRoomDto){
+    @Operation(summary = "Поменять комнату проведения тренировки")
+    public ResponseEntity<ScheduleResponseDto> changeRoom(ScheduleEditRoomDto editRoomDto){
         ScheduleResponseDto scheduleResponseDto = service.editScheduleRoom(editRoomDto);
 
         return new ResponseEntity<>(scheduleResponseDto, HttpStatus.OK);
     }
 
     @PutMapping("/change_schedule_workout/{id}")
-    @Operation(summary = "")
+    @Operation(summary = "Поменять вид тренировки у проводимой тренировки")
     public ResponseEntity<ScheduleResponseDto> changeWorkout(Integer scheduleId, ScheduleEditWorkoutDto editWorkoutDto){
         ScheduleResponseDto scheduleResponseDto = service.editScheduleWorkout(scheduleId, editWorkoutDto);
 
         return new ResponseEntity<>(scheduleResponseDto, HttpStatus.OK);
+    }
+
+    @GetMapping("/get_schedules_by_week")
+    @Operation(summary = "Получить все тренировки на данной неделе")
+    public ResponseEntity<List<ScheduleResponseDto>> getSchedulesByWeek(WeeklyScheduleDto weeklyScheduleDto){
+        List<ScheduleResponseDto> scheduleResponseDtos = service.getWeeklySchedule(weeklyScheduleDto);
+
+        return new ResponseEntity<>(scheduleResponseDtos, HttpStatus.OK);
+    }
+
+    @GetMapping("/get_schedules_by_time_range")
+    @Operation(summary = "Получить все сегодняшние тренировки в заданном промежутке времени")
+    public ResponseEntity<List<ScheduleResponseDto>> getSchedulesByTimeRange(ScheduleGetByTimePeriodDto timePeriodDto){
+        List<ScheduleResponseDto> scheduleResponseDtos = service.getTodaySchedulesByTimeRange(timePeriodDto);
+
+        return new ResponseEntity<>(scheduleResponseDtos, HttpStatus.OK);
     }
 
 

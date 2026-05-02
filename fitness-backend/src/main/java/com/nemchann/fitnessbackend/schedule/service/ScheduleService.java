@@ -1,6 +1,5 @@
 package com.nemchann.fitnessbackend.schedule.service;
 
-import ch.qos.logback.core.util.Loader;
 import com.nemchann.fitnessbackend.common.exception.*;
 import com.nemchann.fitnessbackend.schedule.dto.*;
 import com.nemchann.fitnessbackend.schedule.entity.Room;
@@ -16,20 +15,14 @@ import com.nemchann.fitnessbackend.schedule.repository.WorkoutTypeRepository;
 import com.nemchann.fitnessbackend.users.entity.User;
 import com.nemchann.fitnessbackend.users.service.UserService;
 import jakarta.persistence.EntityNotFoundException;
-import jakarta.persistence.Temporal;
 import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
 
-import java.time.DayOfWeek;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.temporal.TemporalAdjuster;
+import java.time.*;
 import java.time.temporal.TemporalAdjusters;
-import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.stream.Stream;
 
 @Service
 public class ScheduleService {
@@ -269,17 +262,35 @@ public class ScheduleService {
     }
 
     @Transactional
-    public List<ScheduleResponseDto> getWeeklySchedule(LocalDate date){
+    public List<ScheduleResponseDto> getWeeklySchedule(WeeklyScheduleDto dto){
+        LocalDate date = dto.getDate();
         LocalDateTime startOfWeek = date.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
                 .atStartOfDay();
 
-        LocalDateTime endOfWeek = startOfWeek.plusDays(6).with(LocalDateTime.MAX);
+        LocalDateTime startOfNextWeek = startOfWeek.plusDays(7);
 
-        return scheduleRepository.findAllByStartTimeBetweenOrderByStartTimeAsc(startOfWeek, endOfWeek)
+        return scheduleRepository.findAllByStartTimeBetweenOrderByStartTimeAsc(startOfWeek, startOfNextWeek)
                 .stream()
                 .map(this::mapScheduleToResponse)
                 .toList();
     }
+
+    @Transactional
+    public List<ScheduleResponseDto> getTodaySchedulesByTimeRange(ScheduleGetByTimePeriodDto timePeriodDto){
+        LocalTime startTime = timePeriodDto.getStart();
+        LocalTime endTime = timePeriodDto.getEnd();
+
+        LocalDate today = LocalDate.now();
+
+        LocalDateTime start = today.atTime(startTime);
+        LocalDateTime end = today.atTime(endTime);
+
+        return scheduleRepository.findAllByStartTimeBetweenOrderByStartTimeAsc(start, end)
+                .stream()
+                .map(this::mapScheduleToResponse)
+                .toList();
+    }
+
 
     //Сделать метод, который возвращает список тренировок в заданном промежутке времени с валидацией
     //самого промежутка времени
