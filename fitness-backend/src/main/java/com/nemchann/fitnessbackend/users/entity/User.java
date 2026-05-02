@@ -7,6 +7,7 @@ import com.nemchann.fitnessbackend.schedule.entity.Schedule;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.ToString;
 
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
@@ -53,6 +54,7 @@ public class User {
 
     @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     @PrimaryKeyJoinColumn
+    @ToString.Exclude
     private Profile profile;
 
     public User(String login, String password, Role role){

@@ -1,10 +1,7 @@
 package com.nemchann.fitnessbackend.users.entity;
 
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
-import lombok.ToString;
+import lombok.*;
 
 import java.time.LocalDate;
 import java.util.Date;
@@ -23,6 +20,7 @@ public class Profile {
     @MapsId
     @JoinColumn(name = "id")
     @ToString.Exclude
+    @EqualsAndHashCode.Exclude
     private User user;
 
     @Column (name = "surname", nullable = false)
