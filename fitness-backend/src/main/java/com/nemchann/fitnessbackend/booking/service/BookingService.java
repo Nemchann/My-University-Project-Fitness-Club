@@ -7,16 +7,13 @@ import com.nemchann.fitnessbackend.booking.enums.BookingStatusEnum;
 import com.nemchann.fitnessbackend.booking.repository.*;
 import com.nemchann.fitnessbackend.common.exception.AlreadyBookedException;
 import com.nemchann.fitnessbackend.common.exception.BookingNotFoundException;
-import com.nemchann.fitnessbackend.common.exception.NotEnoughPrivilegesException;
 import com.nemchann.fitnessbackend.schedule.entity.Schedule;
 import com.nemchann.fitnessbackend.schedule.entity.Workout;
 import com.nemchann.fitnessbackend.schedule.service.ScheduleService;
-import com.nemchann.fitnessbackend.users.dto.UserResponseDto;
 import com.nemchann.fitnessbackend.users.entity.Profile;
-import com.nemchann.fitnessbackend.users.entity.Role;
 import com.nemchann.fitnessbackend.users.entity.User;
-import com.nemchann.fitnessbackend.users.enums.UserRole;
 import com.nemchann.fitnessbackend.users.service.UserService;
+import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -36,25 +33,28 @@ public class BookingService {
     private final UserService userService;
 
 
+    //Везде, где List поменять на Page
     @Transactional
     public BookingResponseDto createBooking(BookingCreateDto createDto){
 
         Booking booking = rewriteFromCreateDto(createDto);
 
-        if (bookingRepository.existsByUserIdAndScheduleId(createDto.getUserId(), createDto.getScheduleId())){
+        if (bookingRepository.existsByClientIdAndScheduleId(createDto.getUserId(), createDto.getScheduleId())){
             throw new AlreadyBookedException("You've already booked this schedule");
         }
 
-        BookingStatus bookingStatus = new BookingStatus();
 
         try{
             scheduleService.addParticipant(createDto.getScheduleId());
-            bookingStatus.setBookingStatusName(BookingStatusEnum.ACCEPTED);
+            BookingStatus status = bookingStatusRepository.findByBookingStatusName(BookingStatusEnum.ACCEPTED)
+                    .orElseThrow(() -> new EntityNotFoundException("Статус не найден в справочнике"));
+            booking.setBookingStatus(status);
         }catch(IllegalStateException e){
-            bookingStatus.setBookingStatusName(BookingStatusEnum.CANCELLED);
+            BookingStatus status = bookingStatusRepository.findByBookingStatusName(BookingStatusEnum.CANCELLED)
+                    .orElseThrow(() -> new EntityNotFoundException("Статус не найден в справочнике"));
+            booking.setBookingStatus(status);
         }
 
-        booking.setBookingStatus(bookingStatus);
 
         bookingRepository.save(booking);
         userService.addBookingToUser(createDto.getUserId(), booking);
@@ -118,11 +118,12 @@ public class BookingService {
         User user = userService.getUser(createDto.getUserId());
         Schedule schedule = scheduleService.getSchedule(createDto.getScheduleId());
 
-        BookingStatus bookingStatus = new BookingStatus();
-        bookingStatus.setBookingStatusName(BookingStatusEnum.PROCESSING);
+        BookingStatus status = bookingStatusRepository.findByBookingStatusName(BookingStatusEnum.PROCESSING)
+                .orElseThrow(() -> new EntityNotFoundException("Статус не найден в справочнике"));
+
 
         booking.setClient(user);
-        booking.setBookingStatus(bookingStatus);
+        booking.setBookingStatus(status);
         booking.setSchedule(schedule);
         booking.setCreatedAt(createDto.getCreatedAt());
 
@@ -136,8 +137,9 @@ public class BookingService {
         Booking booking = bookingRepository.findById(cancelDto.getBookingId())
                 .orElseThrow(() -> new BookingNotFoundException("Booking is not found"));
 
-        userService.deleteBookingFromUser(cancelDto.getUserId(), booking);
+        userService.cancelBookingFromUser(cancelDto.getUserId(), booking);
 
+        //Исправить на метод в репозитории
         BookingStatus bookingStatus = new BookingStatus();
         bookingStatus.setBookingStatusName(BookingStatusEnum.CANCELLED);
 
@@ -148,7 +150,7 @@ public class BookingService {
     }
 
     public List<BookingShortResponseDto> getClientBookings(UUID clientId){
-        List<Booking> bookingList = bookingRepository.findByClientID(clientId);
+        List<Booking> bookingList = bookingRepository.findByClientId(clientId);
 
         return bookingList
                 .stream()
@@ -169,7 +171,7 @@ public class BookingService {
 
     //Проверить, записан ли пользователь на тренировку или нет
     public boolean checkBookingStatus(UUID userId, Integer scheduleId){
-        return bookingRepository.existsByUserIdAndScheduleId(userId, scheduleId);
+        return bookingRepository.existsByClientIdAndScheduleId(userId, scheduleId);
     }
 
     //Сделать список прошедших тренировок у пользователя
