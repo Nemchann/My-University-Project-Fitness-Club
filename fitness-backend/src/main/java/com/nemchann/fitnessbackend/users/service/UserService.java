@@ -38,6 +38,7 @@ public class UserService {
 
 
     //Создает обычного пользователя типа CLIENT
+    @Transactional
     public UserResponseDto createUser(UserRegistrationDto userRegistrationDto){
         User user = new User();
         Profile profile = new Profile();
@@ -59,6 +60,7 @@ public class UserService {
         return mapToResponseDto(user);
     }
 
+    @Transactional
     public UserResponseDto createTrainer(UserRegistrationDto userRegistrationDto){
         User user = new User();
         Profile profile = new Profile();
@@ -192,6 +194,7 @@ public class UserService {
 
 
     //Метод поменять пароль
+    @Transactional
     public void changePassword(UUID id, PasswordChangeDto passwordChangeDto){
         Optional<User> userOptional = userRepository.findById(id);
 
@@ -236,6 +239,7 @@ public class UserService {
     }
 
     //Метод для входа в систему
+    @Transactional
     public UserResponseDto authentification(UserAuthentificationDto userAuthentificationDto){
         Optional<User> userOpt = userRepository.findByLogin(userAuthentificationDto.getLogin());
 
@@ -256,6 +260,7 @@ public class UserService {
         }
     }
 
+    @Transactional
     public void deactivateUser(UUID id){
         Optional<User> userOptional = userRepository.findById(id);
 
@@ -298,6 +303,7 @@ public class UserService {
         }
     }
 
+    //Подумать, что с эти делать
     public String getFullName(User user){
         if (userRepository.exists(Example.of(user))){
             Profile profile = user.getProfile();
@@ -324,7 +330,9 @@ public class UserService {
         userRepository.save(user);
     }
 
+    @Transactional
     public void deleteBookingFromUser(UUID userId, Booking booking){
+        //Сделать не удаление, а статус CANCELLED
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new UserNotFoundException("User is not found"));
 
@@ -337,6 +345,7 @@ public class UserService {
         bookingList.remove(booking);
     }
 
+    //Внедрить куда-то этот метод
     public void addScheduleToTrainer(UUID trainerId, Schedule schedule){
         User trainer = userRepository.findById(trainerId)
                 .orElseThrow(() -> new UserNotFoundException("User is not found"));
