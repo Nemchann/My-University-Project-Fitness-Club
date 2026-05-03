@@ -139,11 +139,10 @@ public class BookingService {
 
         userService.cancelBookingFromUser(cancelDto.getUserId(), booking);
 
-        //Исправить на метод в репозитории
-        BookingStatus bookingStatus = new BookingStatus();
-        bookingStatus.setBookingStatusName(BookingStatusEnum.CANCELLED);
+        BookingStatus status = bookingStatusRepository.findByBookingStatusName(BookingStatusEnum.CANCELLED)
+                .orElseThrow(() -> new EntityNotFoundException("Статус не найден в справочнике"));
 
-        booking.setBookingStatus(bookingStatus);
+        booking.setBookingStatus(status);
 
         bookingRepository.save(booking);
 

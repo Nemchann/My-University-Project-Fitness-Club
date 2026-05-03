@@ -21,7 +21,7 @@ public class BookingController {
     private final BookingService service;
 
     @PostMapping("/create_booking")
-    @Operation(summary = "")
+    @Operation(summary = "Создать запись на тренировку")
     public ResponseEntity<BookingResponseDto> createBooking(@Valid @RequestBody BookingCreateDto createDto){
         BookingResponseDto responseDto = service.createBooking(createDto);
 
@@ -29,7 +29,7 @@ public class BookingController {
     }
 
     @DeleteMapping("/cancel_booking")
-    @Operation(summary = "")
+    @Operation(summary = "Отменить запись на тренировку")
     public ResponseEntity<Void> cancelBooking(@Valid @RequestBody BookingCancelDto cancelDto){
         service.cancelBooking(cancelDto);
 
@@ -37,7 +37,7 @@ public class BookingController {
     }
 
     @GetMapping("/get_clients_bookings/{id}")
-    @Operation(summary = "")
+    @Operation(summary = "Все записи клиента")
     public ResponseEntity<List<BookingShortResponseDto>> getClientsBookings(@RequestParam UUID clientId){
         List<BookingShortResponseDto> responseDtos = service.getClientBookings(clientId);
 
@@ -45,7 +45,7 @@ public class BookingController {
     }
 
     @GetMapping("/get_clients_by_schedule/{id}")
-    @Operation(summary = "")
+    @Operation(summary = "Посетители данной тренировки")
     public ResponseEntity<List<UserInScheduleDto>> getClientsBySchedule(@RequestParam Integer scheduleId){
         List<UserInScheduleDto> scheduleDtos = service.getClientsBySchedule(scheduleId);
 
@@ -53,7 +53,7 @@ public class BookingController {
     }
 
     @GetMapping("/check_booking_status/{id}")
-    @Operation(summary = "")
+    @Operation(summary = "Проверить статус бронирования для пользователя (записан/не записан)")
     public boolean checkBookingStatus(@RequestParam UUID userId, @RequestParam Integer scheduleId){
         return service.checkBookingStatus(userId, scheduleId);
     }
