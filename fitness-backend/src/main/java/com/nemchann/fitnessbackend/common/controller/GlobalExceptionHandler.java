@@ -72,8 +72,8 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(ex.getMessage(), HttpStatus.CONFLICT);
     }
 
-    @ExceptionHandler(BookingStatusNotFound.class)
-    public ResponseEntity<String> handleBookingStatusNotFound(BookingStatusNotFound ex){
+    @ExceptionHandler(BookingStatusNotFoundException.class)
+    public ResponseEntity<String> handleBookingStatusNotFound(BookingStatusNotFoundException ex){
         return new ResponseEntity<>(ex.getMessage(), HttpStatus.NOT_FOUND);
     }
 
