@@ -54,7 +54,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(IsNotTrainerException.class)
     public ResponseEntity<String> handleNotTrainer(IsNotTrainerException ex){
-        return new ResponseEntity<>(ex.getMessage(), HttpStatus.FORBIDDEN); 
+        return new ResponseEntity<>(ex.getMessage(), HttpStatus.FORBIDDEN);
     }
 
     @ExceptionHandler(NotEnoughPrivilegesException.class)
@@ -65,6 +65,11 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(BookingNotFoundException.class)
     public ResponseEntity<String> handleBookingNotFound(BookingNotFoundException ex){
         return new ResponseEntity<>(ex.getMessage(), HttpStatus.NOT_FOUND);
+    }
+
+    @ExceptionHandler(AlreadyBookedException.class)
+    public ResponseEntity<String> handleBookingConflict(AlreadyBookedException ex){
+        return new ResponseEntity<>(ex.getMessage(), HttpStatus.CONFLICT);
     }
 
     //Когда неправильные логин, email
