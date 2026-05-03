@@ -45,6 +45,7 @@ public class ScheduleService {
     }
 
     //Создать вид тренировки
+    @Transactional
     public WorkoutResponseDto createWorkout(WorkoutCreateDto workoutCreateDto){
         WorkoutTypeEnum typeEnum = WorkoutTypeEnum.valueOf(workoutCreateDto.getWorkoutType().toUpperCase());
 
@@ -83,6 +84,7 @@ public class ScheduleService {
     }
 
     //Создать тренировку
+    @Transactional
     public ScheduleResponseDto createSchedule(ScheduleCreateDto createDto) {
         RoomEnum roomEnum = RoomEnum.valueOf(createDto.getRoomName().toUpperCase());
 
@@ -109,7 +111,7 @@ public class ScheduleService {
         }
     }
 
-    public Schedule rewriteCreateDtoToSchedule(ScheduleCreateDto dto, Workout workout, Room room){
+    private Schedule rewriteCreateDtoToSchedule(ScheduleCreateDto dto, Workout workout, Room room){
         Schedule schedule = new Schedule();
 
         User trainer = userService.getUser(dto.getTrainerId());
