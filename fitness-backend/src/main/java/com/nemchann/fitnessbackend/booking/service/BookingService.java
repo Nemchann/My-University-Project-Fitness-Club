@@ -47,11 +47,11 @@ public class BookingService {
         try{
             scheduleService.addParticipant(createDto.getScheduleId());
             BookingStatus status = bookingStatusRepository.findByBookingStatusName(BookingStatusEnum.ACCEPTED)
-                    .orElseThrow(() -> new EntityNotFoundException("Статус не найден в справочнике"));
+                    .orElseThrow(() -> new BookingNotFoundException("Booking status is not found"));
             booking.setBookingStatus(status);
         }catch(IllegalStateException e){
             BookingStatus status = bookingStatusRepository.findByBookingStatusName(BookingStatusEnum.CANCELLED)
-                    .orElseThrow(() -> new EntityNotFoundException("Статус не найден в справочнике"));
+                    .orElseThrow(() -> new BookingNotFoundException("Booking status is not found"));
             booking.setBookingStatus(status);
         }
 
@@ -119,7 +119,7 @@ public class BookingService {
         Schedule schedule = scheduleService.getSchedule(createDto.getScheduleId());
 
         BookingStatus status = bookingStatusRepository.findByBookingStatusName(BookingStatusEnum.PROCESSING)
-                .orElseThrow(() -> new EntityNotFoundException("Статус не найден в справочнике"));
+                .orElseThrow(() -> new BookingNotFoundException("Booking status is not found"));
 
 
         booking.setClient(user);
@@ -140,7 +140,7 @@ public class BookingService {
         userService.cancelBookingFromUser(cancelDto.getUserId(), booking);
 
         BookingStatus status = bookingStatusRepository.findByBookingStatusName(BookingStatusEnum.CANCELLED)
-                .orElseThrow(() -> new EntityNotFoundException("Статус не найден в справочнике"));
+                .orElseThrow(() -> new BookingNotFoundException("Booking status is not found"));
 
         booking.setBookingStatus(status);
 
