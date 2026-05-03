@@ -1,17 +1,18 @@
 package com.nemchann.fitnessbackend.booking.service;
 
-import com.nemchann.fitnessbackend.booking.dto.BookingCancelDto;
-import com.nemchann.fitnessbackend.booking.dto.BookingCreateDto;
-import com.nemchann.fitnessbackend.booking.dto.BookingResponseDto;
+import com.nemchann.fitnessbackend.booking.dto.*;
 import com.nemchann.fitnessbackend.booking.entity.Booking;
 import com.nemchann.fitnessbackend.booking.entity.BookingStatus;
 import com.nemchann.fitnessbackend.booking.enums.BookingStatusEnum;
 import com.nemchann.fitnessbackend.booking.repository.*;
+import com.nemchann.fitnessbackend.common.exception.AlreadyBookedException;
 import com.nemchann.fitnessbackend.common.exception.BookingNotFoundException;
 import com.nemchann.fitnessbackend.common.exception.NotEnoughPrivilegesException;
 import com.nemchann.fitnessbackend.schedule.entity.Schedule;
 import com.nemchann.fitnessbackend.schedule.entity.Workout;
 import com.nemchann.fitnessbackend.schedule.service.ScheduleService;
+import com.nemchann.fitnessbackend.users.dto.UserResponseDto;
+import com.nemchann.fitnessbackend.users.entity.Profile;
 import com.nemchann.fitnessbackend.users.entity.Role;
 import com.nemchann.fitnessbackend.users.entity.User;
 import com.nemchann.fitnessbackend.users.enums.UserRole;
@@ -19,6 +20,9 @@ import com.nemchann.fitnessbackend.users.service.UserService;
 import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
+
+import java.util.List;
+import java.util.UUID;
 
 @Service
 @AllArgsConstructor
@@ -34,7 +38,12 @@ public class BookingService {
 
     @Transactional
     public BookingResponseDto createBooking(BookingCreateDto createDto){
+
         Booking booking = rewriteFromCreateDto(createDto);
+
+        if (bookingRepository.existsByUserIdAndScheduleId(createDto.getUserId(), createDto.getScheduleId())){
+            throw new AlreadyBookedException("You've already booked this schedule");
+        }
 
         BookingStatus bookingStatus = new BookingStatus();
 
@@ -51,6 +60,7 @@ public class BookingService {
         userService.addBookingToUser(createDto.getUserId(), booking);
 
         return mapToResponseDto(booking);
+
     }
 
     private BookingResponseDto mapToResponseDto(Booking booking){
@@ -71,6 +81,38 @@ public class BookingService {
         return responseDto;
     }
 
+    private BookingShortResponseDto mapToShortResponseDto(Booking booking){
+        BookingShortResponseDto responseDto = new BookingShortResponseDto();
+        Schedule schedule = booking.getSchedule();
+        Workout workout = schedule.getWorkout();
+
+        BookingStatusEnum bookingStatusEnum = booking.getBookingStatus().getBookingStatusName();
+        responseDto.setStatus(bookingStatusEnum.name());
+
+        responseDto.setStatus(bookingStatusEnum.name());
+
+        responseDto.setScheduleName(workout.getWorkoutName());
+
+        responseDto.setScheduleDate(schedule.getScheduleDate());
+        responseDto.setStartTime(schedule.getStartTime());
+
+        return responseDto;
+    }
+
+    private UserInScheduleDto mapToUserScheduleDto(Booking booking){
+        User user = booking.getClient();
+        Profile profile = user.getProfile();
+
+        UserInScheduleDto userInScheduleDto = new UserInScheduleDto();
+
+        userInScheduleDto.setFullName(profile.getSurname() + " " + profile.getSelfname());
+        userInScheduleDto.setPhone(profile.getPhone());
+        userInScheduleDto.setEmail(profile.getEmail());
+
+        return userInScheduleDto;
+    }
+
+    //Проверки на существование пользователя и тренировки происходят тут (внутри сервисов)
     private Booking rewriteFromCreateDto(BookingCreateDto createDto){
         Booking booking = new Booking();
         User user = userService.getUser(createDto.getUserId());
@@ -105,4 +147,30 @@ public class BookingService {
 
     }
 
+    public List<BookingShortResponseDto> getClientBookings(UUID clientId){
+        List<Booking> bookingList = bookingRepository.findByClientID(clientId);
+
+        return bookingList
+                .stream()
+                .map(this::mapToShortResponseDto)
+                .toList();
+    }
+
+
+    //Тут подумать насчет DTO
+    public List<UserInScheduleDto> getClientsBySchedule(Integer scheduleId){
+        List<Booking> bookingList = bookingRepository.findByScheduleId(scheduleId);
+
+        return bookingList
+                .stream()
+                .map(this::mapToUserScheduleDto)
+                .toList();
+    }
+
+    //Проверить, записан ли пользователь на тренировку или нет
+    public boolean checkBookingStatus(UUID userId, Integer scheduleId){
+        return bookingRepository.existsByUserIdAndScheduleId(userId, scheduleId);
+    }
+
+    //Сделать список прошедших тренировок у пользователя
 }
