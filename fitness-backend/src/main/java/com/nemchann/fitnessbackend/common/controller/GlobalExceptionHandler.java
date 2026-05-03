@@ -54,7 +54,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(IsNotTrainerException.class)
     public ResponseEntity<String> handleNotTrainer(IsNotTrainerException ex){
-        return new ResponseEntity<>(ex.getMessage(), HttpStatus.FORBIDDEN); //Подумать какой http статус выводить, пока так
+        return new ResponseEntity<>(ex.getMessage(), HttpStatus.FORBIDDEN); 
     }
 
     @ExceptionHandler(NotEnoughPrivilegesException.class)
