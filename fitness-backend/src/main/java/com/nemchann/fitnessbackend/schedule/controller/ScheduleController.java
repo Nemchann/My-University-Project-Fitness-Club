@@ -4,6 +4,7 @@ import com.nemchann.fitnessbackend.schedule.dto.*;
 import com.nemchann.fitnessbackend.schedule.service.ScheduleService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -24,7 +25,7 @@ public class ScheduleController {
 
     @PostMapping("/create_workout")
     @Operation(summary = "Создать вид тренировки")
-    public ResponseEntity<WorkoutResponseDto> createWorkout(WorkoutCreateDto workoutCreateDto){
+    public ResponseEntity<WorkoutResponseDto> createWorkout(@Valid @RequestBody WorkoutCreateDto workoutCreateDto){
         WorkoutResponseDto workoutResponseDto = service.createWorkout(workoutCreateDto);
 
         return new ResponseEntity<>(workoutResponseDto, HttpStatus.CREATED);
@@ -32,7 +33,7 @@ public class ScheduleController {
 
     @PostMapping("/create_schedule")
     @Operation(summary = "Создать тренировку")
-    public ResponseEntity<ScheduleResponseDto> createSchedule(ScheduleCreateDto scheduleCreateDto){
+    public ResponseEntity<ScheduleResponseDto> createSchedule(@Valid @RequestBody ScheduleCreateDto scheduleCreateDto){
         ScheduleResponseDto scheduleResponseDto = service.createSchedule(scheduleCreateDto);
 
         return new ResponseEntity<>(scheduleResponseDto, HttpStatus.CREATED);
@@ -64,7 +65,7 @@ public class ScheduleController {
 
     @DeleteMapping("cancel_schedule/{id}")
     @Operation(summary = "Отменить тренировку")
-    public ResponseEntity<Void> cancelSchedule(Integer id){
+    public ResponseEntity<Void> cancelSchedule(@RequestParam Integer id){
         service.cancelSchedule(id);
 
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
@@ -72,7 +73,7 @@ public class ScheduleController {
 
     @PutMapping("appoint_trainer/{id}")
     @Operation(summary = "Назначить тренера на тренировку")
-    public ResponseEntity<ScheduleResponseDto> appointTrainer(UUID trainerId, Integer scheduleId){
+    public ResponseEntity<ScheduleResponseDto> appointTrainer(@Valid @RequestBody UUID trainerId, Integer scheduleId){
         ScheduleResponseDto scheduleResponseDto = service.appointATrainer(trainerId, scheduleId);
 
         return new ResponseEntity<>(scheduleResponseDto, HttpStatus.OK);
@@ -80,7 +81,7 @@ public class ScheduleController {
 
     @PutMapping("/change_time/{id}")
     @Operation(summary = "")
-    public ResponseEntity<ScheduleResponseDto> changeTime(ScheduleEditTimeDto scheduleEditTimeDto){
+    public ResponseEntity<ScheduleResponseDto> changeTime(@Valid @RequestBody ScheduleEditTimeDto scheduleEditTimeDto){
         ScheduleResponseDto scheduleResponseDto = service.editTime(scheduleEditTimeDto);
 
         return new ResponseEntity<>(scheduleResponseDto, HttpStatus.OK);
@@ -88,7 +89,7 @@ public class ScheduleController {
 
     @PutMapping("/change_room/{id}")
     @Operation(summary = "Поменять комнату проведения тренировки")
-    public ResponseEntity<ScheduleResponseDto> changeRoom(ScheduleEditRoomDto editRoomDto){
+    public ResponseEntity<ScheduleResponseDto> changeRoom(@Valid @RequestBody ScheduleEditRoomDto editRoomDto){
         ScheduleResponseDto scheduleResponseDto = service.editScheduleRoom(editRoomDto);
 
         return new ResponseEntity<>(scheduleResponseDto, HttpStatus.OK);
@@ -96,7 +97,7 @@ public class ScheduleController {
 
     @PutMapping("/change_schedule_workout/{id}")
     @Operation(summary = "Поменять вид тренировки у проводимой тренировки")
-    public ResponseEntity<ScheduleResponseDto> changeWorkout(Integer scheduleId, ScheduleEditWorkoutDto editWorkoutDto){
+    public ResponseEntity<ScheduleResponseDto> changeWorkout(@RequestParam Integer scheduleId, @Valid @RequestBody ScheduleEditWorkoutDto editWorkoutDto){
         ScheduleResponseDto scheduleResponseDto = service.editScheduleWorkout(scheduleId, editWorkoutDto);
 
         return new ResponseEntity<>(scheduleResponseDto, HttpStatus.OK);
@@ -104,7 +105,7 @@ public class ScheduleController {
 
     @GetMapping("/get_schedules_by_week")
     @Operation(summary = "Получить все тренировки на данной неделе")
-    public ResponseEntity<List<ScheduleResponseDto>> getSchedulesByWeek(WeeklyScheduleDto weeklyScheduleDto){
+    public ResponseEntity<List<ScheduleResponseDto>> getSchedulesByWeek(@Valid @RequestBody WeeklyScheduleDto weeklyScheduleDto){
         List<ScheduleResponseDto> scheduleResponseDtos = service.getWeeklySchedule(weeklyScheduleDto);
 
         return new ResponseEntity<>(scheduleResponseDtos, HttpStatus.OK);
@@ -112,7 +113,7 @@ public class ScheduleController {
 
     @GetMapping("/get_schedules_by_time_range")
     @Operation(summary = "Получить все сегодняшние тренировки в заданном промежутке времени")
-    public ResponseEntity<List<ScheduleResponseDto>> getSchedulesByTimeRange(ScheduleGetByTimePeriodDto timePeriodDto){
+    public ResponseEntity<List<ScheduleResponseDto>> getSchedulesByTimeRange(@Valid @RequestBody ScheduleGetByTimePeriodDto timePeriodDto){
         List<ScheduleResponseDto> scheduleResponseDtos = service.getTodaySchedulesByTimeRange(timePeriodDto);
 
         return new ResponseEntity<>(scheduleResponseDtos, HttpStatus.OK);
@@ -120,7 +121,7 @@ public class ScheduleController {
 
     @GetMapping("/get_schedules_by_date")
     @Operation(summary = "Получить тренировки определенной даты")
-    public ResponseEntity<List<ScheduleResponseDto>> getSchedulesByDate(ScheduleGetByTimeDto timeDto){
+    public ResponseEntity<List<ScheduleResponseDto>> getSchedulesByDate(@Valid @RequestBody ScheduleGetByTimeDto timeDto){
         List<ScheduleResponseDto> responseDtos = service.findSchedulesByDate(timeDto);
 
         return new ResponseEntity<>(responseDtos, HttpStatus.OK);
@@ -128,7 +129,7 @@ public class ScheduleController {
 
     @GetMapping("/get_available_schedules")
     @Operation(summary = "Получить тренировки, на которые еще можно записаться")
-    public ResponseEntity<Page<ScheduleResponseDto>> getAvailableSchedules(Pageable pageable){
+    public ResponseEntity<Page<ScheduleResponseDto>> getAvailableSchedules(@RequestParam Pageable pageable){
         Page<ScheduleResponseDto> scheduleResponseDtos = service.getAvailableWorkouts(pageable);
 
         return new ResponseEntity<>(scheduleResponseDtos, HttpStatus.OK);
