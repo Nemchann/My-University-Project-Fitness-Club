@@ -2,6 +2,7 @@ package com.nemchann.fitnessbackend.users.service;
 
 import com.nemchann.fitnessbackend.booking.entity.Booking;
 import com.nemchann.fitnessbackend.booking.entity.BookingStatus;
+import com.nemchann.fitnessbackend.booking.enums.BookingStatusEnum;
 import com.nemchann.fitnessbackend.common.exception.*;
 import com.nemchann.fitnessbackend.schedule.entity.Schedule;
 import com.nemchann.fitnessbackend.users.dto.*;
@@ -331,8 +332,7 @@ public class UserService {
     }
 
     @Transactional
-    public void deleteBookingFromUser(UUID userId, Booking booking){
-        //Сделать не удаление, а статус CANCELLED
+    public void cancelBookingFromUser(UUID userId, Booking booking){
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new UserNotFoundException("User is not found"));
 
@@ -342,7 +342,14 @@ public class UserService {
             throw new NotEnoughPrivilegesException("You're not client");
         }
         List<Booking> bookingList = user.getClientBookings();
-        bookingList.remove(booking);
+
+        for (Booking b : bookingList){
+            if(b.equals(booking)){
+                BookingStatus bookingStatus = new BookingStatus();
+                bookingStatus.setBookingStatusName(BookingStatusEnum.CANCELLED);
+                b.setBookingStatus(bookingStatus);
+            }
+        }
     }
 
     //Внедрить куда-то этот метод
