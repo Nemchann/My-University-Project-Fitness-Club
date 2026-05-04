@@ -3,6 +3,9 @@ package com.nemchann.fitnessbackend.users.service;
 import com.nemchann.fitnessbackend.booking.entity.Booking;
 import com.nemchann.fitnessbackend.booking.entity.BookingStatus;
 import com.nemchann.fitnessbackend.booking.enums.BookingStatusEnum;
+import com.nemchann.fitnessbackend.booking.repository.BookingRepository;
+import com.nemchann.fitnessbackend.booking.repository.BookingStatusRepository;
+import com.nemchann.fitnessbackend.booking.service.BookingService;
 import com.nemchann.fitnessbackend.common.exception.*;
 import com.nemchann.fitnessbackend.schedule.entity.Schedule;
 import com.nemchann.fitnessbackend.users.dto.*;
@@ -14,6 +17,7 @@ import com.nemchann.fitnessbackend.users.repository.ProfileRepository;
 import com.nemchann.fitnessbackend.users.repository.RoleRepository;
 import com.nemchann.fitnessbackend.users.repository.UserRepository;
 import jakarta.transaction.Transactional;
+import lombok.AllArgsConstructor;
 import org.springframework.data.domain.Example;
 import org.springframework.stereotype.Service;
 import org.springframework.data.domain.Pageable;
@@ -25,18 +29,12 @@ import java.util.UUID;
 
 //Исправить методы, чтобы в передаваемых значениях были dto
 @Service
+@AllArgsConstructor
 public class UserService {
     private final ProfileRepository profileRepository;
     private final RoleRepository roleRepository;
     private final UserRepository userRepository;
-
-    public UserService(ProfileRepository profileRepository, RoleRepository roleRepository,
-                       UserRepository userRepository){
-        this.profileRepository = profileRepository;
-        this.userRepository = userRepository;
-        this.roleRepository = roleRepository;
-    }
-
+    private final BookingStatusRepository bookingStatusRepository; //Подумать насчет этого
 
     //Создает обычного пользователя типа CLIENT
     @Transactional
@@ -304,7 +302,7 @@ public class UserService {
         }
     }
 
-    //Подумать, что с эти делать
+    //Подумать, что с этим делать
     public String getFullName(User user){
         if (userRepository.exists(Example.of(user))){
             Profile profile = user.getProfile();
@@ -315,52 +313,50 @@ public class UserService {
         }
     }
 
-    public void addBookingToUser(UUID userId, Booking booking){
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new UserNotFoundException("User is not found"));
+//    public void addBookingToUser(UUID userId, Booking booking){
+//        User user = userRepository.findById(userId)
+//                .orElseThrow(() -> new UserNotFoundException("User is not found"));
+//
+//        Role role = user.getRole();
+//
+//        if(!role.getRoleName().equals(UserRole.CLIENT)){
+//            throw new NotEnoughPrivilegesException("You're not client");
+//        }
+//
+//        List<Booking> bookingList = user.getClientBookings();
+//        bookingList.add(booking);
+//
+//        userRepository.save(user);
+//    }
 
-        Role role = user.getRole();
+//    @Transactional
+//    public void cancelBookingFromUser(UUID userId, Booking booking){
+//        User user = userRepository.findById(userId)
+//                .orElseThrow(() -> new UserNotFoundException("User is not found"));
+//
+//        Role role = user.getRole();
+//
+//        if(!role.getRoleName().equals(UserRole.CLIENT)){
+//            throw new NotEnoughPrivilegesException("You're not client");
+//        }
+//        List<Booking> bookingList = user.getClientBookings();
+//
+//        for (Booking b : bookingList){
+//            if(b.equals(booking)){
+//                BookingStatus bookingStatus = bookingStatusRepository.findByBookingStatusName(BookingStatusEnum.CANCELLED)
+//                                .orElseThrow(() -> new BookingStatusNotFoundException("Booking status is not found"));
+//                b.setBookingStatus(bookingStatus);
+//            }
+//        }
+//    }
 
-        if(!role.getRoleName().equals(UserRole.CLIENT)){
-            throw new NotEnoughPrivilegesException("You're not client");
-        }
+//    public Page<User> getClients(Pageable pageable){
+//
+//    }
+//
+//    public Page<User> getTrainers(Pageable pageable){
+//
+//    }
 
-        List<Booking> bookingList = user.getClientBookings();
-        bookingList.add(booking);
-
-        userRepository.save(user);
-    }
-
-    @Transactional
-    public void cancelBookingFromUser(UUID userId, Booking booking){
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new UserNotFoundException("User is not found"));
-
-        Role role = user.getRole();
-
-        if(!role.getRoleName().equals(UserRole.CLIENT)){
-            throw new NotEnoughPrivilegesException("You're not client");
-        }
-        List<Booking> bookingList = user.getClientBookings();
-
-        for (Booking b : bookingList){
-            if(b.equals(booking)){
-                BookingStatus bookingStatus = new BookingStatus();
-                bookingStatus.setBookingStatusName(BookingStatusEnum.CANCELLED);
-                b.setBookingStatus(bookingStatus);
-            }
-        }
-    }
-
-    //Внедрить куда-то этот метод
-    public void addScheduleToTrainer(UUID trainerId, Schedule schedule){
-        User trainer = userRepository.findById(trainerId)
-                .orElseThrow(() -> new UserNotFoundException("User is not found"));
-
-        List<Schedule> scheduleList = trainer.getTrainerSchedulesList();
-
-        scheduleList.add(schedule);
-
-        userRepository.save(trainer);
-    }
+    //Добавить методы получения всех тренеров и всех клиентов по отдельности
 }
