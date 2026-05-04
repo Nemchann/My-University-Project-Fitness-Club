@@ -33,16 +33,16 @@ public class BookingService {
     private final UserService userService;
 
 
-    //Везде, где List поменять на Page
+    //В некоторых местах, где List поменять на Page
     @Transactional
     public BookingResponseDto createBooking(BookingCreateDto createDto){
 
         Booking booking = rewriteFromCreateDto(createDto);
 
+        //Добавить: Если эта тренировка есть, но со статусом CANCELLED, то можно записаться
         if (bookingRepository.existsByClientIdAndScheduleId(createDto.getUserId(), createDto.getScheduleId())){
             throw new AlreadyBookedException("You've already booked this schedule");
         }
-
 
         try{
             scheduleService.addParticipant(createDto.getScheduleId());
@@ -57,7 +57,6 @@ public class BookingService {
 
 
         bookingRepository.save(booking);
-        userService.addBookingToUser(createDto.getUserId(), booking);
 
         return mapToResponseDto(booking);
 
@@ -137,8 +136,6 @@ public class BookingService {
         Booking booking = bookingRepository.findById(cancelDto.getBookingId())
                 .orElseThrow(() -> new BookingNotFoundException("Booking is not found"));
 
-        userService.cancelBookingFromUser(cancelDto.getUserId(), booking);
-
         BookingStatus status = bookingStatusRepository.findByBookingStatusName(BookingStatusEnum.CANCELLED)
                 .orElseThrow(() -> new BookingNotFoundException("Booking status is not found"));
 
@@ -146,6 +143,12 @@ public class BookingService {
 
         bookingRepository.save(booking);
 
+    }
+
+    public BookingStatus getBookingStatus(BookingStatusEnum statusEnum){
+
+        return bookingStatusRepository.findByBookingStatusName(statusEnum)
+                .orElseThrow(() -> new BookingNotFoundException("Booking status is not found"));
     }
 
     public List<BookingShortResponseDto> getClientBookings(UUID clientId){
