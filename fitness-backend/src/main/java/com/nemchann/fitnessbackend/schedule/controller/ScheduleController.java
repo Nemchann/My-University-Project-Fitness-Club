@@ -129,7 +129,7 @@ public class ScheduleController {
 
     @GetMapping("/get_available_schedules")
     @Operation(summary = "Получить тренировки, на которые еще можно записаться")
-    public ResponseEntity<Page<ScheduleResponseDto>> getAvailableSchedules(@RequestParam Pageable pageable){
+    public ResponseEntity<Page<ScheduleResponseDto>> getAvailableSchedules(Pageable pageable){
         Page<ScheduleResponseDto> scheduleResponseDtos = service.getAvailableWorkouts(pageable);
 
         return new ResponseEntity<>(scheduleResponseDtos, HttpStatus.OK);
