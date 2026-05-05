@@ -23,6 +23,8 @@ public class ScheduleResponseDto {
 
     private String description;
 
+    private String room;
+
     private LocalDate scheduleDate;
 
     private LocalDateTime startTime;
