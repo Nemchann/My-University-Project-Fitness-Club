@@ -70,6 +70,33 @@ public class UserController {
         return ResponseEntity.ok(users);
     }
 
+    //Доработать
+    @GetMapping("/get_users_by_role")
+    @Operation(summary = "Получить пользователей по названию роли")
+    public ResponseEntity<Page<UserResponseDto>> getUsersByRole(@RequestParam String roleName, Pageable pageable){
+        Page<UserResponseDto> responseDtos = service.getByRoleName(roleName, pageable);
+
+        return new ResponseEntity<>(responseDtos, HttpStatus.OK);
+    }
+
+    @GetMapping("/get_all_clients")
+    @Operation(summary = "Все клиенты")
+    public ResponseEntity<Page<UserResponseDto>> getAllClients(
+            @PageableDefault(size = 10, sort = "login") Pageable pageable) {
+        Page<UserResponseDto> userResponseDtos = service.getAllClients(pageable);
+
+        return new ResponseEntity<>(userResponseDtos, HttpStatus.OK);
+    }
+
+    @GetMapping("/get_all_trainers")
+    @Operation(summary = "Все тренеры")
+    public ResponseEntity<Page<UserResponseDto>> getAllTrainers(
+            @PageableDefault(size = 10, sort = "login") Pageable pageable) {
+        Page<UserResponseDto> userResponseDtos = service.getAllTrainers(pageable);
+
+        return new ResponseEntity<>(userResponseDtos, HttpStatus.OK);
+    }
+
     @GetMapping("/authentification")
     @Operation(summary = "Авторизация существующего пользователя")
     public ResponseEntity<UserResponseDto> authUser(@Valid @RequestBody UserAuthentificationDto dto){

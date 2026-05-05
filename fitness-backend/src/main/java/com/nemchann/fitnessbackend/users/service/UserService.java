@@ -1,13 +1,7 @@
 package com.nemchann.fitnessbackend.users.service;
 
-import com.nemchann.fitnessbackend.booking.entity.Booking;
-import com.nemchann.fitnessbackend.booking.entity.BookingStatus;
-import com.nemchann.fitnessbackend.booking.enums.BookingStatusEnum;
-import com.nemchann.fitnessbackend.booking.repository.BookingRepository;
 import com.nemchann.fitnessbackend.booking.repository.BookingStatusRepository;
-import com.nemchann.fitnessbackend.booking.service.BookingService;
 import com.nemchann.fitnessbackend.common.exception.*;
-import com.nemchann.fitnessbackend.schedule.entity.Schedule;
 import com.nemchann.fitnessbackend.users.dto.*;
 import com.nemchann.fitnessbackend.users.entity.Profile;
 import com.nemchann.fitnessbackend.users.entity.Role;
@@ -23,7 +17,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Page;
 
-import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -350,13 +343,32 @@ public class UserService {
 //        }
 //    }
 
-//    public Page<User> getClients(Pageable pageable){
-//
-//    }
-//
-//    public Page<User> getTrainers(Pageable pageable){
-//
-//    }
+    public Page<UserResponseDto> getByRoleName(String roleName, Pageable pageable){
+        UserRole userRole = UserRole.valueOf(roleName.toUpperCase());
+
+        Role role = roleRepository.findByRoleName(userRole)
+                .orElseThrow(() -> new RoleNotFoundException("Role is not found"));
+
+        return userRepository.findAllByRole(pageable, role)
+                .map(this::mapToResponseDto);
+
+    }
+
+    public Page<UserResponseDto> getAllClients(Pageable pageable){
+        Role role = roleRepository.findByRoleName(UserRole.CLIENT)
+                .orElseThrow(() -> new RoleNotFoundException("Role is not found"));
+
+        return userRepository.findAllByRole(pageable, role)
+                .map(this::mapToResponseDto);
+    }
+
+    public Page<UserResponseDto> getAllTrainers(Pageable pageable){
+        Role role = roleRepository.findByRoleName(UserRole.TRAINER)
+                .orElseThrow(() -> new RoleNotFoundException("Role is not found"));
+
+        return userRepository.findAllByRole(pageable, role)
+                .map(this::mapToResponseDto);
+    }
 
     //Добавить методы получения всех тренеров и всех клиентов по отдельности
 }
