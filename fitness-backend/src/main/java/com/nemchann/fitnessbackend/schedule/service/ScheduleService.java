@@ -151,6 +151,7 @@ public class ScheduleService {
         dto.setCurrentParticipants(schedule.getCurrentParticipants());
         dto.setDescription(schedule.getWorkout().getDescription());
         dto.setWorkoutType(schedule.getWorkout().getWorkoutTypeNameToString());
+        dto.setRoom(schedule.getRoom().getRoomName().name());
 
         return dto;
     }
@@ -275,6 +276,7 @@ public class ScheduleService {
     }
 
     //Получить тренировку на неделю
+    //Можно поменять на Page
     @Transactional
     public List<ScheduleResponseDto> getWeeklySchedule(WeeklyScheduleDto dto){
         LocalDate date = dto.getDate();
@@ -335,9 +337,7 @@ public class ScheduleService {
 
     //Уменьшить счетчик текущих посетителей
     @Transactional
-    public void removeParticipant(Integer scheduleId){
-        Schedule schedule = scheduleRepository.findById(scheduleId)
-                .orElseThrow(() -> new ScheduleIsNotFoundException("Schedule is not found"));
+    public void removeParticipant(Schedule schedule){
 
         Integer currentParticipants = schedule.getCurrentParticipants() - 1;
 
