@@ -6,6 +6,8 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -36,10 +38,11 @@ public class BookingController {
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
 
-    @GetMapping("/get_clients_bookings/{id}")
+    @GetMapping("/get_clients_bookings/{clientId}")
     @Operation(summary = "Все записи клиента")
-    public ResponseEntity<List<BookingShortResponseDto>> getClientsBookings(@RequestParam UUID clientId){
-        List<BookingShortResponseDto> responseDtos = service.getClientBookings(clientId);
+    public ResponseEntity<Page<BookingShortResponseDto>> getClientsBookings
+            (@PathVariable UUID clientId, Pageable pageable){
+        Page<BookingShortResponseDto> responseDtos = service.getClientBookings(clientId, pageable);
 
         return new ResponseEntity<>(responseDtos, HttpStatus.OK);
     }

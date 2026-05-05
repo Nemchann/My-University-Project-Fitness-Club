@@ -16,6 +16,8 @@ import com.nemchann.fitnessbackend.users.service.UserService;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -140,6 +142,7 @@ public class BookingService {
                 .orElseThrow(() -> new BookingNotFoundException("Booking status is not found"));
 
         booking.setBookingStatus(status);
+        scheduleService.removeParticipant(booking.getSchedule());
 
         bookingRepository.save(booking);
 
@@ -151,13 +154,11 @@ public class BookingService {
                 .orElseThrow(() -> new BookingNotFoundException("Booking status is not found"));
     }
 
-    public List<BookingShortResponseDto> getClientBookings(UUID clientId){
-        List<Booking> bookingList = bookingRepository.findByClientId(clientId);
+    //Поменять на Page
+    public Page<BookingShortResponseDto> getClientBookings(UUID clientId, Pageable pageable){
+        Page<Booking> bookings = bookingRepository.findByClientId(clientId, pageable);
 
-        return bookingList
-                .stream()
-                .map(this::mapToShortResponseDto)
-                .toList();
+        return bookings.map(this::mapToShortResponseDto);
     }
 
 
