@@ -30,9 +30,9 @@ public interface ScheduleRepository extends JpaRepository<Schedule, Integer> {
     Page<Schedule> findAvailableSchedules(@Param("now") LocalDateTime now, Pageable pageable);
 
     //Возможно додумать
-    @Query("SELECT s FROM Schedule s " +
-    "JOIN s.workout w " +
-    "JOIN w.workoutType wt " +
-    "HAVING wt = :workoutTypeEnum AND s.isActive = true")
-    Page<Schedule> findAvailableSchedulesByWorkoutType(@Param("workoutTypeEnum") WorkoutTypeEnum workoutTypeEnum);
+//    @Query("SELECT s FROM Schedule s " +
+//    "JOIN s.workout w " +
+//    "JOIN w.workoutType wt " +
+//    "HAVING wt = :workoutTypeEnum AND s.isActive = true")
+//    Page<Schedule> findAvailableSchedulesByWorkoutType(@Param("workoutTypeEnum") WorkoutTypeEnum workoutTypeEnum, Pageable pageable);
 }
