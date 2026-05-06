@@ -8,6 +8,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -41,23 +42,23 @@ public class BookingController {
     @GetMapping("/get_clients_bookings/{clientId}")
     @Operation(summary = "Все записи клиента")
     public ResponseEntity<Page<BookingShortResponseDto>> getClientsBookings
-            (@PathVariable UUID clientId, Pageable pageable){
+            (@PathVariable UUID clientId, @PageableDefault(size = 10, sort = "schedule") Pageable pageable){
         Page<BookingShortResponseDto> responseDtos = service.getClientBookings(clientId, pageable);
 
         return new ResponseEntity<>(responseDtos, HttpStatus.OK);
     }
 
-    @GetMapping("/get_clients_by_schedule/{id}")
+    @GetMapping("/get_clients_by_schedule/{scheduleId}")
     @Operation(summary = "Посетители данной тренировки")
-    public ResponseEntity<List<UserInScheduleDto>> getClientsBySchedule(@RequestParam Integer scheduleId){
+    public ResponseEntity<List<UserInScheduleDto>> getClientsBySchedule(@PathVariable Integer scheduleId){
         List<UserInScheduleDto> scheduleDtos = service.getClientsBySchedule(scheduleId);
 
         return new ResponseEntity<>(scheduleDtos, HttpStatus.OK);
     }
 
-    @GetMapping("/check_booking_status/{id}")
+    @GetMapping("/check_booking_status/{userId}")
     @Operation(summary = "Проверить статус бронирования для пользователя (записан/не записан)")
-    public boolean checkBookingStatus(@RequestParam UUID userId, @RequestParam Integer scheduleId){
+    public boolean checkBookingStatus(@PathVariable UUID userId, @RequestParam Integer scheduleId){
         return service.checkBookingStatus(userId, scheduleId);
     }
 }

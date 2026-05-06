@@ -8,6 +8,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -41,7 +42,7 @@ public class ScheduleController {
 
     @GetMapping("get_workout/{id}")
     @Operation(summary = "Получить вид тренировки по id")
-    public ResponseEntity<WorkoutResponseDto> getWorkout(Integer id){
+    public ResponseEntity<WorkoutResponseDto> getWorkout(@PathVariable Integer id){
         WorkoutResponseDto workoutResponseDto = service.getWorkoutResponse(id);
 
         return new ResponseEntity<>(workoutResponseDto, HttpStatus.OK);
@@ -49,7 +50,7 @@ public class ScheduleController {
 
     @GetMapping("get_schedule/{id}")
     @Operation(summary = "Получить тренировку по id")
-    public ResponseEntity<ScheduleResponseDto> getSchedule(Integer id){
+    public ResponseEntity<ScheduleResponseDto> getSchedule(@PathVariable Integer id){
         ScheduleResponseDto scheduleResponseDto = service.getScheduleResponse(id);
 
         return new ResponseEntity<>(scheduleResponseDto, HttpStatus.OK);
@@ -57,7 +58,7 @@ public class ScheduleController {
 
     @DeleteMapping("delete_schedule/{id}")
     @Operation(summary = "Удалить тренировку")
-    public ResponseEntity<Void> deleteSchedule(Integer id){
+    public ResponseEntity<Void> deleteSchedule(@PathVariable Integer id){
         service.deleteSchedule(id);
 
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
@@ -65,22 +66,23 @@ public class ScheduleController {
 
     @DeleteMapping("cancel_schedule/{id}")
     @Operation(summary = "Отменить тренировку")
-    public ResponseEntity<Void> cancelSchedule(@RequestParam Integer id){
+    public ResponseEntity<Void> cancelSchedule(@PathVariable Integer id){
         service.cancelSchedule(id);
 
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
 
-    @PutMapping("appoint_trainer/{id}")
+    @PutMapping("appoint_trainer/{scheduleId}")
     @Operation(summary = "Назначить тренера на тренировку")
-    public ResponseEntity<ScheduleResponseDto> appointTrainer(@Valid @RequestBody UUID trainerId, Integer scheduleId){
+    public ResponseEntity<ScheduleResponseDto> appointTrainer(
+            @Valid @RequestBody UUID trainerId, @PathVariable Integer scheduleId){
         ScheduleResponseDto scheduleResponseDto = service.appointATrainer(trainerId, scheduleId);
 
         return new ResponseEntity<>(scheduleResponseDto, HttpStatus.OK);
     }
 
     @PutMapping("/change_time/{id}")
-    @Operation(summary = "")
+    @Operation(summary = "Поменять время у тренировки")
     public ResponseEntity<ScheduleResponseDto> changeTime(@Valid @RequestBody ScheduleEditTimeDto scheduleEditTimeDto){
         ScheduleResponseDto scheduleResponseDto = service.editTime(scheduleEditTimeDto);
 
@@ -95,9 +97,10 @@ public class ScheduleController {
         return new ResponseEntity<>(scheduleResponseDto, HttpStatus.OK);
     }
 
-    @PutMapping("/change_schedule_workout/{id}")
+    @PutMapping("/change_schedule_workout/{scheduleId}")
     @Operation(summary = "Поменять вид тренировки у проводимой тренировки")
-    public ResponseEntity<ScheduleResponseDto> changeWorkout(@RequestParam Integer scheduleId, @Valid @RequestBody ScheduleEditWorkoutDto editWorkoutDto){
+    public ResponseEntity<ScheduleResponseDto> changeWorkout(
+            @PathVariable Integer scheduleId, @Valid @RequestBody ScheduleEditWorkoutDto editWorkoutDto){
         ScheduleResponseDto scheduleResponseDto = service.editScheduleWorkout(scheduleId, editWorkoutDto);
 
         return new ResponseEntity<>(scheduleResponseDto, HttpStatus.OK);
@@ -129,7 +132,8 @@ public class ScheduleController {
 
     @GetMapping("/get_available_schedules")
     @Operation(summary = "Получить тренировки, на которые еще можно записаться")
-    public ResponseEntity<Page<ScheduleResponseDto>> getAvailableSchedules(Pageable pageable){
+    public ResponseEntity<Page<ScheduleResponseDto>> getAvailableSchedules(
+            @PageableDefault(size = 10, sort = "workout") Pageable pageable){
         Page<ScheduleResponseDto> scheduleResponseDtos = service.getAvailableWorkouts(pageable);
 
         return new ResponseEntity<>(scheduleResponseDtos, HttpStatus.OK);
@@ -137,7 +141,8 @@ public class ScheduleController {
 
     @GetMapping("/get_schedules_by_trainer/{trainerId}")
     @Operation(summary = "Тренировки данного тренера")
-    public ResponseEntity<Page<ScheduleResponseDto>> getSchedulesByTrainer(@PathVariable UUID trainerId, Pageable pageable){
+    public ResponseEntity<Page<ScheduleResponseDto>> getSchedulesByTrainer(
+            @PathVariable UUID trainerId, @PageableDefault(size = 10, sort = "workout") Pageable pageable){
         Page<ScheduleResponseDto> responseDtos = service.getSchedulesByTrainer(trainerId, pageable);
 
         return new ResponseEntity<>(responseDtos, HttpStatus.OK);

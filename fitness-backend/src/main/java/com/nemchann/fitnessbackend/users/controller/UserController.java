@@ -73,7 +73,8 @@ public class UserController {
     //Доработать
     @GetMapping("/get_users_by_role")
     @Operation(summary = "Получить пользователей по названию роли")
-    public ResponseEntity<Page<UserResponseDto>> getUsersByRole(@RequestParam String roleName, Pageable pageable){
+    public ResponseEntity<Page<UserResponseDto>> getUsersByRole(
+            @RequestParam String roleName, @PageableDefault(size = 10, sort = "login") Pageable pageable){
         Page<UserResponseDto> responseDtos = service.getByRoleName(roleName, pageable);
 
         return new ResponseEntity<>(responseDtos, HttpStatus.OK);
@@ -127,7 +128,7 @@ public class UserController {
 
     @DeleteMapping("/deactivate/{id}")
     @Operation(summary = "Деактивировать пользователя")
-    public ResponseEntity<Void> deactivateUser(UUID id){
+    public ResponseEntity<Void> deactivateUser(@PathVariable UUID id){
         service.deactivateUser(id);
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
