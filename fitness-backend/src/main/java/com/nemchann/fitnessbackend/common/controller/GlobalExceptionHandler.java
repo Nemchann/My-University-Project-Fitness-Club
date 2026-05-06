@@ -1,6 +1,7 @@
 package com.nemchann.fitnessbackend.common.controller;
 
 import com.nemchann.fitnessbackend.common.exception.*;
+import com.nemchann.fitnessbackend.payment.entity.PaymentStatus;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -74,6 +75,11 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(BookingStatusNotFoundException.class)
     public ResponseEntity<String> handleBookingStatusNotFound(BookingStatusNotFoundException ex){
+        return new ResponseEntity<>(ex.getMessage(), HttpStatus.NOT_FOUND);
+    }
+
+    @ExceptionHandler(PaymentStatusNotFoundException.class)
+    public ResponseEntity<String> handlePaymentStatusNotFound(PaymentStatusNotFoundException ex){
         return new ResponseEntity<>(ex.getMessage(), HttpStatus.NOT_FOUND);
     }
 
