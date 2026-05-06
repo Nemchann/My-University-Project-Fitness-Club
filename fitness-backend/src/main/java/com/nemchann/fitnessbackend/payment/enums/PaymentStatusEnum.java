@@ -1,4 +1,4 @@
-package com.nemchann.fitnessbackend.payment;
+package com.nemchann.fitnessbackend.payment.enums;
 
 public enum PaymentStatusEnum {
     ACCEPTED,
