@@ -135,5 +135,13 @@ public class ScheduleController {
         return new ResponseEntity<>(scheduleResponseDtos, HttpStatus.OK);
     }
 
+    @GetMapping("/get_schedules_by_trainer/{trainerId}")
+    @Operation(summary = "Тренировки данного тренера")
+    public ResponseEntity<Page<ScheduleResponseDto>> getSchedulesByTrainer(@PathVariable UUID trainerId, Pageable pageable){
+        Page<ScheduleResponseDto> responseDtos = service.getSchedulesByTrainer(trainerId, pageable);
+
+        return new ResponseEntity<>(responseDtos, HttpStatus.OK);
+    }
+
 
 }

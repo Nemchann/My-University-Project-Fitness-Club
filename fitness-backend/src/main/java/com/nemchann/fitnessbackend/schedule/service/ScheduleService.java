@@ -13,9 +13,11 @@ import com.nemchann.fitnessbackend.schedule.repository.ScheduleRepository;
 import com.nemchann.fitnessbackend.schedule.repository.WorkoutRepository;
 import com.nemchann.fitnessbackend.schedule.repository.WorkoutTypeRepository;
 import com.nemchann.fitnessbackend.users.entity.User;
+import com.nemchann.fitnessbackend.users.repository.UserRepository;
 import com.nemchann.fitnessbackend.users.service.UserService;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
+import lombok.AllArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -27,22 +29,14 @@ import java.util.Optional;
 import java.util.UUID;
 
 @Service
+@AllArgsConstructor
 public class ScheduleService {
     private final RoomRepository roomRepository;
     private final ScheduleRepository scheduleRepository;
     private final WorkoutRepository workoutRepository;
     private final WorkoutTypeRepository workoutTypeRepository;
     private final UserService userService;
-
-    public ScheduleService(RoomRepository roomRepository, ScheduleRepository scheduleRepository,
-                           WorkoutRepository workoutRepository, WorkoutTypeRepository workoutTypeRepository,
-                           UserService userService){
-        this.roomRepository = roomRepository;
-        this.scheduleRepository = scheduleRepository;
-        this.workoutRepository = workoutRepository;
-        this.workoutTypeRepository = workoutTypeRepository;
-        this.userService = userService;
-    }
+    private final UserRepository userRepository;
 
     //Создать вид тренировки
     @Transactional
@@ -315,6 +309,18 @@ public class ScheduleService {
 
         return scheduleRepository.findAvailableSchedules(now, pageable)
                 .map(this::mapScheduleToResponse);
+    }
+
+    public Page<ScheduleResponseDto> getSchedulesByTrainer(UUID trainerId, Pageable pageable){
+
+        if(userService.isTrainer(trainerId)){
+            User trainer = userRepository.findById(trainerId)
+                    .orElseThrow(() -> new UserNotFoundException("User is not found"));
+            return scheduleRepository.findAllByTrainer(trainer, pageable)
+                    .map(this::mapScheduleToResponse);
+        }else{
+            throw new IsNotTrainerException("You are not a trainer");
+        }
     }
 
     //Метод, который будет использоваться в BookingService
