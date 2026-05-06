@@ -1,7 +1,7 @@
 package com.nemchann.fitnessbackend.payment.entity;
 
 
-import com.nemchann.fitnessbackend.payment.PaymentStatusEnum;
+import com.nemchann.fitnessbackend.payment.enums.PaymentStatusEnum;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
