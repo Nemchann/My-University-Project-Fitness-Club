@@ -2,6 +2,7 @@ package com.nemchann.fitnessbackend.users.dto;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -29,6 +30,6 @@ public class UserEditingDto {
     @Email(message = "Некорректный email")
     private String email;
 
-    @NotBlank(message = "Поле Электронная почта не может быть пустым")
+    @NotNull
     private LocalDate birthday;
 }
