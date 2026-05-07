@@ -1,0 +1,6 @@
+name: Urls
+values:
+  - key: baseUrl
+    value: ''
+  - key: proxyUrl
+    value: ''

@@ -1,6 +1,7 @@
 package com.nemchann.fitnessbackend.common.controller;
 
 import com.nemchann.fitnessbackend.common.exception.*;
+import com.nemchann.fitnessbackend.payment.entity.PaymentStatus;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -54,7 +55,32 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(IsNotTrainerException.class)
     public ResponseEntity<String> handleNotTrainer(IsNotTrainerException ex){
-        return new ResponseEntity<>(ex.getMessage(), HttpStatus.FORBIDDEN); //Подумать какой http статус выводить, пока так
+        return new ResponseEntity<>(ex.getMessage(), HttpStatus.FORBIDDEN);
+    }
+
+    @ExceptionHandler(NotEnoughPrivilegesException.class)
+    public ResponseEntity<String> handleNoPrivileges(NotEnoughPrivilegesException ex){
+        return new ResponseEntity<>(ex.getMessage(), HttpStatus.FORBIDDEN);
+    }
+
+    @ExceptionHandler(BookingNotFoundException.class)
+    public ResponseEntity<String> handleBookingNotFound(BookingNotFoundException ex){
+        return new ResponseEntity<>(ex.getMessage(), HttpStatus.NOT_FOUND);
+    }
+
+    @ExceptionHandler(AlreadyBookedException.class)
+    public ResponseEntity<String> handleBookingConflict(AlreadyBookedException ex){
+        return new ResponseEntity<>(ex.getMessage(), HttpStatus.CONFLICT);
+    }
+
+    @ExceptionHandler(BookingStatusNotFoundException.class)
+    public ResponseEntity<String> handleBookingStatusNotFound(BookingStatusNotFoundException ex){
+        return new ResponseEntity<>(ex.getMessage(), HttpStatus.NOT_FOUND);
+    }
+
+    @ExceptionHandler(PaymentStatusNotFoundException.class)
+    public ResponseEntity<String> handlePaymentStatusNotFound(PaymentStatusNotFoundException ex){
+        return new ResponseEntity<>(ex.getMessage(), HttpStatus.NOT_FOUND);
     }
 
     //Когда неправильные логин, email

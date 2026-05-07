@@ -13,9 +13,11 @@ import com.nemchann.fitnessbackend.schedule.repository.ScheduleRepository;
 import com.nemchann.fitnessbackend.schedule.repository.WorkoutRepository;
 import com.nemchann.fitnessbackend.schedule.repository.WorkoutTypeRepository;
 import com.nemchann.fitnessbackend.users.entity.User;
+import com.nemchann.fitnessbackend.users.repository.UserRepository;
 import com.nemchann.fitnessbackend.users.service.UserService;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
+import lombok.AllArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -27,24 +29,17 @@ import java.util.Optional;
 import java.util.UUID;
 
 @Service
+@AllArgsConstructor
 public class ScheduleService {
     private final RoomRepository roomRepository;
     private final ScheduleRepository scheduleRepository;
     private final WorkoutRepository workoutRepository;
     private final WorkoutTypeRepository workoutTypeRepository;
     private final UserService userService;
-
-    public ScheduleService(RoomRepository roomRepository, ScheduleRepository scheduleRepository,
-                           WorkoutRepository workoutRepository, WorkoutTypeRepository workoutTypeRepository,
-                           UserService userService){
-        this.roomRepository = roomRepository;
-        this.scheduleRepository = scheduleRepository;
-        this.workoutRepository = workoutRepository;
-        this.workoutTypeRepository = workoutTypeRepository;
-        this.userService = userService;
-    }
+    private final UserRepository userRepository;
 
     //Создать вид тренировки
+    @Transactional
     public WorkoutResponseDto createWorkout(WorkoutCreateDto workoutCreateDto){
         WorkoutTypeEnum typeEnum = WorkoutTypeEnum.valueOf(workoutCreateDto.getWorkoutType().toUpperCase());
 
@@ -83,6 +78,7 @@ public class ScheduleService {
     }
 
     //Создать тренировку
+    @Transactional
     public ScheduleResponseDto createSchedule(ScheduleCreateDto createDto) {
         RoomEnum roomEnum = RoomEnum.valueOf(createDto.getRoomName().toUpperCase());
 
@@ -109,7 +105,7 @@ public class ScheduleService {
         }
     }
 
-    public Schedule rewriteCreateDtoToSchedule(ScheduleCreateDto dto, Workout workout, Room room){
+    private Schedule rewriteCreateDtoToSchedule(ScheduleCreateDto dto, Workout workout, Room room){
         Schedule schedule = new Schedule();
 
         User trainer = userService.getUser(dto.getTrainerId());
@@ -149,6 +145,7 @@ public class ScheduleService {
         dto.setCurrentParticipants(schedule.getCurrentParticipants());
         dto.setDescription(schedule.getWorkout().getDescription());
         dto.setWorkoutType(schedule.getWorkout().getWorkoutTypeNameToString());
+        dto.setRoom(schedule.getRoom().getRoomName().name());
 
         return dto;
     }
@@ -169,9 +166,15 @@ public class ScheduleService {
         return mapWorkoutToResponseDto(workout);
     }
 
+    public Schedule getSchedule(Integer id){
+        return scheduleRepository.findById(id)
+                .orElseThrow(() -> new ScheduleIsNotFoundException("Schedule is not found"));
+    }
+
     //Назначить тренера на тренировку
     @Transactional
     public ScheduleResponseDto appointATrainer(UUID trainerId, Integer scheduleId){
+        //Добавить добавление тренировок самому тренеру в UserService, а также их удаление
         User trainer = userService.getUser(trainerId);
         Schedule schedule = scheduleRepository.findById(scheduleId)
                 .orElseThrow(() -> new ScheduleIsNotFoundException("Schedule is not found"));
@@ -191,6 +194,7 @@ public class ScheduleService {
     //Удалить тренировку
     @Transactional
     public void deleteSchedule(Integer id){
+        //Добавить функциональность при бронировании. Что будет с бронированиями, если удалить тренировку?
         Schedule schedule = scheduleRepository.findById(id)
                         .orElseThrow(() -> new ScheduleIsNotFoundException("Schedule is not found"));
         scheduleRepository.delete(schedule);
@@ -199,6 +203,7 @@ public class ScheduleService {
     //Деактивировать тренировку
     @Transactional
     public void cancelSchedule(Integer id){
+        //Сделать бронирования, подписанные на эту тренировку со статусов CANCELLED
         Schedule schedule = scheduleRepository.findById(id)
                 .orElseThrow(() -> new ScheduleIsNotFoundException("Schedule is not found"));
         schedule.setActive(false);
@@ -253,6 +258,7 @@ public class ScheduleService {
         return mapScheduleToResponse(schedule);
     }
 
+    //Получить тренировки данного дня
     @Transactional
     public List<ScheduleResponseDto> findSchedulesByDate(ScheduleGetByTimeDto scheduleGetByTimeDto){
         LocalDate date = scheduleGetByTimeDto.getDate();
@@ -263,6 +269,8 @@ public class ScheduleService {
                 .toList();
     }
 
+    //Получить тренировку на неделю
+    //Можно поменять на Page
     @Transactional
     public List<ScheduleResponseDto> getWeeklySchedule(WeeklyScheduleDto dto){
         LocalDate date = dto.getDate();
@@ -277,6 +285,7 @@ public class ScheduleService {
                 .toList();
     }
 
+    //Получить сегодняшние тренировки в заданном промежутке времени
     @Transactional
     public List<ScheduleResponseDto> getTodaySchedulesByTimeRange(ScheduleGetByTimePeriodDto timePeriodDto){
         LocalTime startTime = timePeriodDto.getStart();
@@ -293,6 +302,7 @@ public class ScheduleService {
                 .toList();
     }
 
+    //Посмотреть доступные
     @Transactional
     public Page<ScheduleResponseDto> getAvailableWorkouts(Pageable pageable) {
         LocalDateTime now = LocalDateTime.now();
@@ -301,21 +311,52 @@ public class ScheduleService {
                 .map(this::mapScheduleToResponse);
     }
 
+    public Page<ScheduleResponseDto> getSchedulesByTrainer(UUID trainerId, Pageable pageable){
+
+        if(userService.isTrainer(trainerId)){
+            User trainer = userRepository.findById(trainerId)
+                    .orElseThrow(() -> new UserNotFoundException("User is not found"));
+            return scheduleRepository.findAllByTrainer(trainer, pageable)
+                    .map(this::mapScheduleToResponse);
+        }else{
+            throw new IsNotTrainerException("You are not a trainer");
+        }
+    }
+
     //Метод, который будет использоваться в BookingService
+    //Увеличить счетчик текущих посетителей
     @Transactional
-    public void updateParticipantsCount(Integer scheduleId, Integer delta){
+    public void addParticipant(Integer scheduleId){
         Schedule schedule = scheduleRepository.findById(scheduleId)
                 .orElseThrow(() -> new ScheduleIsNotFoundException("Schedule is not found"));
 
-        Integer currentParticipants = schedule.getCurrentParticipants() + delta;
+
+        if (schedule.getCurrentParticipants() >= schedule.getMaxParticipants()){
+            throw new IllegalStateException("No free slots available");
+        }
+        Integer currentParticipants = schedule.getCurrentParticipants() + 1;
+
         schedule.setCurrentParticipants(currentParticipants);
 
         scheduleRepository.save(schedule);
     }
 
+    //Уменьшить счетчик текущих посетителей
+    @Transactional
+    public void removeParticipant(Schedule schedule){
 
-    //Сделать метод, который возвращает список тренировок в заданном промежутке времени с валидацией
-    //самого промежутка времени
+        Integer currentParticipants = schedule.getCurrentParticipants() - 1;
+
+        if(currentParticipants < 0){
+            throw new ArithmeticException("Current participants mustn't be negative");
+        }
+
+        schedule.setCurrentParticipants(currentParticipants);
+
+        scheduleRepository.save(schedule);
+    }
+
+    // Добавить метод получения тренировок по типу тренировок (workoutType)
     // По возможности создать классы-мапперы
 
 }

@@ -1,5 +1,6 @@
 package com.nemchann.fitnessbackend.users.repository;
 
+import com.nemchann.fitnessbackend.users.entity.Role;
 import com.nemchann.fitnessbackend.users.entity.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
@@ -15,4 +16,5 @@ public interface UserRepository extends JpaRepository<User, UUID> {
 
     Page<User> findAllByIsActiveTrue(Pageable pageable);
 
+    Page<User> findAllByRole(Pageable pageable, Role role);
 }

@@ -1,0 +1,14 @@
+.env
+*.env
+
+.postman/
+.idea/
+.vscode/
+
+target/
+*.class
+*.jar
+
+/fitness-proxy/cmd/proxy/proxy.exe  # если компилируешь в windows
+bin/
+vendor/

@@ -20,17 +20,6 @@ spring:
       hibernate:
         format_sql: true
 
-  # 2. MongoDB (История уведомлений)
-  data:
-    mongodb:
-      uri: ${SPRING_DATA_MONGODB_URI:mongodb://admin:password@localhost:27017/notificatiion_db?authSource=admin}
-
-  # 3. RabbitMQ (События)
-  rabbitmq:
-    host: ${SPRING_RABBITMQ_HOST:localhost}
-    port: 5672
-    username: ${COMMON_DB_USER:admin}
-    password: ${COMMON_DB_PASSWORD:password}
 
 # Настройки Swagger
 springdoc:

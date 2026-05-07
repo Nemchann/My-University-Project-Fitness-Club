@@ -1,6 +1,6 @@
 package com.nemchann.fitnessbackend.users.service;
 
-import com.nemchann.fitnessbackend.booking.entity.Booking;
+import com.nemchann.fitnessbackend.booking.repository.BookingStatusRepository;
 import com.nemchann.fitnessbackend.common.exception.*;
 import com.nemchann.fitnessbackend.users.dto.*;
 import com.nemchann.fitnessbackend.users.entity.Profile;
@@ -11,31 +11,26 @@ import com.nemchann.fitnessbackend.users.repository.ProfileRepository;
 import com.nemchann.fitnessbackend.users.repository.RoleRepository;
 import com.nemchann.fitnessbackend.users.repository.UserRepository;
 import jakarta.transaction.Transactional;
+import lombok.AllArgsConstructor;
 import org.springframework.data.domain.Example;
 import org.springframework.stereotype.Service;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Page;
 
-import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
 //Исправить методы, чтобы в передаваемых значениях были dto
 @Service
+@AllArgsConstructor
 public class UserService {
     private final ProfileRepository profileRepository;
     private final RoleRepository roleRepository;
     private final UserRepository userRepository;
-
-    public UserService(ProfileRepository profileRepository, RoleRepository roleRepository,
-                       UserRepository userRepository){
-        this.profileRepository = profileRepository;
-        this.userRepository = userRepository;
-        this.roleRepository = roleRepository;
-    }
-
+    private final BookingStatusRepository bookingStatusRepository; //Подумать насчет этого
 
     //Создает обычного пользователя типа CLIENT
+    @Transactional
     public UserResponseDto createUser(UserRegistrationDto userRegistrationDto){
         User user = new User();
         Profile profile = new Profile();
@@ -57,6 +52,7 @@ public class UserService {
         return mapToResponseDto(user);
     }
 
+    @Transactional
     public UserResponseDto createTrainer(UserRegistrationDto userRegistrationDto){
         User user = new User();
         Profile profile = new Profile();
@@ -190,6 +186,7 @@ public class UserService {
 
 
     //Метод поменять пароль
+    @Transactional
     public void changePassword(UUID id, PasswordChangeDto passwordChangeDto){
         Optional<User> userOptional = userRepository.findById(id);
 
@@ -234,6 +231,7 @@ public class UserService {
     }
 
     //Метод для входа в систему
+    @Transactional
     public UserResponseDto authentification(UserAuthentificationDto userAuthentificationDto){
         Optional<User> userOpt = userRepository.findByLogin(userAuthentificationDto.getLogin());
 
@@ -254,6 +252,7 @@ public class UserService {
         }
     }
 
+    @Transactional
     public void deactivateUser(UUID id){
         Optional<User> userOptional = userRepository.findById(id);
 
@@ -296,6 +295,7 @@ public class UserService {
         }
     }
 
+    //Подумать, что с этим делать
     public String getFullName(User user){
         if (userRepository.exists(Example.of(user))){
             Profile profile = user.getProfile();
@@ -305,4 +305,70 @@ public class UserService {
             throw new UserNotFoundException("User is not found");
         }
     }
+
+//    public void addBookingToUser(UUID userId, Booking booking){
+//        User user = userRepository.findById(userId)
+//                .orElseThrow(() -> new UserNotFoundException("User is not found"));
+//
+//        Role role = user.getRole();
+//
+//        if(!role.getRoleName().equals(UserRole.CLIENT)){
+//            throw new NotEnoughPrivilegesException("You're not client");
+//        }
+//
+//        List<Booking> bookingList = user.getClientBookings();
+//        bookingList.add(booking);
+//
+//        userRepository.save(user);
+//    }
+
+//    @Transactional
+//    public void cancelBookingFromUser(UUID userId, Booking booking){
+//        User user = userRepository.findById(userId)
+//                .orElseThrow(() -> new UserNotFoundException("User is not found"));
+//
+//        Role role = user.getRole();
+//
+//        if(!role.getRoleName().equals(UserRole.CLIENT)){
+//            throw new NotEnoughPrivilegesException("You're not client");
+//        }
+//        List<Booking> bookingList = user.getClientBookings();
+//
+//        for (Booking b : bookingList){
+//            if(b.equals(booking)){
+//                BookingStatus bookingStatus = bookingStatusRepository.findByBookingStatusName(BookingStatusEnum.CANCELLED)
+//                                .orElseThrow(() -> new BookingStatusNotFoundException("Booking status is not found"));
+//                b.setBookingStatus(bookingStatus);
+//            }
+//        }
+//    }
+
+    public Page<UserResponseDto> getByRoleName(String roleName, Pageable pageable){
+        UserRole userRole = UserRole.valueOf(roleName.toUpperCase());
+
+        Role role = roleRepository.findByRoleName(userRole)
+                .orElseThrow(() -> new RoleNotFoundException("Role is not found"));
+
+        return userRepository.findAllByRole(pageable, role)
+                .map(this::mapToResponseDto);
+
+    }
+
+    public Page<UserResponseDto> getAllClients(Pageable pageable){
+        Role role = roleRepository.findByRoleName(UserRole.CLIENT)
+                .orElseThrow(() -> new RoleNotFoundException("Role is not found"));
+
+        return userRepository.findAllByRole(pageable, role)
+                .map(this::mapToResponseDto);
+    }
+
+    public Page<UserResponseDto> getAllTrainers(Pageable pageable){
+        Role role = roleRepository.findByRoleName(UserRole.TRAINER)
+                .orElseThrow(() -> new RoleNotFoundException("Role is not found"));
+
+        return userRepository.findAllByRole(pageable, role)
+                .map(this::mapToResponseDto);
+    }
+
+    //Добавить методы получения всех тренеров и всех клиентов по отдельности
 }

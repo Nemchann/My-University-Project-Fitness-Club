@@ -15,7 +15,7 @@ import java.util.UUID;
 @Data
 public class ScheduleCreateDto {
 
-    @NotBlank
+    @NotNull
     private Integer workoutId;
 
     @NotNull

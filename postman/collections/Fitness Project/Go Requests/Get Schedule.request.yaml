@@ -1,0 +1,5 @@
+$kind: http-request
+name: Get Schedule
+url: "{{proxyUrl}}/api/fitness-club/schedules/get_schedule/202"
+method: GET
+order: 575003328817943
