@@ -1,0 +1,14 @@
+$kind: http-request
+name: Cancel Booking
+url: "{{proxyUrl}}/{{bookingControllerUrl}}/cancel_booking"
+method: DELETE
+body:
+  type: json
+  content: "{\r
+
+    \  \"bookingId\": \"8b282b50-77e7-4353-abb1-51f595faa723\",\r
+
+    \  \"userId\": \"b0831861-2f09-4f89-8077-3ba8db0abe24\"\r
+
+    }"
+order: 4050153022500350

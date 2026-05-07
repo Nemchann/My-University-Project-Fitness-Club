@@ -1,0 +1,16 @@
+$kind: http-request
+name: Create Booking
+url: "{{proxyUrl}}/api/fitness-club/bookings/create_booking"
+method: POST
+body:
+  type: json
+  content: "{\r
+
+    \  \"userId\": \"922ddbc4-bef0-453a-8b1f-27fcfb5f3ab7\",\r
+
+    \  \"scheduleId\": 253,\r
+
+    \  \"createdAt\": \"2026-05-07T17:33:45.685Z\"\r
+
+    }"
+order: 1778179114185

@@ -4,3 +4,11 @@ values:
     value: ''
   - key: proxyUrl
     value: ''
+  - key: userControllerUrl
+    value: ''
+  - key: scheduleControllerUrl
+    value: ''
+  - key: paymentControllerUrl
+    value: ''
+  - key: bookingControllerUrl
+    value: ''
