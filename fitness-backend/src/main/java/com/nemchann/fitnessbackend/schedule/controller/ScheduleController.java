@@ -40,7 +40,7 @@ public class ScheduleController {
         return new ResponseEntity<>(scheduleResponseDto, HttpStatus.CREATED);
     }
 
-    @GetMapping("get_workout/{id}")
+    @GetMapping("/get_workout/{id}")
     @Operation(summary = "Получить вид тренировки по id")
     public ResponseEntity<WorkoutResponseDto> getWorkout(@PathVariable Integer id){
         WorkoutResponseDto workoutResponseDto = service.getWorkoutResponse(id);
@@ -48,7 +48,7 @@ public class ScheduleController {
         return new ResponseEntity<>(workoutResponseDto, HttpStatus.OK);
     }
 
-    @GetMapping("get_schedule/{id}")
+    @GetMapping("/get_schedule/{id}")
     @Operation(summary = "Получить тренировку по id")
     public ResponseEntity<ScheduleResponseDto> getSchedule(@PathVariable Integer id){
         ScheduleResponseDto scheduleResponseDto = service.getScheduleResponse(id);
@@ -56,7 +56,7 @@ public class ScheduleController {
         return new ResponseEntity<>(scheduleResponseDto, HttpStatus.OK);
     }
 
-    @DeleteMapping("delete_schedule/{id}")
+    @DeleteMapping("/delete_schedule/{id}")
     @Operation(summary = "Удалить тренировку")
     public ResponseEntity<Void> deleteSchedule(@PathVariable Integer id){
         service.deleteSchedule(id);
@@ -72,7 +72,7 @@ public class ScheduleController {
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
 
-    @PutMapping("appoint_trainer/{scheduleId}")
+    @PutMapping("/appoint_trainer/{scheduleId}")
     @Operation(summary = "Назначить тренера на тренировку")
     public ResponseEntity<ScheduleResponseDto> appointTrainer(
             @Valid @RequestBody UUID trainerId, @PathVariable Integer scheduleId){
