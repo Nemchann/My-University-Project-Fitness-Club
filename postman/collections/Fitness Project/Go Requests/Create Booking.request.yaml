@@ -1,0 +1,5 @@
+$kind: http-request
+name: Create Booking
+url: ""
+method: GET
+order: 4204940732720158
