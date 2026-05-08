@@ -13,6 +13,8 @@ import (
 	"fitness-proxy/internal/repository"
 	"fitness-proxy/internal/model"
 	"fitness-proxy/internal/middleware"
+	"fitness-proxy/internal/service"
+
 	"os"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -67,14 +69,38 @@ func main() {
         }
     }()
 
+
     // 5. Передаем канал в Middleware
-
-
 	r := gin.Default()
 
 	r.Use(middleware.AsyncLogger(logChan))
 
-	// Адрес твоего Java-бэкенда
+	// 1. Инициализируем репозиторий IP
+	ipRepo := repository.NewMongoIPRepo(db)
+
+	// 2. Создаем менеджер (пока пустой)
+	ipManager := service.NewIPManager()
+
+	// 3. Загружаем правила из базы (делаем это ОДИН РАЗ при старте)
+	rules, err := ipRepo.GetAll(context.Background())
+	if err != nil {
+    	log.Fatalf("Не удалось загрузить IP-правила: %v", err)
+	}
+
+	// 4. Наполняем менеджер данными (нужно будет добавить метод Import в менеджер)
+	for _, rule := range rules {
+    	err := ipManager.AddRule(rule.Network, rule.Type)
+    	if err != nil {
+        	log.Printf("Ошибка при добавлении правила %s: %v", rule.Network, err)
+        	continue // Пропускаем битое правило и идем дальше
+    	}
+	}
+
+	log.Printf("Загружено правил для IP: %d", len(rules))
+
+	r.Use(middleware.IPFilter(ipManager))
+
+	// Адрес Java-бэкенда
 	target := os.Getenv("JAVA_BACKEND_URL")
 	remote, err := url.Parse(target)
 	if err != nil {
