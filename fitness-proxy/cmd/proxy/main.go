@@ -89,6 +89,8 @@ func main() {
 	// 2. Создаем менеджер (пока пустой)
 	ipManager := service.NewIPManager()
 
+	rateLimiter := service.NewIPRateLimiter(1, 2) // 1 запрос в секунду, с "burst" до 2
+
 	// 3. Загружаем правила из базы (делаем это ОДИН РАЗ при старте)
 	rules, err := ipRepo.GetAll(context.Background())
 	if err != nil {
@@ -107,6 +109,8 @@ func main() {
 	log.Printf("Загружено правил для IP: %d", len(rules))
 
 	r.Use(middleware.IPFilter(ipManager))
+
+	r.Use(middleware.RateLimitMiddleware(rateLimiter, ipManager))
 
 
 	// Адрес Java-бэкенда
