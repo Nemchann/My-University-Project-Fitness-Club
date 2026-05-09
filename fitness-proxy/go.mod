@@ -8,6 +8,8 @@ require (
 	go.mongodb.org/mongo-driver v1.17.9
 )
 
+require golang.org/x/time v0.15.0 // indirect
+
 require (
 	github.com/bytedance/gopkg v0.1.3 // indirect
 	github.com/bytedance/sonic v1.15.0 // indirect
