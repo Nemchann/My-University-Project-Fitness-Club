@@ -11,12 +11,14 @@ import (
 type IPManager struct {
     whitelist cidranger.Ranger
     blacklist cidranger.Ranger
+    greylist  cidranger.Ranger // Если решишь добавить логику для серых списков
 }
 
 func NewIPManager() *IPManager {
     return &IPManager{
         whitelist: cidranger.NewPCTrieRanger(),
         blacklist: cidranger.NewPCTrieRanger(),
+        greylist:  cidranger.NewPCTrieRanger(),
     }
 }
 
@@ -31,7 +33,12 @@ func (m *IPManager) IsAllowed(ip net.IP) (bool, string) {
         return true, "whitelisted"
     }
 
-    // 3. Политика по умолчанию (п. 1.2.3)
+    // 3. Серый список
+    if contains, _ := m.greylist.Contains(ip); contains {
+        return true, "grey"
+    }
+
+    // 4. Политика по умолчанию (п. 1.2.3)
     return true, "default" 
 }
 
@@ -53,11 +60,26 @@ func (m *IPManager) AddRule(network string, ruleType string) error{
         return m.blacklist.Insert(entry)
     case "grey":
         // Если решишь добавить логику для серых списков
-        return nil 
+        return m.greylist.Insert(entry) 
     default:
         return fmt.Errorf("unknown rule type: %s", ruleType)
     }
 }
+
+func (m *IPManager) GetRuleInfo(ip net.IP) (string) {
+    // 1. Проверяем черный список (высший приоритет п. 1.2.1)
+    if contains, _ := m.blacklist.Contains(ip); contains {
+        return "blacklisted"
+    }
+    if contains, _ := m.whitelist.Contains(ip); contains {
+        return "whitelisted"
+    }
+    if contains, _ := m.greylist.Contains(ip); contains {
+        return "grey"
+    }
+
+    return "default"
+}    
 
 //перезапись правил IP
 func (m *IPManager) Reload(rules []model.IPRule) error {
