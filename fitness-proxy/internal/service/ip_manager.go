@@ -4,6 +4,8 @@ import (
 	"github.com/yl2chen/cidranger"
 	"net"
 	"fmt"
+
+    "fitness-proxy/internal/model"
 )
 
 type IPManager struct {
@@ -55,4 +57,30 @@ func (m *IPManager) AddRule(network string, ruleType string) error{
     default:
         return fmt.Errorf("unknown rule type: %s", ruleType)
     }
+}
+
+//перезапись правил IP
+func (m *IPManager) Reload(rules []model.IPRule) error {
+    // Создаем новые чистые рейнджеры
+    newWhitelist := cidranger.NewPCTrieRanger()
+    newBlacklist := cidranger.NewPCTrieRanger()
+
+    for _, rule := range rules {
+        _, ipNet, err := net.ParseCIDR(rule.Network)
+        if err != nil {
+            return err
+        }
+        entry := cidranger.NewBasicRangerEntry(*ipNet)
+        
+        if rule.Type == "white" {
+            newWhitelist.Insert(entry)
+        } else if rule.Type == "black" {
+            newBlacklist.Insert(entry)
+        }
+    }
+
+    // В Go замена указателя — операция быстрая и безопасная
+    m.whitelist = newWhitelist
+    m.blacklist = newBlacklist
+    return nil
 }

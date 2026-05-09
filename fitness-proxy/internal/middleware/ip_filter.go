@@ -15,11 +15,17 @@ func IPFilter(manager *service.IPManager) gin.HandlerFunc {
         allowed, reason := manager.IsAllowed(ip)
 
         if !allowed {
-            log.Printf("Доступ запрещен для IP %s: %s", ip, reason)
-            c.AbortWithStatusJSON(403, gin.H{"error": "Your IP is blacklisted"})
+            log.Printf("BLOCK: IP %s rejected. Reason: %s", ip, reason)
+            
+            // ТЗ 1.2.1: прерываем запрос с ошибкой 403
+            c.AbortWithStatusJSON(403, gin.H{
+                "error": "Access denied",
+                "ip":    ip.String(),
+            })
             return
         }
         
         c.Next()
     }
 }
+

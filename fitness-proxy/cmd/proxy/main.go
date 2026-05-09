@@ -14,11 +14,15 @@ import (
 	"fitness-proxy/internal/model"
 	"fitness-proxy/internal/middleware"
 	"fitness-proxy/internal/service"
+	"fitness-proxy/internal/controller"
 
 	"os"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
+
+//Запуск: go run cmd/proxy/main.go 
+
 
 func init() {
     if err := godotenv.Load(); err != nil {
@@ -35,6 +39,7 @@ func main() {
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
+
 	// 1. Подключаемся к Mongo (используя URI из .env)
 
 	uri := os.Getenv("MONGODB_URI")
@@ -73,6 +78,9 @@ func main() {
     // 5. Передаем канал в Middleware
 	r := gin.Default()
 
+	//Сразу доверяем localhost, чтобы не париться с реальными IP при тестах
+	r.SetTrustedProxies([]string{"127.0.0.1"})
+
 	r.Use(middleware.AsyncLogger(logChan))
 
 	// 1. Инициализируем репозиторий IP
@@ -100,6 +108,7 @@ func main() {
 
 	r.Use(middleware.IPFilter(ipManager))
 
+
 	// Адрес Java-бэкенда
 	target := os.Getenv("JAVA_BACKEND_URL")
 	remote, err := url.Parse(target)
@@ -119,12 +128,17 @@ func main() {
 		c.Next()
 	})
 
-	// Основной обработчик: все запросы (/*) пробрасываются в Java
-	r.Any("/*proxyPath", func(c *gin.Context) {
-		// Обновляем заголовок Host, чтобы Java-сервер не смущался
-		c.Request.Host = remote.Host
-		
-		proxy.ServeHTTP(c.Writer, c.Request)
+
+	// Группа для управления прокси
+	admin := r.Group("/management")
+	{
+    	admin.GET("/reload", controller.ReloadRulesHandler(ipRepo, ipManager))
+	}
+
+	// Проксируем всё остальное, что НЕ начинается с /management
+	r.NoRoute(func(c *gin.Context) {
+			c.Request.Host = remote.Host
+			proxy.ServeHTTP(c.Writer, c.Request)
 	})
 
 	log.Println("Proxy запущен на порту :9000")
