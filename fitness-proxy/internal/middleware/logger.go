@@ -6,6 +6,7 @@ import (
 	"fitness-proxy/internal/model"
 
 	"github.com/gin-gonic/gin"
+    "fmt"
 )
 
 func AsyncLogger(logChan chan<- model.AccessLog) gin.HandlerFunc {
@@ -14,12 +15,15 @@ func AsyncLogger(logChan chan<- model.AccessLog) gin.HandlerFunc {
         
         c.Next() // Пропускаем запрос в Java
 
+        reason, _ := c.Get("abort_reason")
+
         // Формируем лог после ответа
         entry := model.AccessLog{
             IP:         c.ClientIP(),
             URL:        c.Request.URL.Path,
             Method:     c.Request.Method,
             StatusCode: c.Writer.Status(),
+            Reason:  fmt.Sprintf("%v", reason),
             Latency:    time.Since(start).Milliseconds(),
             Timestamp:  time.Now(),
         }
