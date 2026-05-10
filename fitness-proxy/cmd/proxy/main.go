@@ -108,7 +108,7 @@ func main() {
 
 	log.Printf("Загружено правил для IP: %d", len(rules))
 
-	r.Use(middleware.IPFilter(ipManager))
+	r.Use(middleware.IPFilter(ipManager, logChan))
 
 	r.Use(middleware.RateLimitMiddleware(rateLimiter, ipManager))
 
