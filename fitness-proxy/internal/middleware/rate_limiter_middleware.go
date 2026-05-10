@@ -3,7 +3,6 @@ package middleware
 import (
 	"net"
 	"fitness-proxy/internal/service"
-	"golang.org/x/time/rate"
 	"github.com/gin-gonic/gin"
 )
 
@@ -44,12 +43,15 @@ func RateLimitMiddleware(limiterManager *service.IPRateLimiter, ipManager *servi
             r, b = DefaultRate, DefaultBurst
         }
 
-        limiter := limiterManager.GetLimiter(ipStr, rate.Limit(r), b)
+        limiters := limiterManager.GetLimiters(ipStr, r, b)
 
-		if !limiter.Allow() {
-			c.AbortWithStatusJSON(429, gin.H{"error": "Too many requests. Slow down!"})
-			return
-		}
+        // Запрос проходит, только если ОБА лимитера дали добро
+        if !limiters.Second.Allow() || !limiters.Minute.Allow() {
+            c.Header("Retry-After", "2")
+            c.Set("abort_reason", "Rate limit exceeded") // Чтобы логгер записал причину
+            c.AbortWithStatusJSON(429, gin.H{"error": "Too many requests. Slow down!"})
+            return
+        }
 		c.Next()
 	}
 }
