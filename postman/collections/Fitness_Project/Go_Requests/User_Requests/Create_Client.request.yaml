@@ -1,0 +1,28 @@
+$kind: http-request
+name: Create_Client
+url: "{{proxyUrl}}/api/fitness-club/users/register"
+method: POST
+body:
+  type: json
+  content: "{\r
+
+    \  \"login\": \"Poliiin\",\r
+
+    \  \"password\": \"1234567890\",\r
+
+    \  \"surname\": \"Ryhlova\",\r
+
+    \  \"selfname\": \"Polina\",\r
+
+    \  \"patronymic\": \"Nikolaevna\",\r
+
+    \  \"phone\": \"+75679821234\",\r
+
+    \  \"email\": \"polina@example.com\",\r
+
+    \  \"birthday\": \"2006-08-20\",\r
+
+    \  \"createdAt\": \"2026-05-07T18:40:15.947Z\"\r
+
+    }"
+order: 3412430562037910

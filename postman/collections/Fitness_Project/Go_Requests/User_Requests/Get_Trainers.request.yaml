@@ -1,0 +1,13 @@
+$kind: http-request
+name: Get_Trainers
+url: "{{proxyUrl}}/api/fitness-club/users/get_all_trainers?page=0&size=10&sort=\
+  login,"
+method: GET
+queryParams:
+  - key: page
+    value: "0"
+  - key: size
+    value: "10"
+  - key: sort
+    value: login,
+order: 1778179109054

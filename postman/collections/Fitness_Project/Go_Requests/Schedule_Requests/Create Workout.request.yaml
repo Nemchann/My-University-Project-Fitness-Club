@@ -1,0 +1,16 @@
+$kind: http-request
+name: Create Workout
+url: "{{proxyUrl}}/{{scheduleControllerUrl}}/create_workout"
+method: POST
+body:
+  type: json
+  content: "{\r
+
+    \  \"workoutName\": \"ABS\",\r
+
+    \  \"workoutType\": \"STRENGTH\",\r
+
+    \  \"description\": \"Силовая тренировка на ягодицы\"\r
+
+    }"
+order: 4219967096691826

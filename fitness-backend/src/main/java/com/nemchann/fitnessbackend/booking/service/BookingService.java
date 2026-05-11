@@ -7,13 +7,14 @@ import com.nemchann.fitnessbackend.booking.enums.BookingStatusEnum;
 import com.nemchann.fitnessbackend.booking.repository.*;
 import com.nemchann.fitnessbackend.common.exception.AlreadyBookedException;
 import com.nemchann.fitnessbackend.common.exception.BookingNotFoundException;
+import com.nemchann.fitnessbackend.common.exception.BookingStatusNotFoundException;
+import com.nemchann.fitnessbackend.payment.dto.PaymentResponseDto;
 import com.nemchann.fitnessbackend.schedule.entity.Schedule;
 import com.nemchann.fitnessbackend.schedule.entity.Workout;
 import com.nemchann.fitnessbackend.schedule.service.ScheduleService;
 import com.nemchann.fitnessbackend.users.entity.Profile;
 import com.nemchann.fitnessbackend.users.entity.User;
 import com.nemchann.fitnessbackend.users.service.UserService;
-import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -35,7 +36,6 @@ public class BookingService {
     private final UserService userService;
 
 
-    //В некоторых местах, где List поменять на Page
     @Transactional
     public BookingResponseDto createBooking(BookingCreateDto createDto){
 
@@ -131,7 +131,6 @@ public class BookingService {
         return booking;
     }
 
-    //Додумать
     @Transactional
     public void cancelBooking(BookingCancelDto cancelDto){
 
@@ -154,7 +153,6 @@ public class BookingService {
                 .orElseThrow(() -> new BookingNotFoundException("Booking status is not found"));
     }
 
-    //Поменять на Page
     public Page<BookingShortResponseDto> getClientBookings(UUID clientId, Pageable pageable){
         Page<Booking> bookings = bookingRepository.findByClientId(clientId, pageable);
 
@@ -164,7 +162,7 @@ public class BookingService {
 
     //Тут подумать насчет DTO
     public List<UserInScheduleDto> getClientsBySchedule(Integer scheduleId){
-        List<Booking> bookingList = bookingRepository.findByScheduleId(scheduleId);
+        List<Booking> bookingList = bookingRepository.findAllByScheduleId(scheduleId);
 
         return bookingList
                 .stream()
@@ -176,6 +174,19 @@ public class BookingService {
     public boolean checkBookingStatus(UUID userId, Integer scheduleId){
         return bookingRepository.existsByClientIdAndScheduleId(userId, scheduleId);
     }
+
+    @Transactional
+    public void cancelBySchedule(Integer scheduleId) {
+        List<Booking> bookings = bookingRepository.findAllByScheduleId(scheduleId);
+        BookingStatus cancelledStatus = bookingStatusRepository.findByBookingStatusName(BookingStatusEnum.CANCELLED)
+                .orElseThrow(() -> new BookingStatusNotFoundException("Booking status is not found"));
+        bookings.forEach(b -> b.setBookingStatus((cancelledStatus))); // устанавливаем объект статуса
+        bookingRepository.saveAll(bookings);
+    }
+
+//    public Page<PaymentResponseDto> futureBookings(UUID userId){
+//
+//    }
 
     //Сделать список прошедших тренировок у пользователя
 }

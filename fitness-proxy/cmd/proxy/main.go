@@ -2,21 +2,29 @@ package main
 
 import (
 	"log"
-	//"net/http"
+	"net/http"
 	"net/http/httputil"
 	"net/url"
 	"github.com/joho/godotenv"
 	"github.com/gin-gonic/gin"
 	"context"
 	"time"
+	"syscall"
+	"os/signal"
 
 	"fitness-proxy/internal/repository"
 	"fitness-proxy/internal/model"
 	"fitness-proxy/internal/middleware"
+	"fitness-proxy/internal/service"
+	"fitness-proxy/internal/controller"
+
 	"os"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
+
+//Запуск: go run cmd/proxy/main.go 
+
 
 func init() {
     if err := godotenv.Load(); err != nil {
@@ -33,6 +41,7 @@ func main() {
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
+
 	// 1. Подключаемся к Mongo (используя URI из .env)
 
 	uri := os.Getenv("MONGODB_URI")
@@ -67,14 +76,50 @@ func main() {
         }
     }()
 
+
     // 5. Передаем канал в Middleware
-
-
 	r := gin.Default()
+
+	//Сразу доверяем localhost, чтобы не париться с реальными IP при тестах
+	r.SetTrustedProxies([]string{"127.0.0.1"})
 
 	r.Use(middleware.AsyncLogger(logChan))
 
-	// Адрес твоего Java-бэкенда
+	// 1. Инициализируем репозиторий IP
+	ipRepo := repository.NewMongoIPRepo(db)
+
+	// 2. Создаем менеджер (пока пустой)
+	ipManager := service.NewIPManager()
+
+	rateLimiter := service.NewIPRateLimiter(1, 2) // 1 запрос в секунду, с "burst" до 2
+
+	cacheManager := service.NewCacheManager(5 * time.Minute) // Кеш на 5 минут
+
+	// 3. Загружаем правила из базы (делаем это ОДИН РАЗ при старте)
+	rules, err := ipRepo.GetAll(context.Background())
+	if err != nil {
+    	log.Fatalf("Не удалось загрузить IP-правила: %v", err)
+	}
+
+	// 4. Наполняем менеджер данными (нужно будет добавить метод Import в менеджер)
+	for _, rule := range rules {
+    	err := ipManager.AddRule(rule.Network, rule.Type)
+    	if err != nil {
+        	log.Printf("Ошибка при добавлении правила %s: %v", rule.Network, err)
+        	continue // Пропускаем битое правило и идем дальше
+    	}
+	}
+
+	log.Printf("Загружено правил для IP: %d", len(rules))
+
+	r.Use(middleware.IPFilter(ipManager, logChan))
+
+	r.Use(middleware.RateLimitMiddleware(rateLimiter, ipManager))
+
+	r.Use(middleware.CacheMiddleware(cacheManager))
+
+
+	// Адрес Java-бэкенда
 	target := os.Getenv("JAVA_BACKEND_URL")
 	remote, err := url.Parse(target)
 	if err != nil {
@@ -93,14 +138,52 @@ func main() {
 		c.Next()
 	})
 
-	// Основной обработчик: все запросы (/*) пробрасываются в Java
-	r.Any("/*proxyPath", func(c *gin.Context) {
-		// Обновляем заголовок Host, чтобы Java-сервер не смущался
-		c.Request.Host = remote.Host
-		
-		proxy.ServeHTTP(c.Writer, c.Request)
+
+	// Группа для управления прокси, потом поменять на router
+	admin := r.Group("/management")
+	{
+    	admin.GET("/reload", controller.ReloadRulesHandler(ipRepo, ipManager))
+		admin.DELETE("/cache", controller.FlushCacheHandler(cacheManager))
+		admin.GET("/stats", controller.GetStatsHandler(rateLimiter))
+	}
+
+	// Проксируем всё остальное, что НЕ начинается с /management
+	r.NoRoute(func(c *gin.Context) {
+			c.Request.Host = remote.Host
+			proxy.ServeHTTP(c.Writer, c.Request)
 	})
 
 	log.Println("Proxy запущен на порту :9000")
 	r.Run(":9000") 
+
+
+	//Код для graceful shutdown, чтобы не обрывать активные соединения при остановке сервера (например, Ctrl+C)
+	srv := &http.Server{
+        Addr:    ":9000",
+        Handler: r,
+    }
+
+    // Запускаем сервер в отдельной горутине, чтобы он не блокировал основной поток
+    go func() {
+        if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+            log.Fatalf("listen: %s\n", err)
+        }
+    }()
+
+    // Канал для ожидания сигналов от системы (например, Ctrl+C)
+    quit := make(chan os.Signal, 1)
+    signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+    <-quit // Блокируемся здесь, пока не придет сигнал
+    log.Println("Shutting down proxy server...")
+
+    // Даем серверу 5 секунд на завершение текущих запросов
+	//Исправить ошибку компилятора
+    shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 5*time.Second)
+    defer shutdownCancel()
+
+    if err := srv.Shutdown(shutdownCtx); err != nil {
+		log.Fatal("Server forced to shutdown:", err)
+	}
+
+    log.Println("Proxy server exiting")
 }

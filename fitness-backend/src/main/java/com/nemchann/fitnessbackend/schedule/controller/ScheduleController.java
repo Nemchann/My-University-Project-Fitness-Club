@@ -64,7 +64,7 @@ public class ScheduleController {
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
 
-    @DeleteMapping("cancel_schedule/{id}")
+    @DeleteMapping("/cancel_schedule/{id}")
     @Operation(summary = "Отменить тренировку")
     public ResponseEntity<Void> cancelSchedule(@PathVariable Integer id){
         service.cancelSchedule(id);

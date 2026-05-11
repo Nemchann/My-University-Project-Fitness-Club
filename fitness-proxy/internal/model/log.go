@@ -8,6 +8,7 @@ type AccessLog struct {
     URL        string      `bson:"url"`
     Method     string      `bson:"method"`
     StatusCode int         `bson:"status_code"`
+    Reason     string      `bson:"reason,omitempty"` // Например: "Blacklisted by administrator"
     Latency    int64       `bson:"latency_ms"`
     Timestamp  time.Time   `bson:"ts"`
 }

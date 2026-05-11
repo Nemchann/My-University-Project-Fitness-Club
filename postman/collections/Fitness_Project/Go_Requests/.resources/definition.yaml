@@ -1,0 +1,7 @@
+$kind: collection
+name: Go_Requests
+description: |-
+  This folder contains requests on Go-proxy.
+
+  Go-proxy is hoisted at port 9000
+order: 570447230926847

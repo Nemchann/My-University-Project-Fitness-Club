@@ -1,0 +1,5 @@
+$kind: http-request
+name: Reload IP-Rules
+url: "{{proxyUrl}}/management/reload"
+method: GET
+order: 1778315472079

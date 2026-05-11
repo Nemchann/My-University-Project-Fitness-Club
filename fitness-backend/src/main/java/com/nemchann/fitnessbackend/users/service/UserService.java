@@ -369,6 +369,4 @@ public class UserService {
         return userRepository.findAllByRole(pageable, role)
                 .map(this::mapToResponseDto);
     }
-
-    //Добавить методы получения всех тренеров и всех клиентов по отдельности
 }

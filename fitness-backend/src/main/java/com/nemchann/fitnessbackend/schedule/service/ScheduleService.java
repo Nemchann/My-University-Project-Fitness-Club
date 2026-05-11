@@ -1,5 +1,10 @@
 package com.nemchann.fitnessbackend.schedule.service;
 
+import com.nemchann.fitnessbackend.booking.entity.Booking;
+import com.nemchann.fitnessbackend.booking.entity.BookingStatus;
+import com.nemchann.fitnessbackend.booking.enums.BookingStatusEnum;
+import com.nemchann.fitnessbackend.booking.repository.BookingRepository;
+import com.nemchann.fitnessbackend.booking.repository.BookingStatusRepository;
 import com.nemchann.fitnessbackend.common.exception.*;
 import com.nemchann.fitnessbackend.schedule.dto.*;
 import com.nemchann.fitnessbackend.schedule.entity.Room;
@@ -37,6 +42,8 @@ public class ScheduleService {
     private final WorkoutTypeRepository workoutTypeRepository;
     private final UserService userService;
     private final UserRepository userRepository;
+    private final BookingRepository bookingRepository;
+    private final BookingStatusRepository bookingStatusRepository;
 
     //Создать вид тренировки
     @Transactional
@@ -203,10 +210,12 @@ public class ScheduleService {
     //Деактивировать тренировку
     @Transactional
     public void cancelSchedule(Integer id){
-        //Сделать бронирования, подписанные на эту тренировку со статусов CANCELLED
+        //Проверить работоспособность
         Schedule schedule = scheduleRepository.findById(id)
                 .orElseThrow(() -> new ScheduleIsNotFoundException("Schedule is not found"));
         schedule.setActive(false);
+
+        cancelBySchedule(id);
 
         scheduleRepository.save(schedule);
     }
@@ -355,6 +364,16 @@ public class ScheduleService {
 
         scheduleRepository.save(schedule);
     }
+
+    @Transactional
+    public void cancelBySchedule(Integer scheduleId) {
+        List<Booking> bookings = bookingRepository.findAllByScheduleId(scheduleId);
+        BookingStatus cancelledStatus = bookingStatusRepository.findByBookingStatusName(BookingStatusEnum.CANCELLED)
+                .orElseThrow(() -> new BookingStatusNotFoundException("Booking status is not found"));
+        bookings.forEach(b -> b.setBookingStatus((cancelledStatus))); // устанавливаем объект статуса
+        bookingRepository.saveAll(bookings);
+    }
+
 
     // Добавить метод получения тренировок по типу тренировок (workoutType)
     // По возможности создать классы-мапперы
