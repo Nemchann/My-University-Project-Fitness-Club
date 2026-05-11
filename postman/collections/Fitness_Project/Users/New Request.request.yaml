@@ -1,0 +1,28 @@
+$kind: http-request
+name: New Request
+url: "{{baseUrl}}/api/fitness-club/users/register"
+method: GET
+body:
+  type: json
+  content: "{\r
+
+    \  \"login\": \"tort\",\r
+
+    \  \"password\": \"0987654321\",\r
+
+    \  \"surname\": \"Tort\",\r
+
+    \  \"selfname\": \"Bebe\",\r
+
+    \  \"patronymic\": \"Bebevna\",\r
+
+    \  \"phone\": \"+78971234567\",\r
+
+    \  \"email\": \"tert@example.com\",\r
+
+    \  \"birthday\": \"2006-05-06\",\r
+
+    \  \"createdAt\": \"2026-05-06T15:22:59.979Z\"\r
+
+    }"
+order: 1778080887247

@@ -1,0 +1,14 @@
+$kind: http-request
+name: Auth_User
+url: "{{proxyUrl}}/{{userControllerUrl}}/authentification"
+method: GET
+body:
+  type: json
+  content: "{\r
+
+    \  \"login\": \"marina.chuprikova\",\r
+
+    \  \"password\": \"123456789\"\r
+
+    }"
+order: 4490023826592803

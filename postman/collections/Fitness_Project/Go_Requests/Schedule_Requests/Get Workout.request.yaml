@@ -1,0 +1,5 @@
+$kind: http-request
+name: Get Workout
+url: "{{proxyUrl}}/{{scheduleControllerUrl}}/get_workout/1"
+method: GET
+order: 4493995726166702

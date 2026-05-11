@@ -1,0 +1,12 @@
+$kind: http-request
+name: Get_All_Users
+url: "{{proxyUrl}}/{{userControllerUrl}}/get_users?page=0&size=10&sort=login,desc"
+method: GET
+queryParams:
+  - key: page
+    value: "0"
+  - key: size
+    value: "10"
+  - key: sort
+    value: login,desc
+order: 4482233811435994

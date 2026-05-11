@@ -1,0 +1,15 @@
+$kind: http-request
+url: "{{baseUrl}}/api/fitness-club/bookings/create_booking"
+method: POST
+body:
+  type: json
+  content: "{\r
+
+    \  \"userId\": \"b0831861-2f09-4f89-8077-3ba8db0abe24\",\r
+
+    \  \"scheduleId\": 102,\r
+
+    \  \"createdAt\": \"2026-05-06T15:16:46.305Z\"\r
+
+    }"
+order: 1778081605318

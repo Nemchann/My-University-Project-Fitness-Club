@@ -1,0 +1,28 @@
+$kind: http-request
+name: Create_Trainer
+url: "{{proxyUrl}}/api/fitness-club/users/register_trainer"
+method: POST
+body:
+  type: json
+  content: "{\r
+
+    \  \"login\": \"Pupochek\",\r
+
+    \  \"password\": \"1234567890\",\r
+
+    \  \"surname\": \"Pupkina\",\r
+
+    \  \"selfname\": \"Maria\",\r
+
+    \  \"patronymic\": \"Ivanovna\",\r
+
+    \  \"phone\": \"+79271234567\",\r
+
+    \  \"email\": \"pupa@example.com\",\r
+
+    \  \"birthday\": \"1994-08-20\",\r
+
+    \  \"createdAt\": \"2026-05-07T18:40:15.947Z\"\r
+
+    }"
+order: 3497581765215296
