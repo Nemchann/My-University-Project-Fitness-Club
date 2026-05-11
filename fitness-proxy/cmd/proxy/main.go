@@ -118,6 +118,8 @@ func main() {
 
 	r.Use(middleware.CacheMiddleware(cacheManager))
 
+	r.Use(middleware.CORSMiddleware())
+
 
 	// Адрес Java-бэкенда
 	target := os.Getenv("JAVA_BACKEND_URL")
