@@ -91,6 +91,8 @@ func main() {
 
 	rateLimiter := service.NewIPRateLimiter(1, 2) // 1 запрос в секунду, с "burst" до 2
 
+	cacheManager := service.NewCacheManager(5 * time.Minute) // Кеш на 5 минут
+
 	// 3. Загружаем правила из базы (делаем это ОДИН РАЗ при старте)
 	rules, err := ipRepo.GetAll(context.Background())
 	if err != nil {
@@ -111,6 +113,8 @@ func main() {
 	r.Use(middleware.IPFilter(ipManager, logChan))
 
 	r.Use(middleware.RateLimitMiddleware(rateLimiter, ipManager))
+
+	r.Use(middleware.CacheMiddleware(cacheManager))
 
 
 	// Адрес Java-бэкенда
