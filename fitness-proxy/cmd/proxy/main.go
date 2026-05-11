@@ -2,13 +2,15 @@ package main
 
 import (
 	"log"
-	//"net/http"
+	"net/http"
 	"net/http/httputil"
 	"net/url"
 	"github.com/joho/godotenv"
 	"github.com/gin-gonic/gin"
 	"context"
 	"time"
+	"syscall"
+	"os/signal"
 
 	"fitness-proxy/internal/repository"
 	"fitness-proxy/internal/model"
@@ -137,10 +139,12 @@ func main() {
 	})
 
 
-	// Группа для управления прокси
+	// Группа для управления прокси, потом поменять на router
 	admin := r.Group("/management")
 	{
     	admin.GET("/reload", controller.ReloadRulesHandler(ipRepo, ipManager))
+		admin.DELETE("/cache", controller.FlushCacheHandler(cacheManager))
+		admin.GET("/stats", controller.GetStatsHandler(rateLimiter))
 	}
 
 	// Проксируем всё остальное, что НЕ начинается с /management
@@ -151,4 +155,35 @@ func main() {
 
 	log.Println("Proxy запущен на порту :9000")
 	r.Run(":9000") 
+
+
+	//Код для graceful shutdown, чтобы не обрывать активные соединения при остановке сервера (например, Ctrl+C)
+	srv := &http.Server{
+        Addr:    ":9000",
+        Handler: r,
+    }
+
+    // Запускаем сервер в отдельной горутине, чтобы он не блокировал основной поток
+    go func() {
+        if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+            log.Fatalf("listen: %s\n", err)
+        }
+    }()
+
+    // Канал для ожидания сигналов от системы (например, Ctrl+C)
+    quit := make(chan os.Signal, 1)
+    signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+    <-quit // Блокируемся здесь, пока не придет сигнал
+    log.Println("Shutting down proxy server...")
+
+    // Даем серверу 5 секунд на завершение текущих запросов
+	//Исправить ошибку компилятора
+    shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 5*time.Second)
+    defer shutdownCancel()
+
+    if err := srv.Shutdown(shutdownCtx); err != nil {
+		log.Fatal("Server forced to shutdown:", err)
+	}
+
+    log.Println("Proxy server exiting")
 }
