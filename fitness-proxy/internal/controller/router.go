@@ -6,8 +6,9 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// Потом вынести в main.go и добавить туда все эндпоинты управления (пока только /reload)
-func SetupRouter(ipRepo *repository.MongoIPRepo, ipManager *service.IPManager, limiterManager *service.IPRateLimiter, proxyHandler gin.HandlerFunc) *gin.Engine {
+// Потом вынести в main.go и добавить туда все эндпоинты управления 
+func SetupRouter(ipRepo *repository.MongoIPRepo, ipManager *service.IPManager, 
+    limiterManager *service.IPRateLimiter, proxyHandler gin.HandlerFunc, cacheManager *service.CacheManager) *gin.Engine {
     r := gin.Default()
 
     // Группа управления
@@ -16,7 +17,8 @@ func SetupRouter(ipRepo *repository.MongoIPRepo, ipManager *service.IPManager, l
         admin.GET("/reload", ReloadRulesHandler(ipRepo, ipManager))
 
         admin.GET("/stats", GetStatsHandler(limiterManager))
-        // Сюда добавим новые эндпоинты
+        
+        admin.DELETE("/cache", FlushCacheHandler(cacheManager)) // Новый метод для очистки кеша
     }
 
     // Все остальное — в прокси
