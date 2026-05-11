@@ -1,5 +1,0 @@
-$kind: http-request
-name: Get Available Schedules
-url: "{{proxyUrl}}/{{scheduleControllerUrl}}/get_available_schedules"
-method: GET
-order: 4494130328526189

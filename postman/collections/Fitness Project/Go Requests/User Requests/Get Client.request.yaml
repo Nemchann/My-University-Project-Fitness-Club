@@ -1,5 +1,0 @@
-$kind: http-request
-name: Get Client
-url: "{{proxyUrl}}/{{userControllerUrl}}/fc0a5215-32f4-4376-8054-ac85519d0ab2"
-method: GET
-order: 4503329562806913

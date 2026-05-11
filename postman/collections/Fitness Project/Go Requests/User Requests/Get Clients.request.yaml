@@ -1,5 +1,0 @@
-$kind: http-request
-name: Get Clients
-url: "{{proxyUrl}}/api/fitness-club/users/get_all_clients"
-method: GET
-order: 4460148457927248

@@ -1,5 +1,0 @@
-$kind: http-request
-name: Get All Users
-url: "{{proxyUrl}}/{{userControllerUrl}}/get_users"
-method: GET
-order: 4482233811435994
