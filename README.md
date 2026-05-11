@@ -4,8 +4,9 @@
 
 ## Стек технологий
 
-- [Фронтенд]: React + TS
-- [Бэкенд]: Java Spring Boot + Hibernate
-- [База данных SQL]: PostgreSQL + PostgeSQL Driver
-- [База данных NoSQL]: MongoDB + MongoDB Driver
+- Фронтенд: React + TS
+- Бэкенд: Java Spring Boot + Hibernate
+- Proxy: Go + Gin + yl2chen cidranger
+- База данных SQL: PostgreSQL
+- База данных NoSQL для proxy: MongoDB
 
