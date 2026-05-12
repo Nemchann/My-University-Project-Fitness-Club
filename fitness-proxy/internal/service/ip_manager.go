@@ -106,3 +106,17 @@ func (m *IPManager) Reload(rules []model.IPRule) error {
     m.blacklist = newBlacklist
     return nil
 }
+
+func (m *IPManager) UpdateRule(network string, ruleType string) error {
+
+    _, ipNet, err := net.ParseCIDR(network)
+    if err != nil {
+        return err
+    }
+    // Удаляем из всех списков, чтобы избежать конфликтов
+    m.whitelist.Remove(*ipNet)
+    m.blacklist.Remove(*ipNet)
+    m.greylist.Remove(*ipNet)
+
+    return m.AddRule(network, ruleType)
+}
