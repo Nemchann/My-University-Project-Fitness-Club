@@ -1,5 +1,5 @@
 $kind: http-request
 name: Cancel Schedule
-url: "{{proxyUrl}}/{{scheduleControllerUrl}}/cancel_schedule/102"
+url: "{{proxyUrl}}/{{scheduleControllerUrl}}/cancel_schedule/302"
 method: DELETE
 order: 4494203178525995

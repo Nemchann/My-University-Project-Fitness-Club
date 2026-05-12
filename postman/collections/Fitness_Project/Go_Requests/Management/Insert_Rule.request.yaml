@@ -1,0 +1,14 @@
+$kind: http-request
+name: Insert_Rule
+url: "{{proxyUrl}}/management/insert_rule"
+method: POST
+body:
+  type: json
+  content: "{\r
+
+    \    \"network\": \"127.0.0.2\",\r
+
+    \    \"type\": \"grey\"\r
+
+    }"
+order: 4053483526543936
