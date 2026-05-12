@@ -80,8 +80,6 @@ func main() {
     // 5. Передаем канал в Middleware
 	r := gin.Default()
 
-	//Сразу доверяем localhost, чтобы не париться с реальными IP при тестах
-	r.SetTrustedProxies([]string{"127.0.0.1"})
 
 	r.Use(middleware.AsyncLogger(logChan))
 
@@ -140,14 +138,18 @@ func main() {
 		c.Next()
 	})
 
+	admin := controller.SetupRouter(ipRepo, ipManager, rateLimiter, cacheManager, r)
+
+	admin.Handlers.Last() // Нужна для того, чтобы компилятор не ругался, что не использую переменную admin
+
 
 	// Группа для управления прокси, потом поменять на router
-	admin := r.Group("/management")
-	{
-    	admin.GET("/reload", controller.ReloadRulesHandler(ipRepo, ipManager))
-		admin.DELETE("/cache", controller.FlushCacheHandler(cacheManager))
-		admin.GET("/stats", controller.GetStatsHandler(rateLimiter))
-	}
+	// admin := r.Group("/management")
+	// {
+    // 	admin.GET("/reload", controller.ReloadRulesHandler(ipRepo, ipManager))
+	// 	admin.DELETE("/cache", controller.FlushCacheHandler(cacheManager))
+	// 	admin.GET("/stats", controller.GetStatsHandler(rateLimiter))
+	// }
 
 	// Проксируем всё остальное, что НЕ начинается с /management
 	r.NoRoute(func(c *gin.Context) {
@@ -156,7 +158,6 @@ func main() {
 	})
 
 	log.Println("Proxy запущен на порту :9000")
-	r.Run(":9000") 
 
 
 	//Код для graceful shutdown, чтобы не обрывать активные соединения при остановке сервера (например, Ctrl+C)
