@@ -8,7 +8,7 @@ import (
 func GetStatsHandler(limiterManager *service.IPRateLimiter) gin.HandlerFunc {
     return func(c *gin.Context) {
         c.JSON(200, gin.H{
-            "active_limiters": limiterManager.GetCount(), // нужно будет добавить метод в сервис
+            "active_limiters": limiterManager.GetCount(),
             "message": "Proxy is running smoothly",
         })
     }
