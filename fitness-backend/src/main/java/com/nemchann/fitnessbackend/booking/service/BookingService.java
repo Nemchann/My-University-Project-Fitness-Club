@@ -21,6 +21,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 
@@ -184,9 +185,22 @@ public class BookingService {
         bookingRepository.saveAll(bookings);
     }
 
-//    public Page<PaymentResponseDto> futureBookings(UUID userId){
-//
-//    }
+    public Page<BookingResponseDto> futureBookings(UUID userId, Pageable pageable){
+        return bookingRepository.findByClientIdAndScheduleScheduleDateAfter(userId, LocalDate.now(), pageable)
+                .map(this::mapToResponseDto);
+    }
+
+    public Page<BookingResponseDto> pastBookings(UUID clientId, Pageable pageable){
+        return bookingRepository.findByClientIdAndScheduleScheduleDateBefore(clientId, LocalDate.now(), pageable)
+                .map(this::mapToResponseDto);
+    }
+
+    public BookingResponseDto nearestBooking(UUID clientId){
+        Booking booking = bookingRepository.findFirstByClientIdAndScheduleScheduleDateAfter(clientId, LocalDate.now())
+                .orElseThrow(() -> new BookingNotFoundException("Booking is not found"));
+
+        return mapToResponseDto(booking);
+    }
 
     //Сделать список прошедших тренировок у пользователя
 }

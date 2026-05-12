@@ -48,6 +48,32 @@ public class BookingController {
         return new ResponseEntity<>(responseDtos, HttpStatus.OK);
     }
 
+    @GetMapping("/upcoming/{clientId}")
+    @Operation(summary = "Будущие записи клиента")
+    public ResponseEntity<Page<BookingResponseDto>> getFutureBookings(
+            @PathVariable UUID clientId, @PageableDefault(size = 10, sort = "schedule") Pageable pageable){
+        Page<BookingResponseDto> bookingResponseDtos = service.futureBookings(clientId, pageable);
+
+        return new ResponseEntity<>(bookingResponseDtos, HttpStatus.OK);
+    }
+
+    @GetMapping("/past/{clientId}")
+    @Operation(summary = "Прошедшие записи клиента")
+    public ResponseEntity<Page<BookingResponseDto>> getPastBookings(
+            @PathVariable UUID clientId, @PageableDefault(size = 10, sort = "schedule") Pageable pageable){
+        Page<BookingResponseDto> bookingResponseDtos = service.pastBookings(clientId, pageable);
+
+        return new ResponseEntity<>(bookingResponseDtos, HttpStatus.OK);
+    }
+
+    @GetMapping("/nearest/{clientId}")
+    @Operation(summary = "Ближайшая запись")
+    public ResponseEntity<BookingResponseDto> getNearestBooking(@PathVariable UUID clientId){
+        BookingResponseDto dto = service.nearestBooking(clientId);
+
+        return new ResponseEntity<>(dto, HttpStatus.OK);
+    }
+
     @GetMapping("/get_clients_by_schedule/{scheduleId}")
     @Operation(summary = "Посетители данной тренировки")
     public ResponseEntity<List<UserInScheduleDto>> getClientsBySchedule(@PathVariable Integer scheduleId){
