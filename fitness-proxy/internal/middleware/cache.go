@@ -20,6 +20,8 @@ var cacheablePaths = []string{
     "/api/fitness-club/schedules/get_schedules_by_week",
 	"/api/fitness-club/schedules/get_schedules_by_date",
     "/api/fitness-club/bookings/past",
+	"/api/fitness-club/users/get_all_trainers",
+	"/api/fitness-club/users/get/", // Сделать кеширование
 }
 
 func isCacheable(path string) bool {
@@ -62,8 +64,12 @@ func CacheMiddleware(cache *service.CacheManager) gin.HandlerFunc {
 
 		c.Next()
 
-		// 4. После того как Java ответила, сохраняем результат (если статус 200)
-		if c.Writer.Status() == http.StatusOK {
+
+		path := c.Request.URL.Path
+		ttl := cache.GetTTLForPath(path) // Получаем TTL из нашей карты
+
+		// 4. После того как Java ответила, сохраняем результат (если статус 200 или 300-400)
+		if c.Writer.Status() == http.StatusOK || (c.Writer.Status() >= 300 && c.Writer.Status() < 400) && ttl > 0 {
 			cache.Set(key, w.body.Bytes())
 		}
 	}
