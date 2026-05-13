@@ -3,6 +3,7 @@ package middleware
 import (
 	"log"
 	"net"
+    //"net/http"
 	"fitness-proxy/internal/service"
 	"github.com/gin-gonic/gin"
     "fitness-proxy/internal/model"
@@ -26,8 +27,23 @@ func IPFilter(manager *service.IPManager, logChan chan model.AccessLog) gin.Hand
             })
             return
         }
+        // if reason == "grey"{
+        //     if !captchaPassed(c) {          // ← твоя проверка CAPTCHA
+        //         c.AbortWithStatus(http.StatusForbidden) // или редирект на страницу с CAPTCHA
+        //         return
+        //     }
+        // }
         
         c.Next()
     }
 }
+
+//Функция для капчи, которую стоит доработать
+// func captchaPassed(c *gin.Context) bool {
+//     token, err := c.Cookie("captcha_token")
+//     if err != nil {
+//         return false
+//     }
+//     return validateToken(token) // проверка подписи или обращение к Redis
+// }
 
