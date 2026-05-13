@@ -91,7 +91,11 @@ func main() {
 
 	rateLimiter := service.NewIPRateLimiter(1, 2) // 1 запрос в секунду, с "burst" до 2
 
+	cacheRepo := repository.NewMongoCacheRepo(db)
+
 	cacheManager := service.NewCacheManager(5 * time.Minute) // Кеш на 5 минут
+
+	cacheManager.LoadSettings(cacheRepo)
 
 	// 3. Загружаем правила из базы (делаем это ОДИН РАЗ при старте)
 	rules, err := ipRepo.GetAll(context.Background())
@@ -138,7 +142,7 @@ func main() {
 		c.Next()
 	})
 
-	admin := controller.SetupRouter(ipRepo, ipManager, rateLimiter, cacheManager, r)
+	admin := controller.SetupRouter(ipRepo, ipManager, rateLimiter, cacheManager, cacheRepo, r)
 
 	admin.Handlers.Last() // Нужна для того, чтобы компилятор не ругался, что не использую переменную admin
 

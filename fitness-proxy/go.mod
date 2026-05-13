@@ -8,6 +8,11 @@ require (
 	go.mongodb.org/mongo-driver v1.17.9
 )
 
+require (
+	github.com/mattn/go-colorable v0.1.14 // indirect
+	github.com/rs/zerolog v1.35.1 // indirect
+)
+
 require golang.org/x/time v0.15.0 // direct
 
 require (
