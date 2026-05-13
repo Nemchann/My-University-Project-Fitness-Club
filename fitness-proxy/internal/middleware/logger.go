@@ -5,6 +5,8 @@ import (
 
 	"fitness-proxy/internal/model"
 
+    "github.com/rs/zerolog/log"
+    "github.com/rs/zerolog"
 	"github.com/gin-gonic/gin"
     "fmt"
 )
@@ -21,6 +23,7 @@ func AsyncLogger(logChan chan<- model.AccessLog) gin.HandlerFunc {
         entry := model.AccessLog{
             IP:         c.ClientIP(),
             URL:        c.Request.URL.Path,
+            Level:      getLevel(c.Writer.Status()),
             Method:     c.Request.Method,
             StatusCode: c.Writer.Status(),
             Reason:  fmt.Sprintf("%v", reason),
@@ -34,5 +37,37 @@ func AsyncLogger(logChan chan<- model.AccessLog) gin.HandlerFunc {
         default:
             // Если канал забит, не тормозим прокси, просто пишем в консоль
         }
+
+        duration := time.Since(start)
+        status := c.Writer.Status()
+
+        // Определяем уровень лога через Zerolog
+        var event *zerolog.Event
+        if status >= 500 {
+            event = log.Error()
+        } else if status >= 400 {
+            event = log.Warn()
+        } else {
+            event = log.Info()
+        }
+
+        event.
+            Int("status", status).
+            Str("method", c.Request.Method).
+            Str("path", c.Request.URL.Path).
+            Str("ip", c.ClientIP()).
+            Dur("latency", duration).
+            Msg("processed request")
     }
+}
+
+//Додумать, чтобы можно было нормально делать уровни логирования
+func getLevel(status int) string {
+    if status >= 500 {
+        return "ERROR"
+    }
+    if status >= 400 {
+        return "WARN"
+    }
+    return "INFO"
 }

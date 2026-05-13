@@ -5,6 +5,7 @@ import "time"
 type AccessLog struct {
     ID         interface{} `bson:"_id,omitempty"`
     IP         string      `bson:"client_ip"`
+    Level      string      `bson:"level"` // Например: "info", "warning", "error"
     URL        string      `bson:"url"`
     Method     string      `bson:"method"`
     StatusCode int         `bson:"status_code"`
