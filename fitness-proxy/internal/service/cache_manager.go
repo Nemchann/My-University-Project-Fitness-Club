@@ -1,8 +1,13 @@
 package service
 
 import (
-	"time"
+	"context"
+	"fitness-proxy/internal/model"
+	"fitness-proxy/internal/repository"
+	"log"
 	"sync"
+	"time"
+	"strings"
 )
 
 type CacheItem struct {
@@ -12,6 +17,7 @@ type CacheItem struct {
 
 type CacheManager struct {
     storage map[string]CacheItem
+	pathSettings map[string]time.Duration // Храним тут наши TTL из базы
     mu      sync.RWMutex
 	defaultTTL time.Duration
 }
@@ -21,6 +27,24 @@ func NewCacheManager(defaultTTL time.Duration) *CacheManager {
 		storage:    make(map[string]CacheItem),
 		defaultTTL: defaultTTL,
 	}
+}
+
+func (m *CacheManager) LoadSettings(repo *repository.MongoCacheRepo) {
+    settings, err := repo.GetSettings(context.Background())
+    if err != nil {
+        log.Printf("Ошибка загрузки настроек кеша: %v", err)
+        return
+    }
+
+    newSettings := make(map[string]time.Duration)
+    for _, s := range settings {
+        newSettings[s.Path] = time.Duration(s.TTLSeconds) * time.Second
+    }
+
+    m.mu.Lock()
+    m.pathSettings = newSettings
+    m.mu.Unlock()
+    log.Println("Настройки кеша обновлены из БД")
 }
 
 // Set сохраняет данные в кеш
@@ -53,6 +77,18 @@ func (c *CacheManager) Get(key string) ([]byte, bool) {
 	return item.Data, true
 }
 
+func (c *CacheManager) GetTTLForPath(path string) time.Duration {
+	c.mu.RLock()
+	ttl, exists := c.pathSettings[path]
+	c.mu.RUnlock()
+
+	if !exists {
+		return c.defaultTTL
+	}
+
+	return ttl
+}
+
 func (c *CacheManager) Delete(key string) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
@@ -65,3 +101,25 @@ func (c *CacheManager) Flush() {
 	c.storage = make(map[string]CacheItem)
 }
 
+func (c *CacheManager) GetPathSettingsByID(id string, repo *repository.MongoCacheRepo) (model.CacheSetting, error) {
+	setting, err := repo.GetByID(context.Background(), id)
+	if err != nil {
+		return model.CacheSetting{}, err
+	}
+	return *setting, nil
+}
+
+func (m *CacheManager) DeleteByPath(pathPrefix string) int {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	
+	deletedCount := 0
+	for key := range m.storage {
+		// Ключ в кеше обычно выглядит как "GET:/api/trainers"
+		if strings.Contains(key, pathPrefix) {
+			delete(m.storage, key)
+			deletedCount++
+		}
+	}
+	return deletedCount
+}
