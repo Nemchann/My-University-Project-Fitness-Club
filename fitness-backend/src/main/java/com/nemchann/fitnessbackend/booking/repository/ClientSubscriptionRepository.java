@@ -11,7 +11,9 @@ import java.util.UUID;
 public interface ClientSubscriptionRepository extends JpaRepository<ClientSubscription, Integer> {
     Optional<ClientSubscription> findClientSubscriptionById(Integer id);
 
-    Page<ClientSubscription> findAllClientSubscriptions(UUID clientId, Pageable pageable);
+    Page<ClientSubscription> findByClientId(UUID clientId, Pageable pageable);
 
     //Сделать метод, который возвращает последний абонемент пользователя
+
+    Optional<ClientSubscription> findLastByClientId(UUID clientId);
 }
