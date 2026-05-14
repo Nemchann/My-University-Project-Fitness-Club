@@ -87,4 +87,22 @@ public class BookingController {
     public boolean checkBookingStatus(@PathVariable UUID userId, @RequestParam Integer scheduleId){
         return service.checkBookingStatus(userId, scheduleId);
     }
+
+    @PostMapping("/create_client_subscription")
+    @Operation(summary = "Купить абонемент")
+    public ResponseEntity<ClientSubscriptionResponseDto> createClientSubscription(@RequestBody @Valid CreateClientSubscriptionDto createDto){
+        ClientSubscriptionResponseDto responseDto = service.createClientSubscription(createDto);
+
+        return new ResponseEntity<>(responseDto, HttpStatus.CREATED);
+    }
+
+    @GetMapping("/all_subscriptions")
+    @Operation(summary = "Все абонементы")
+    public ResponseEntity<List<SubscriptionResponseDto>> getAllSubscriptions(){
+        List<SubscriptionResponseDto> dtos = service.allSubscriptions();
+
+        return new ResponseEntity<>(dtos, HttpStatus.OK);
+    }
+
+
 }
