@@ -1,0 +1,218 @@
+basePath: /api/proxy
+definitions:
+  model.IPRule:
+    properties:
+      burst:
+        description: максимальный всплеск
+        type: integer
+      comment:
+        description: Для чего это правило (необязательно, но полезно)
+        type: string
+      id:
+        type: string
+      network:
+        description: 'Например: "192.168.1.0/24"'
+        type: string
+      rate:
+        description: количество запросов в секунду
+        type: number
+      type:
+        description: '"white", "black", "grey"'
+        type: string
+      updatedAt:
+        type: string
+    type: object
+host: localhost:9000
+info:
+  contact:
+    email: support@swagger.io
+    name: API Support
+    url: http://www.swagger.io/support
+  description: Пример сервера для документации
+  license:
+    name: Apache 2.0
+    url: http://apache.org
+  termsOfService: http://swagger.io/terms/
+  title: Swagger Example API
+  version: "1.0"
+paths:
+  /management/cache:
+    delete:
+      description: Удаляет все записи из кеша в памяти
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Очистить кеш
+      tags:
+      - Cache-Management
+  /management/cache_setting/{id}:
+    get:
+      description: Возвращает настройки кеша для указанного ObjectID
+      parameters:
+      - description: ObjectID настройки
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Получить настройки кеша по ID
+      tags:
+      - Cache-Management
+  /management/cache_settings/{id}:
+    delete:
+      description: Удаляет настройку кеша для указанного ObjectID
+      parameters:
+      - description: ObjectID настройки
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Удалить настройку кеша по ID
+      tags:
+      - Cache-Management
+  /management/cache_settings/purge:
+    delete:
+      description: Удаляет все настройки кеша для совпадений по началу пути (например,
+        /api/users. Удалит в том числе /api/users/uuid)
+      parameters:
+      - description: Путь для удаления настроек
+        in: query
+        name: path
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Удалить настройки кеша по началу пути
+      tags:
+      - Cache-Management
+  /management/reload:
+    get:
+      description: Обновляет актуальные правила IP
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Подгрузить правила IP
+      tags:
+      - IP Management
+  /management/rules:
+    get:
+      description: Возвращает список всех правил IP
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/model.IPRule'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Получить все правила IP
+      tags:
+      - IP-Management
+    post:
+      consumes:
+      - application/json
+      description: Добавляет новый IP в черный, белый или серый список
+      parameters:
+      - description: Данные правила
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/model.IPRule'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Добавить правило IP
+      tags:
+      - IP Management
+  /management/rules/{id}:
+    delete:
+      description: Удаляет запись из MongoDB по её ObjectID
+      parameters:
+      - description: ObjectID правила
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Удалить правило IP
+      tags:
+      - IP-Management
+swagger: "2.0"
