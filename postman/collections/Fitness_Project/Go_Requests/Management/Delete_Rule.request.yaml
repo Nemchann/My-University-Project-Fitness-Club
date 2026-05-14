@@ -1,5 +1,5 @@
 $kind: http-request
 name: Delete_Rule
-url: "{{proxyUrl}}/management/delete/69fdaab7d4bc9072ddd6a0f0"
+url: "{{proxyUrl}}/management/rule/69fdaab7d4bc9072ddd6a0f0"
 method: DELETE
 order: 4442313018038141
