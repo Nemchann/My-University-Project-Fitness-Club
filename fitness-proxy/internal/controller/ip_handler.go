@@ -11,6 +11,15 @@ type AddRuleRequest struct {
 	Type string `json:"type" binding:"required"` // "black", "white", "grey"
 }
 
+
+// @Summary Добавить правило IP
+// @Description Добавляет новый IP в черный, белый или серый список
+// @Tags IP Management
+// @Accept  json
+// @Produce  json
+// @Param   request body controller.AddRuleRequest true "Данные правила"
+// @Success 200 {object} map[string]string
+// @Router /management/rules [post]
 func AddRuleHandler(ipRepo *repository.MongoIPRepo, ipManager *service.IPManager) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var req AddRuleRequest
