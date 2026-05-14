@@ -19,6 +19,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -44,18 +45,39 @@ public class BookingService {
             throw new AlreadyBookedException("You've already booked this schedule");
         }
 
+        //Если бронировать тренировку за 2 часа до нее и позже
+        LocalDateTime edgeTime = LocalDateTime.now().plusHours(2);
+        if (booking.getSchedule().getStartTime().isAfter(edgeTime)){
+            throw new BookingTooLateException("It is too late to book that schedule");
+        }
+
+        ClientSubscription clientSubscription = clientSubscriptionRepository.findLastByClientId(booking.getClient().getId())
+                .orElseThrow(() -> new ClientSubscriptionNotFoundException("Client subscription is not found"));
+
         try{
             scheduleService.addParticipant(createDto.getScheduleId());
             BookingStatus status = bookingStatusRepository.findByBookingStatusName(BookingStatusEnum.ACCEPTED)
                     .orElseThrow(() -> new BookingNotFoundException("Booking status is not found"));
+
+            Integer remainingVisits = clientSubscription.getRemainingVisits();
+
+            if (remainingVisits > 0){
+                clientSubscription.setRemainingVisits(remainingVisits - 1);
+            }else{
+                //Подумать, что делать, если есть еще активные абонементы у пользователя
+                throw new VisitsEndedException("Your visits ended. Buy new subscription");
+            }
+            //Подумать, что делать с безлимитным посещением
+
             booking.setBookingStatus(status);
+
         }catch(IllegalStateException e){
             BookingStatus status = bookingStatusRepository.findByBookingStatusName(BookingStatusEnum.CANCELLED)
                     .orElseThrow(() -> new BookingNotFoundException("Booking status is not found"));
             booking.setBookingStatus(status);
         }
 
-
+        clientSubscriptionRepository.save(clientSubscription);
         bookingRepository.save(booking);
 
         return mapToResponseDto(booking);
@@ -168,6 +190,7 @@ public class BookingService {
         clientSubscription.setStartDate(LocalDate.now());
 
         LocalDate endDate = LocalDate.now().plusDays(subscription.getDurationDays());
+        clientSubscription.setEndDate(endDate);
         clientSubscription.setRemainingVisits(subscription.getVisitsCount());
 
         return clientSubscription;
@@ -245,13 +268,15 @@ public class BookingService {
         return mapToResponseDto(booking);
     }
 
+    //Все абонементы
     public List<SubscriptionResponseDto> allSubscriptions(){
-        return subscriptionRepository.findAllSubscriptions()
+        return subscriptionRepository.findAll()
                 .stream()
                 .map(this::mapToSubscriptionResponseDto)
                 .toList();
     }
 
+    @Transactional
     public ClientSubscriptionResponseDto createClientSubscription(CreateClientSubscriptionDto createClientSubscriptionDto){
         ClientSubscription clientSubscription = rewriteFromSubscriptionCreateDto(createClientSubscriptionDto);
 
@@ -264,11 +289,23 @@ public class BookingService {
         return mapToClientSubscriptionResponseDto(clientSubscription);
     }
 
+    private void setLapsedSubscriptionStatus(ClientSubscription clientSubscription){
+        LocalDate endDate = clientSubscription.getEndDate();
+
+        if(endDate.isBefore(LocalDate.now())){
+            SubscriptionStatus status = subscriptionStatusRepository.findBySubscriptionStatusName(SubscriptionStatusEnum.LAPSED)
+                    .orElseThrow(() -> new SubscriptionStatusNotFoundException("Subscription status is not found"));
+            clientSubscription.setSubscriptionStatus(status);
+        }
+    }
+
+    @Transactional
     public ClientSubscriptionResponseDto getClientSubscription(Integer id){
         ClientSubscription clientSubscription = clientSubscriptionRepository.findClientSubscriptionById(id)
                 .orElseThrow(() -> new ClientSubscriptionNotFoundException("Client subscription is not found"));
 
-        //Добавить дополнительную логику
+        setLapsedSubscriptionStatus(clientSubscription); // Ничего не произойдет,
+        // если дата окончания действия абонемента после текущей
 
         return mapToClientSubscriptionResponseDto(clientSubscription);
 
