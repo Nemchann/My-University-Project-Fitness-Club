@@ -6,6 +6,13 @@ import (
 	"fitness-proxy/internal/repository"
 )
 
+
+// @Summary Очистить кеш
+// @Description Удаляет все записи из кеша в памяти
+// @Tags Cache-Management
+// @Produce  json
+// @Success 200 {object} map[string]string
+// @Router /management/cache [delete]
 func FlushCacheHandler(cache *service.CacheManager) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		cache.Flush()
@@ -13,6 +20,14 @@ func FlushCacheHandler(cache *service.CacheManager) gin.HandlerFunc {
 	}
 }
 
+// @Summary Получить настройки кеша по ID
+// @Description Возвращает настройки кеша для указанного ObjectID
+// @Tags Cache-Management
+// @Produce  json
+// @Param id path string true "ObjectID настройки"
+// @Success 200 {object} map[string]interface{}
+// @Failure 500 {object} map[string]string
+// @Router /management/cache_setting/{id} [get]
 func GetSettingByIDHandler(cacheRepo *repository.MongoCacheRepo, cacheManager *service.CacheManager) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		id := c.Param("id")
@@ -25,6 +40,14 @@ func GetSettingByIDHandler(cacheRepo *repository.MongoCacheRepo, cacheManager *s
 	}
 }
 
+// @Summary Удалить настройку кеша по ID
+// @Description Удаляет настройку кеша для указанного ObjectID
+// @Tags Cache-Management
+// @Produce  json
+// @Param id path string true "ObjectID настройки"
+// @Success 200 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /management/cache_settings/{id} [delete]
 func DeleteSettingByIDHandler(cacheRepo *repository.MongoCacheRepo) gin.HandlerFunc{
 	return func(c *gin.Context) {
 		id := c.Param("id")
@@ -40,7 +63,14 @@ func DeleteSettingByIDHandler(cacheRepo *repository.MongoCacheRepo) gin.HandlerF
 	}
 }
 
-
+// @Summary Удалить настройки кеша по началу пути
+// @Description Удаляет все настройки кеша для совпадений по началу пути (например, /api/users. Удалит в том числе /api/users/uuid)
+// @Tags Cache-Management
+// @Produce  json
+// @Param path query string true "Путь для удаления настроек"
+// @Success 200 {object} map[string]interface{}
+// @Failure 400 {object} map[string]string
+// @Router /management/cache_settings/purge [delete]
 func DeleteSettingsByPathHandler(cacheManager *service.CacheManager) gin.HandlerFunc{
 	return func(c *gin.Context) {
 		path := c.Query("path") // Извлекаем ?path=/api/trainers

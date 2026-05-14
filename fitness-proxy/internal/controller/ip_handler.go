@@ -17,7 +17,7 @@ type AddRuleRequest struct {
 // @Tags IP Management
 // @Accept  json
 // @Produce  json
-// @Param   request body controller.AddRuleRequest true "Данные правила"
+// @Param   request body model.IPRule true "Данные правила"
 // @Success 200 {object} map[string]string
 // @Router /management/rules [post]
 func AddRuleHandler(ipRepo *repository.MongoIPRepo, ipManager *service.IPManager) gin.HandlerFunc {
@@ -42,6 +42,12 @@ func AddRuleHandler(ipRepo *repository.MongoIPRepo, ipManager *service.IPManager
 	}
 }
 
+// @Summary Подгрузить правила IP
+// @Description Обновляет актуальные правила IP
+// @Tags IP Management
+// @Produce  json
+// @Success 200 {object} map[string]string
+// @Router /management/reload [get]
 func ReloadRulesHandler(ipRepo *repository.MongoIPRepo, ipManager *service.IPManager) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		// 1. Снова лезем в базу за свежими правилами
@@ -62,6 +68,15 @@ func ReloadRulesHandler(ipRepo *repository.MongoIPRepo, ipManager *service.IPMan
 }
 
 // Получение всех правил
+
+
+// @Summary Получить все правила IP
+// @Description Возвращает список всех правил IP
+// @Tags IP-Management
+// @Produce  json
+// @Success 200 {object} []model.IPRule
+// @Failure 500 {object} map[string]string
+// @Router /management/rules [get]
 func GetAllRulesHandler(ipRepo *repository.MongoIPRepo) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		rules, err := ipRepo.GetAll(c.Request.Context())
@@ -74,6 +89,14 @@ func GetAllRulesHandler(ipRepo *repository.MongoIPRepo) gin.HandlerFunc {
 }
 
 // Удаление правила по ID
+
+// @Summary Удалить правило IP
+// @Description Удаляет запись из MongoDB по её ObjectID
+// @Tags IP-Management
+// @Param id path string true "ObjectID правила"
+// @Success 200 {object} map[string]string
+// @Failure 400 {object} map[string]string
+// @Router /management/rules/{id} [delete]
 func DeleteRuleHandler(ipRepo *repository.MongoIPRepo, ipManager *service.IPManager) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		id := c.Param("id")
