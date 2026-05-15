@@ -21,7 +21,7 @@ var cacheablePaths = []string{
 	"/api/fitness-club/schedules/get_schedules_by_date",
     "/api/fitness-club/bookings/past",
 	"/api/fitness-club/users/get_all_trainers",
-	"/api/fitness-club/users/get/", // Сделать кеширование
+	"/api/fitness-club/users/get/",
 }
 
 func isCacheable(path string) bool {
@@ -54,6 +54,7 @@ func CacheMiddleware(cache *service.CacheManager) gin.HandlerFunc {
 		if data, found := cache.Get(key); found {
 			c.Data(http.StatusOK, "application/json", data)
 			fmt.Println("Из кеша")
+			cache.IncrementCachedCount()
 			c.Abort() // Дальше к Java не идем!
 			return
 		}

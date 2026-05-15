@@ -8,6 +8,7 @@ import (
 	"sync"
 	"time"
 	"strings"
+	"sync/atomic"
 )
 
 type CacheItem struct {
@@ -20,6 +21,7 @@ type CacheManager struct {
 	pathSettings map[string]time.Duration // Храним тут наши TTL из базы
     mu      sync.RWMutex
 	defaultTTL time.Duration
+	cachedCount atomic.Int64
 }
 
 func NewCacheManager(defaultTTL time.Duration) *CacheManager {
@@ -115,11 +117,31 @@ func (m *CacheManager) DeleteByPath(pathPrefix string) int {
 	
 	deletedCount := 0
 	for key := range m.storage {
-		// Ключ в кеше обычно выглядит как "GET:/api/trainers"
 		if strings.Contains(key, pathPrefix) {
 			delete(m.storage, key)
 			deletedCount++
 		}
 	}
 	return deletedCount
+}
+
+func (m *CacheManager) UpdateTTL(id string, ttl int, repo *repository.MongoCacheRepo) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	repo.UpdateTTL(context.Background(), id, ttl)
+
+	m.LoadSettings(repo) // Заодно подгружаем настройки кеша
+}
+
+func (m  *CacheManager) GetKeysCount() int{
+	return len(m.pathSettings)
+}
+
+func (m *CacheManager) IncrementCachedCount() {
+	m.cachedCount.Add(1)
+}
+
+func (m *CacheManager) GetHitRate() int{
+	return int(m.cachedCount.Load())
 }

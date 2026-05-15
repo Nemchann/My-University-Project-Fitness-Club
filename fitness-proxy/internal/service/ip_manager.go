@@ -1,17 +1,19 @@
 package service
 
 import (
-	"github.com/yl2chen/cidranger"
-	"net"
 	"fmt"
+	"net"
 
-    "fitness-proxy/internal/model"
+	"github.com/yl2chen/cidranger"
+
+	"fitness-proxy/internal/model"
 )
 
 type IPManager struct {
     whitelist cidranger.Ranger
     blacklist cidranger.Ranger
-    greylist  cidranger.Ranger // Если решишь добавить логику для серых списков
+    greylist  cidranger.Ranger 
+    blockedCount int
 }
 
 func NewIPManager() *IPManager {
@@ -25,6 +27,7 @@ func NewIPManager() *IPManager {
 func (m *IPManager) IsAllowed(ip net.IP) (bool, string) {
     // 1. Проверяем черный список (высший приоритет п. 1.2.1)
     if contains, _ := m.blacklist.Contains(ip); contains {
+        m.blockedCount++
         return false, "blacklisted"
     }
 
@@ -119,4 +122,12 @@ func (m *IPManager) UpdateRule(network string, ruleType string) error {
     m.greylist.Remove(*ipNet)
 
     return m.AddRule(network, ruleType)
+}
+
+func (m *IPManager) GetBlockedCount() int {
+    return m.blockedCount
+}
+
+func (m *IPManager) GetRulesCount() int{
+    return m.blacklist.Len() + m.whitelist.Len() + m.greylist.Len()
 }
