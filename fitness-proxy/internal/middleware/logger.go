@@ -19,12 +19,19 @@ func AsyncLogger(logChan chan<- model.AccessLog) gin.HandlerFunc {
 
         reason, _ := c.Get("abort_reason")
 
+        val, exists := c.Get("request_id")
+        requestID := "unknown"
+        if exists {
+            requestID = val.(string)
+        }
+
         // Формируем лог после ответа
         entry := model.AccessLog{
             IP:         c.ClientIP(),
             URL:        c.Request.URL.Path,
             Level:      getLevel(c.Writer.Status()),
             Method:     c.Request.Method,
+            RequestID:  requestID,
             StatusCode: c.Writer.Status(),
             Reason:  fmt.Sprintf("%v", reason),
             Latency:    time.Since(start).Milliseconds(),
