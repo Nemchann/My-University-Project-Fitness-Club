@@ -14,7 +14,12 @@ import (
 func IPFilter(manager *service.IPManager, logChan chan model.AccessLog) gin.HandlerFunc {
     return func(c *gin.Context) {
         ip := net.ParseIP(c.ClientIP())
-        allowed, reason := manager.IsAllowed(ip)
+        rawIP := c.ClientIP() // На случай, если IP не парсится
+        if ip != nil && ip.To4() != nil {
+            rawIP = ip.To4().String() // Всегда будет 127.0.0.1
+        }
+
+        allowed, reason := manager.IsAllowed(ip.To4()) //Это нужно для того, если пришел адрес ::1
 
         if !allowed || reason == "blacklisted" {
             log.Printf("BLOCK: IP %s rejected. Reason: %s", ip, reason)
@@ -23,7 +28,7 @@ func IPFilter(manager *service.IPManager, logChan chan model.AccessLog) gin.Hand
             // ТЗ 1.2.1: прерываем запрос с ошибкой 403
             c.AbortWithStatusJSON(403, gin.H{
                 "error": "Access denied",
-                "ip":    ip.String(),
+                "ip":    rawIP,
             })
             return
         }
