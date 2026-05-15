@@ -96,6 +96,7 @@ func main() {
     // 5. Передаем канал в Middleware
 	r := gin.Default()
 
+	r.Use(middleware.RequestID())
 
 	r.Use(middleware.AsyncLogger(logChan))
 
@@ -130,6 +131,11 @@ func main() {
 
 	log.Printf("Загружено правил для IP: %d", len(rules))
 
+	monitor := service.NewMonitor() // Создаем один экземпляр
+	go monitor.StartRPSResetter() //Подумать, что можно с этим сделать
+
+	r.Use(monitor.Middleware())
+
 	r.Use(middleware.IPFilter(ipManager, logChan))
 
 	r.Use(middleware.RateLimitMiddleware(rateLimiter, ipManager))
@@ -137,6 +143,8 @@ func main() {
 	r.Use(middleware.CacheMiddleware(cacheManager))
 
 	r.Use(middleware.CORSMiddleware())
+
+	r.Use(middleware.MaxBodySize(2 * 1024 * 1024))
 
 
 	// Адрес Java-бэкенда
@@ -146,6 +154,7 @@ func main() {
 		log.Fatalf("Ошибка конфигурации целевого URL: %v", err)
 	}
 
+	r.Use(controller.ProxyHandler(target))
 	// Настраиваем стандартный Reverse Proxy
 	proxy := httputil.NewSingleHostReverseProxy(remote)
 
@@ -153,23 +162,13 @@ func main() {
 	r.Use(func(c *gin.Context) {
 		log.Printf("Запрос: %s %s от IP: %s", c.Request.Method, c.Request.URL.Path, c.ClientIP())
 		
-		// Здесь будет логика фильтрации IP (п. 1.2)
 		
 		c.Next()
 	})
 
-	admin := controller.SetupRouter(ipRepo, ipManager, rateLimiter, cacheManager, cacheRepo, r)
+	admin := controller.SetupRouter(ipRepo, ipManager, rateLimiter, cacheManager, cacheRepo, monitor, r)
 
 	admin.Handlers.Last() // Нужна для того, чтобы компилятор не ругался, что не использую переменную admin
-
-
-	// Группа для управления прокси, потом поменять на router
-	// admin := r.Group("/management")
-	// {
-    // 	admin.GET("/reload", controller.ReloadRulesHandler(ipRepo, ipManager))
-	// 	admin.DELETE("/cache", controller.FlushCacheHandler(cacheManager))
-	// 	admin.GET("/stats", controller.GetStatsHandler(rateLimiter))
-	// }
 
 	// Проксируем всё остальное, что НЕ начинается с /management
 	r.NoRoute(func(c *gin.Context) {

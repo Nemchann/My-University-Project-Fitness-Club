@@ -13,14 +13,15 @@ import (
 // Потом вынести в main.go и добавить туда все эндпоинты управления 
 func SetupRouter(ipRepo *repository.MongoIPRepo, ipManager *service.IPManager, 
     limiterManager *service.IPRateLimiter, 
-    cacheManager *service.CacheManager, cacheRepo *repository.MongoCacheRepo, r *gin.Engine) *gin.RouterGroup {
+    cacheManager *service.CacheManager, cacheRepo *repository.MongoCacheRepo, 
+    m *service.Monitor, r *gin.Engine) *gin.RouterGroup {
     
     // Группа управления - админка
     admin := r.Group("/api/proxy/management")
     {
         admin.GET("/reload", ReloadRulesHandler(ipRepo, ipManager))
 
-        admin.GET("/stats", GetStatsHandler(limiterManager))
+        admin.GET("/stats", GetStatsHandler(limiterManager, cacheManager, ipManager))
 
         admin.GET("/rules", GetAllRulesHandler(ipRepo))
         
