@@ -89,3 +89,31 @@ func DeleteSettingsByPathHandler(cacheManager *service.CacheManager) gin.Handler
 		})
 	}
 }
+
+
+func UpdateTTLByIDHandler(cacheManager *service.CacheManager, cacheRepo *repository.MongoCacheRepo) gin.HandlerFunc {
+	return func(c *gin.Context){
+		id := c.Param("id")
+		var input struct {
+            TTLSeconds int `json:"ttl_seconds" binding:"required,min=1"`
+        }
+
+        if err := c.ShouldBindJSON(&input); err != nil {
+            c.JSON(400, gin.H{"error": "Неверный формат TTL"})
+            return
+        }
+
+        // 1. Обновляем в MongoDB
+        err := cacheRepo.UpdateTTL(c.Request.Context(), id, input.TTLSeconds)
+        if err != nil {
+            c.JSON(500, gin.H{"error": "Ошибка БД"})
+            return
+        }
+
+        // 2. Сразу перегружаем настройки в память прокси
+        cacheManager.LoadSettings(cacheRepo)
+
+        c.JSON(200, gin.H{"message": "TTL обновлен и применен"})
+    }
+
+}	

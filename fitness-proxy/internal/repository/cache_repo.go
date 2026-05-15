@@ -84,3 +84,18 @@ func (r *MongoCacheRepo) DeleteByPath(ctx context.Context, path string) error {
 	log.Printf("Deleted cache setting with path: %v", result.DeletedCount)
     return nil
 }
+
+func (r *MongoCacheRepo) UpdateTTL(ctx context.Context, id string, ttl int) error {
+	result, err := r.collection.UpdateOne(ctx, bson.M{"_id": id}, bson.M{"$set": bson.M{"ttl_seconds": ttl}})
+
+	if err != nil{
+		return err
+	}
+
+	if result.UpsertedCount == 0{
+		return fmt.Errorf("Документ с данным id %s не найден", id)
+	}
+
+	log.Printf("Updated cache settings with id: %s", id)
+	return nil
+}
