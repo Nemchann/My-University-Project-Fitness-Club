@@ -79,7 +79,7 @@ func main() {
 	
 
 	// 2. Инициализируем репозиторий
-    logRepo := repository.NewMongoLogRepo(db)
+    logRepo := repository.NewMongoLogRepository(db)
 
     // 3. Создаем канал для логов
     logChan := make(chan model.AccessLog, 500)
@@ -103,10 +103,12 @@ func main() {
 	// 1. Инициализируем репозиторий IP
 	ipRepo := repository.NewMongoIPRepo(db)
 
-	// 2. Создаем менеджер (пока пустой)
-	ipManager := service.NewIPManager()
+	// 2. Создаем менеджер для IP-правил и другие сервисы
+	ipManager := service.NewIPManager(ipRepo) //Тут нужно подправить
 
-	rateLimiter := service.NewIPRateLimiter(1, 2) // 1 запрос в секунду, с "burst" до 2
+	rateLimiter := service.NewIPRateLimiter(1, 2) // Нужно будет убрать параметры, они задаются в middleware в зависимости от типа IP (черный, белый, серый)
+
+	logsService := service.NewLogService(logRepo) // Сервис для получения логов, который будет использоваться в контроллере
 
 	cacheRepo := repository.NewMongoCacheRepo(db)
 
@@ -136,7 +138,7 @@ func main() {
 
 	r.Use(monitor.Middleware())
 
-	r.Use(middleware.IPFilter(ipManager, logChan))
+	r.Use(middleware.IPFilter(ipManager, logChan, monitor))
 
 	r.Use(middleware.RateLimitMiddleware(rateLimiter, ipManager))
 
@@ -166,7 +168,8 @@ func main() {
 		c.Next()
 	})
 
-	admin := controller.SetupRouter(ipRepo, ipManager, rateLimiter, cacheManager, cacheRepo, monitor, r)
+	admin := controller.SetupRouter(ipRepo, ipManager, rateLimiter, 
+		cacheManager, cacheRepo, monitor, client, target, logsService, r)
 
 	admin.Handlers.Last() // Нужна для того, чтобы компилятор не ругался, что не использую переменную admin
 
