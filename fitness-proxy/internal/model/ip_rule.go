@@ -7,7 +7,7 @@ import (
 
 type IPRule struct {
     ID        primitive.ObjectID `bson:"_id,omitempty"`
-    Network   string             `bson:"network"` // Например: "192.168.1.0/24"
+    Network   string             `bson:"network" json:"network"` // Например: "192.168.1.0/24"
     Type      string             `bson:"type"`    // "white", "black", "grey"
     Rate      float64            `bson:"rate"`  // количество запросов в секунду
     Burst     int                `bson:"burst"` // максимальный всплеск
