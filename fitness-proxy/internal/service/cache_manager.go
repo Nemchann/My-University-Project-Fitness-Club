@@ -83,7 +83,7 @@ func (c *CacheManager) Get(key string) ([]byte, bool) {
 	return item.Data, true
 }
 
-func (c *CacheManager) GetTTLForPath(path string) time.Duration {
+func (c *CacheManager) GetTTLForPathRAM(path string) time.Duration {
 	c.mu.RLock()
 	ttl, exists := c.pathSettings[path]
 	c.mu.RUnlock()
@@ -115,7 +115,7 @@ func (c *CacheManager) GetPathSettingsByID(id string) (model.CacheSetting, error
 	return *setting, nil
 }
 
-func (m *CacheManager) DeleteByPath(pathPrefix string) int {
+func (m *CacheManager) DeleteFromRAMByPath(pathPrefix string) int {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	
@@ -129,24 +129,32 @@ func (m *CacheManager) DeleteByPath(pathPrefix string) int {
 	return deletedCount
 }
 
-func (m *CacheManager) DeleteByID(id string) error {
-	err := m.cacheRepository.DeleteByID(context.Background(), id)
+func (m *CacheManager) DeleteByID(ctx context.Context, id string) error {
+	err := m.cacheRepository.DeleteByID(ctx, id)
 
 	return err
 }
 
-func (m *CacheManager) UpdateTTL(id string, ttl int64) error {
+func (m *CacheManager) UpdateTTL(ctx context.Context, id string, ttl int64) error {
 	objID, err := primitive.ObjectIDFromHex(id)
 
 	if err != nil{
 		return err
 	}
 	
-	m.cacheRepository.UpdateTTL(context.Background(), objID, ttl)
+	m.cacheRepository.UpdateTTL(ctx, objID, ttl)
 
 	m.LoadSettings() // Заодно подгружаем настройки кеша
 
 	return nil
+}
+
+func (m *CacheManager) GetTTLForPath(ctx context.Context, path string) (int, error) {
+	ttl, err := m.cacheRepository.GetTTLForPath(ctx, path)
+	if err != nil {
+		return 0, err
+	}
+	return ttl, nil
 }
 
 func (m  *CacheManager) GetKeysCount() int{
