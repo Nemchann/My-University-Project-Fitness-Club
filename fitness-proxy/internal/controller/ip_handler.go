@@ -14,7 +14,7 @@ type AddRuleRequest struct {
 
 // @Summary Добавить правило IP
 // @Description Добавляет новый IP в черный, белый или серый список
-// @Tags IP Management
+// @Tags IP-Management
 // @Accept  json
 // @Produce  json
 // @Param   request body model.IPRule true "Данные правила"
@@ -44,7 +44,7 @@ func AddRuleHandler(ipRepo *repository.MongoIPRepo, ipManager *service.IPManager
 
 // @Summary Подгрузить правила IP
 // @Description Обновляет актуальные правила IP
-// @Tags IP Management
+// @Tags IP-Management
 // @Produce  json
 // @Success 200 {object} map[string]string
 // @Router /management/reload [get]

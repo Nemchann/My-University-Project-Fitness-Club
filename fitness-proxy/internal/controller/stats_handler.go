@@ -8,7 +8,8 @@ import (
 
 )
 
-func GetStatsHandler(limiterManager *service.IPRateLimiter, cacheManager *service.CacheManager, ipManager *service.IPManager) gin.HandlerFunc {
+func GetStatsHandler(limiterManager *service.IPRateLimiter, cacheManager *service.CacheManager, 
+    ipManager *service.IPManager, monitor *service.Monitor) gin.HandlerFunc {
     startTime := time.Now() // Можно вынести в глобальную переменную при старте
 
     return func(c *gin.Context) {
@@ -19,6 +20,8 @@ func GetStatsHandler(limiterManager *service.IPRateLimiter, cacheManager *servic
             "uptime":   time.Since(startTime).String(),
             "goroutines": runtime.NumGoroutine(),
             "memory_usage_kb": m.Alloc / 1024,
+            "total_requests": monitor.GetTotalRequests(),
+            "average_response_time_ms": monitor.GetAverageResponseTime(),
             "cache": gin.H{
                 "total_keys": cacheManager.GetKeysCount(),
                 "hit_rate":   cacheManager.GetHitRate(), 
