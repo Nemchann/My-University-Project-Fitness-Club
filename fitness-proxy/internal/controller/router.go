@@ -1,7 +1,6 @@
 package controller
 
 import (
-	"fitness-proxy/internal/repository"
 	"fitness-proxy/internal/service"
 	"github.com/gin-gonic/gin"
 
@@ -14,16 +13,16 @@ import (
 
 //Инициализация Swagger: swag init -g cmd/proxy/main.go
 
-// Потом вынести в main.go и добавить туда все эндпоинты управления 
-func SetupRouter(ipRepo *repository.MongoIPRepo, ipManager *service.IPManager, 
+// Админка здесь
+func SetupRouter(ipManager *service.IPManager, 
     limiterManager *service.IPRateLimiter, 
-    cacheManager *service.CacheManager, cacheRepo *repository.MongoCacheRepo, 
+    cacheManager *service.CacheManager, 
     m *service.Monitor, client *mongo.Client, target string, logsService *service.LogService, r *gin.Engine) *gin.RouterGroup {
     
     // Группа управления - админка
     admin := r.Group("/api/proxy/management")
     {
-        admin.GET("/reload", ReloadRulesHandler(ipRepo, ipManager))
+        admin.GET("/reload", ReloadRulesHandler(ipManager))
 
         admin.GET("/stats", GetStatsHandler(limiterManager, cacheManager, ipManager, m))
 
@@ -33,21 +32,21 @@ func SetupRouter(ipRepo *repository.MongoIPRepo, ipManager *service.IPManager,
 
         admin.GET("/logs", LogsHandler(logsService)) // Новый эндпоинт для получения логов аудита
 
-        admin.GET("/rules", GetAllRulesHandler(ipRepo))
+        admin.GET("/rules", GetAllRulesHandler(ipManager))
 
         admin.GET("/clients", GetClientsHandler(m))
         
         admin.DELETE("/cache", FlushCacheHandler(cacheManager)) // Новый метод для очистки кеша
 
-        admin.POST("/insert_rule", AddRuleHandler(ipRepo, ipManager))
+        admin.POST("/insert_rule", AddRuleHandler(ipManager))
 
-        admin.GET("/cache_setting/:id", GetSettingByIDHandler(cacheRepo, cacheManager)) // Новый метод для получения TTL по ID
+        admin.GET("/cache_setting/:id", GetSettingByIDHandler(cacheManager)) // Новый метод для получения TTL по ID
 
-        admin.PUT("/cache_settings/:id", UpdateTTLByIDHandler(cacheManager, cacheRepo)) // Новый метод для добавления или обновления настройки кеша
+        admin.PUT("/cache_settings/:id", UpdateTTLByIDHandler(cacheManager)) // Новый метод для добавления или обновления настройки кеша
 
-        admin.DELETE("/rules/:id", DeleteRuleHandler(ipRepo, ipManager))
+        admin.DELETE("/rules/:id", DeleteRuleHandler(ipManager))
 
-        admin.DELETE("/cache_settings/:id", DeleteSettingByIDHandler(cacheRepo)) // Новый метод для удаления настройки кеша по ID
+        admin.DELETE("/cache_settings/:id", DeleteSettingByIDHandler(cacheManager)) // Новый метод для удаления настройки кеша по ID
 
         admin.DELETE("/cache_settings/purge", DeleteSettingsByPathHandler(cacheManager)) // Новый метод для удаления настройки кеша
         // 

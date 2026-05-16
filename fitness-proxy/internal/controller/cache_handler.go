@@ -1,12 +1,10 @@
 package controller
 
 import (
-	"fitness-proxy/internal/repository"
 	"fitness-proxy/internal/service"
 	"fmt"
 
 	"github.com/gin-gonic/gin"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 // @Summary Очистить кеш
@@ -30,10 +28,10 @@ func FlushCacheHandler(cache *service.CacheManager) gin.HandlerFunc {
 // @Success 200 {object} map[string]interface{}
 // @Failure 500 {object} map[string]string
 // @Router /management/cache_setting/{id} [get]
-func GetSettingByIDHandler(cacheRepo *repository.MongoCacheRepo, cacheManager *service.CacheManager) gin.HandlerFunc {
+func GetSettingByIDHandler(cacheManager *service.CacheManager) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		id := c.Param("id")
-		result, err := cacheManager.GetPathSettingsByID(id, cacheRepo)
+		result, err := cacheManager.GetPathSettingsByID(id)
 		if err != nil {
 			c.JSON(500, gin.H{"error": "Failed to get cache setting"})
 			return
@@ -50,11 +48,11 @@ func GetSettingByIDHandler(cacheRepo *repository.MongoCacheRepo, cacheManager *s
 // @Success 200 {object} map[string]string
 // @Failure 500 {object} map[string]string
 // @Router /management/cache_settings/{id} [delete]
-func DeleteSettingByIDHandler(cacheRepo *repository.MongoCacheRepo) gin.HandlerFunc{
+func DeleteSettingByIDHandler(cacheManager *service.CacheManager) gin.HandlerFunc{
 	return func(c *gin.Context) {
 		id := c.Param("id")
 
-		err := cacheRepo.DeleteById(c.Request.Context(), id)
+		err := cacheManager.DeleteByID(id)
 
 		if err != nil{
 			c.JSON(500, gin.H{"error": "Failed to get cache setting"})
@@ -102,18 +100,12 @@ func DeleteSettingsByPathHandler(cacheManager *service.CacheManager) gin.Handler
 // @Success 200 {object} map[string]interface{}
 // @Failure 400 {object} map[string]string
 // @Router /management/cache_settings/{id} [put]
-func UpdateTTLByIDHandler(cacheManager *service.CacheManager, cacheRepo *repository.MongoCacheRepo) gin.HandlerFunc {
+func UpdateTTLByIDHandler(cacheManager *service.CacheManager) gin.HandlerFunc {
 	return func(c *gin.Context){
 		id := c.Param("id")
 		var input struct {
             TTLSeconds int64 `json:"ttl_seconds" binding:"required,min=1"`
         }
-
-		objID, err := primitive.ObjectIDFromHex(id)
-		if err != nil {
-    		c.JSON(400, gin.H{"error": "Неверный формат ID"})
-    		return
-		}
 
         if err := c.ShouldBindJSON(&input); err != nil {
             c.JSON(400, gin.H{"error": "Неверный формат TTL"})
@@ -121,7 +113,7 @@ func UpdateTTLByIDHandler(cacheManager *service.CacheManager, cacheRepo *reposit
         }
 
         // 1. Обновляем в MongoDB
-        errDB := cacheRepo.UpdateTTL(c.Request.Context(), objID, input.TTLSeconds)
+        errDB := cacheManager.UpdateTTL(id, input.TTLSeconds)
         if errDB != nil {
 			fmt.Println(errDB.Error())
             c.JSON(500, gin.H{"error": "Ошибка БД"})
@@ -129,7 +121,7 @@ func UpdateTTLByIDHandler(cacheManager *service.CacheManager, cacheRepo *reposit
         }
 
         // 2. Сразу перегружаем настройки в память прокси
-        cacheManager.LoadSettings(cacheRepo)
+        cacheManager.LoadSettings()
 
         c.JSON(200, gin.H{"message": "TTL обновлен и применен"})
     }

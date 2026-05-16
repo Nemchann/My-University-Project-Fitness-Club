@@ -1,9 +1,10 @@
 package controller
 
 import (
-	"fitness-proxy/internal/repository"
 	"fitness-proxy/internal/service"
 	"github.com/gin-gonic/gin"
+	"fmt"
+	"net/http"
 )
 
 type AddRuleRequest struct {
@@ -20,7 +21,7 @@ type AddRuleRequest struct {
 // @Param   request body model.IPRule true "Данные правила"
 // @Success 200 {object} map[string]string
 // @Router /management/rules [post]
-func AddRuleHandler(ipRepo *repository.MongoIPRepo, ipManager *service.IPManager) gin.HandlerFunc {
+func AddRuleHandler(ipManager *service.IPManager) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var req AddRuleRequest
 		if err := c.ShouldBindJSON(&req); err != nil {
@@ -29,7 +30,7 @@ func AddRuleHandler(ipRepo *repository.MongoIPRepo, ipManager *service.IPManager
 		}
 
 		// 1. Сохраняем в MongoDB
-		err := ipRepo.InsertRule(c.Request.Context(), req.IP, req.Type)
+		err := ipManager.AddRule(req.IP, req.Type)
 		if err != nil {
 			c.JSON(500, gin.H{"error": "Ошибка сохранения в БД"})
 			return
@@ -48,22 +49,22 @@ func AddRuleHandler(ipRepo *repository.MongoIPRepo, ipManager *service.IPManager
 // @Produce  json
 // @Success 200 {object} map[string]string
 // @Router /management/reload [get]
-func ReloadRulesHandler(ipRepo *repository.MongoIPRepo, ipManager *service.IPManager) gin.HandlerFunc {
+func ReloadRulesHandler(ipManager *service.IPManager) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		// 1. Снова лезем в базу за свежими правилами
-		rules, err := ipRepo.GetAll(c.Request.Context())
-		if err != nil {
-			c.JSON(500, gin.H{"error": "Failed to fetch rules from DB"})
-			return
-		}
+		// Просто дергаем метод менеджера. Менеджер сам знает, как сходить в Mongo.
+    	err := ipManager.ReloadFromDB(c.Request.Context())
+    	if err != nil {
+        	// Если что-то пошло не так на стороне БД или парсинга
+        	c.JSON(http.StatusInternalServerError, gin.H{
+           		"error": fmt.Sprintf("Failed to rebuild Radix Tree: %v", err),
+        	})
+        	return
+    	}
 
-		// 2. Вызываем метод Reload, который мы написали в IPManager
-		if err := ipManager.Reload(rules); err != nil {
-			c.JSON(500, gin.H{"error": "Failed to rebuild Radix Tree"})
-			return
-		}
-
-		c.JSON(200, gin.H{"status": "success", "loaded_rules": len(rules)})
+    	c.JSON(http.StatusOK, gin.H{
+        	"status": "success",
+        	"message": "Radix Tree successfully rebuilt from database data",
+    	})
 	}
 }
 
@@ -77,9 +78,9 @@ func ReloadRulesHandler(ipRepo *repository.MongoIPRepo, ipManager *service.IPMan
 // @Success 200 {object} []model.IPRule
 // @Failure 500 {object} map[string]string
 // @Router /management/rules [get]
-func GetAllRulesHandler(ipRepo *repository.MongoIPRepo) gin.HandlerFunc {
+func GetAllRulesHandler(ipManager *service.IPManager) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		rules, err := ipRepo.GetAll(c.Request.Context())
+		rules, err := ipManager.GetAll(c.Request.Context())
 		if err != nil {
 			c.JSON(500, gin.H{"error": "Ошибка БД"})
 			return
@@ -97,16 +98,16 @@ func GetAllRulesHandler(ipRepo *repository.MongoIPRepo) gin.HandlerFunc {
 // @Success 200 {object} map[string]string
 // @Failure 400 {object} map[string]string
 // @Router /management/rules/{id} [delete]
-func DeleteRuleHandler(ipRepo *repository.MongoIPRepo, ipManager *service.IPManager) gin.HandlerFunc {
+func DeleteRuleHandler(ipManager *service.IPManager) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		id := c.Param("id")
-		err := ipRepo.DeleteByID(c.Request.Context(), id)
+		err := ipManager.RemoveRule(c.Request.Context(), id)
 		if err != nil {
 			c.JSON(500, gin.H{"error": "Не удалось удалить"})
 			return
 		}
 
-		rules, errAll := ipRepo.GetAll(c.Request.Context())
+		rules, errAll := ipManager.GetAll(c.Request.Context())
 
 
 		if errAll != nil {
