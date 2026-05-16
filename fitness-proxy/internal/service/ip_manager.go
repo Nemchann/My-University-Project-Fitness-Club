@@ -99,6 +99,14 @@ func (m *IPManager) GetRuleInfo(ip net.IP) (string) {
     return "default"
 }    
 
+func (m *IPManager) RemoveRule(ctx context.Context, id string) error {
+    err := m.repository.DeleteByID(ctx, id)
+    if err != nil {
+        return err
+    }
+    return nil
+}
+
 //перезапись правил IP
 func (m *IPManager) Reload(rules []model.IPRule) error {
     // Создаем новые чистые рейнджеры
@@ -123,6 +131,64 @@ func (m *IPManager) Reload(rules []model.IPRule) error {
     m.whitelist = newWhitelist
     m.blacklist = newBlacklist
     return nil
+}
+
+// ReloadFromDB самостоятельно вычитывает правила из репозитория и обновляет деревья в памяти
+func (m *IPManager) ReloadFromDB(ctx context.Context) error {
+    // 1. Вытягиваем все правила из репозитория (убедись, что метод в твоем репозитории называется именно так)
+    // Если он возвращает правила для белого, черного и серого списков, используй его:
+    rules, err := m.repository.GetAll(ctx) // Или твой метод, например, GetAllRules(ctx)
+    if err != nil {
+        return fmt.Errorf("failed to fetch rules from repository: %w", err)
+    }
+
+    // 2. Создаем новые чистые рейнджеры (выделяем память)
+    newWhitelist := cidranger.NewPCTrieRanger()
+    newBlacklist := cidranger.NewPCTrieRanger()
+    newGreylist  := cidranger.NewPCTrieRanger()
+
+    // 3. Заполняем новые деревья
+    for _, rule := range rules {
+        // Используем наше безопасное решение для парсинга (и для одиночных IP, и для CIDR)
+        var ipNet *net.IPNet
+        
+        _, ipNet, err = net.ParseCIDR(rule.Network)
+        if err != nil {
+            // Если это одиночный IP, превращаем его в маску /32
+            ip := net.ParseIP(rule.Network)
+            if ip == nil {
+                // Логируем или пропускаем битое правило, чтобы всё дерево не падало
+                continue 
+            }
+            mask := net.CIDRMask(32, 32)
+            if ip.To4() == nil {
+                mask = net.CIDRMask(128, 128) // Для IPv6
+            }
+            ipNet = &net.IPNet{IP: ip, Mask: mask}
+        }
+
+        entry := cidranger.NewBasicRangerEntry(*ipNet)
+        
+        // Распределяем по новым деревьям
+        switch rule.Type {
+        case "white":
+            _ = newWhitelist.Insert(entry)
+        case "black":
+            _ = newBlacklist.Insert(entry)
+        case "grey":
+            _ = newGreylist.Insert(entry)
+        }
+    }
+
+    // 4. Атомарно и безопасно заменяем старые деревья на новые
+    m.whitelist = newWhitelist
+    m.blacklist = newBlacklist
+    m.greylist = newGreylist
+
+    return nil
+}
+func (m *IPManager) GetAll(ctx context.Context) ([]model.IPRule, error) {
+    return m.repository.GetAll(ctx)
 }
 
 func (m *IPManager) UpdateRule(network string, ruleType string) error {

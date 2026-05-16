@@ -5,10 +5,12 @@ import (
 	"fitness-proxy/internal/model"
 	"fitness-proxy/internal/repository"
 	"log"
-	"sync"
-	"time"
 	"strings"
+	"sync"
 	"sync/atomic"
+	"time"
+
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type CacheItem struct {
@@ -22,17 +24,19 @@ type CacheManager struct {
     mu      sync.RWMutex
 	defaultTTL time.Duration
 	cachedCount atomic.Int64
+	cacheRepository repository.CacheRepository
 }
 
-func NewCacheManager(defaultTTL time.Duration) *CacheManager {
+func NewCacheManager(defaultTTL time.Duration, repository repository.CacheRepository) *CacheManager {
 	return &CacheManager{
 		storage:    make(map[string]CacheItem),
 		defaultTTL: defaultTTL,
+		cacheRepository: repository,
 	}
 }
 
-func (m *CacheManager) LoadSettings(repo *repository.MongoCacheRepo) {
-    settings, err := repo.GetSettings(context.Background())
+func (m *CacheManager) LoadSettings() {
+    settings, err := m.cacheRepository.GetSettings(context.Background())
     if err != nil {
         log.Printf("Ошибка загрузки настроек кеша: %v", err)
         return
@@ -103,8 +107,8 @@ func (c *CacheManager) Flush() {
 	c.storage = make(map[string]CacheItem)
 }
 
-func (c *CacheManager) GetPathSettingsByID(id string, repo *repository.MongoCacheRepo) (model.CacheSetting, error) {
-	setting, err := repo.GetByID(context.Background(), id)
+func (c *CacheManager) GetPathSettingsByID(id string) (model.CacheSetting, error) {
+	setting, err := c.cacheRepository.GetByID(context.Background(), id)
 	if err != nil {
 		return model.CacheSetting{}, err
 	}
@@ -125,14 +129,25 @@ func (m *CacheManager) DeleteByPath(pathPrefix string) int {
 	return deletedCount
 }
 
-// func (m *CacheManager) UpdateTTL(id string, ttl int64, repo *repository.MongoCacheRepo) {
-// 	m.mu.Lock()
-// 	defer m.mu.Unlock()
+func (m *CacheManager) DeleteByID(id string) error {
+	err := m.cacheRepository.DeleteByID(context.Background(), id)
 
-// 	repo.UpdateTTL(context.Background(), id, ttl)
+	return err
+}
 
-// 	m.LoadSettings(repo) // Заодно подгружаем настройки кеша
-// }
+func (m *CacheManager) UpdateTTL(id string, ttl int64) error {
+	objID, err := primitive.ObjectIDFromHex(id)
+
+	if err != nil{
+		return err
+	}
+	
+	m.cacheRepository.UpdateTTL(context.Background(), objID, ttl)
+
+	m.LoadSettings() // Заодно подгружаем настройки кеша
+
+	return nil
+}
 
 func (m  *CacheManager) GetKeysCount() int{
 	return len(m.pathSettings)

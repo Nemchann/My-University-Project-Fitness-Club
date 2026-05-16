@@ -48,7 +48,7 @@ func (r *MongoIPRepo) GetAll(ctx context.Context) ([]model.IPRule, error) {
 
 func (r *MongoIPRepo) InsertRule(ctx context.Context, ip string, ruleType string) error {
     doc := bson.M{
-        "ip":         ip,
+        "network":         ip,
         "type":       ruleType,
     }
 

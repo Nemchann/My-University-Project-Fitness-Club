@@ -62,7 +62,7 @@ func (r *MongoCacheRepo) GetByID(ctx context.Context, id string) (*model.CacheSe
 	return &setting, nil
 }
 
-func (r *MongoCacheRepo) DeleteById(ctx context.Context, id string) error {
+func (r *MongoCacheRepo) DeleteByID(ctx context.Context, id string) error {
 	objID, err := primitive.ObjectIDFromHex(id)
 
 	if err != nil{
