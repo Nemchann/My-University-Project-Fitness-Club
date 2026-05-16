@@ -52,6 +52,7 @@ func (r *MongoIPRepo) InsertRule(ctx context.Context, ip string, ruleType string
         "type":       ruleType,
     }
 
+    //Исправить, если ip был уже в бд, то обновляем тип правила, а не вставляем новый документ
     result, error := r.collection.InsertOne(ctx, doc)
     if error != nil {
         return error
