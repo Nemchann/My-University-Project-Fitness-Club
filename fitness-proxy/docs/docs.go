@@ -126,6 +126,55 @@ const docTemplate = `{
             }
         },
         "/management/cache_settings/{id}": {
+            "put": {
+                "description": "Изменяет ttl у опредленной настройки кеша по id",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Cache-Management"
+                ],
+                "summary": "Изменить TTL настройки кеша по id",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID настройки кеша (Hex)",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Новое значение TTL в JSON",
+                        "name": "ttl_request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            },
             "delete": {
                 "description": "Удаляет настройку кеша для указанного ObjectID",
                 "produces": [

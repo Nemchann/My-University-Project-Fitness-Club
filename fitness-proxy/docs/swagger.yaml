@@ -104,6 +104,39 @@ paths:
       summary: Удалить настройку кеша по ID
       tags:
       - Cache-Management
+    put:
+      consumes:
+      - application/json
+      description: Изменяет ttl у опредленной настройки кеша по id
+      parameters:
+      - description: ID настройки кеша (Hex)
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Новое значение TTL в JSON
+        in: body
+        name: ttl_request
+        required: true
+        schema:
+          type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Изменить TTL настройки кеша по id
+      tags:
+      - Cache-Management
   /management/cache_settings/purge:
     delete:
       description: Удаляет все настройки кеша для совпадений по началу пути (например,
