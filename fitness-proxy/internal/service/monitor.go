@@ -13,10 +13,12 @@ type Monitor struct {
 	AverageLatency int64
 	ActiveConnections int64
 	CurrentTraffic int64
+    TotalTrafficBytes int64
 	RPSHistory     []int64
     TrafficHistory []int64 // байт в секунду
     bufferIndex    int
     mu             sync.Mutex
+    ClientsMap sync.Map // Ключ: string (IP), Значение: *ClientStats
 }
 
 func NewMonitor () *Monitor{
@@ -28,6 +30,15 @@ func NewMonitor () *Monitor{
 		RPSHistory:     make([]int64, 60), // храним за 60 секунд
         TrafficHistory: make([]int64, 60),
 	}
+}
+
+type ClientStats struct {
+	IP             string `json:"ip"`
+	TotalRequests  int64  `json:"total_requests"`
+	BlockedRequests int64  `json:"blocked_requests"`
+	BytesTransferred int64 `json:"bytes_transferred"`
+    BlockedRateLimit int64 `json:"blocked_rate_limit"` // Превысил лимит RPS/RPM
+    BlockedBlacklist int64 `json:"blocked_blacklist"`  // Забанен по IP
 }
 
 func (m *Monitor) UpdateLatency(newLatency int64) {
@@ -55,6 +66,56 @@ func (m *Monitor) StartRPSResetter(){
     }
 }
 
+func (m *Monitor) GetRequestsPerMinute() int64 {
+    var sum int64
+    m.mu.Lock()
+    for _, rps := range m.RPSHistory {
+        sum += rps
+    }
+    m.mu.Unlock()
+    return sum / 60
+}
+
+func (m *Monitor) GetAverageResponseTime() int64 {
+    return atomic.LoadInt64(&m.AverageLatency)
+}
+
+func (m *Monitor) GetActiveConnections() int64 {
+    return atomic.LoadInt64(&m.ActiveConnections)
+}
+
+func (m *Monitor) GetTotalRequests() int64 {
+    return atomic.LoadInt64(&m.TotalRequests)
+}
+
+func (m *Monitor) GetRPSHistory() []int64 {
+    m.mu.Lock()
+    defer m.mu.Unlock()
+    historyCopy := make([]int64, len(m.RPSHistory))
+    copy(historyCopy, m.RPSHistory)
+    return historyCopy
+}
+
+func (m *Monitor) GetTrafficHistory() []int64 {
+    m.mu.Lock()
+    defer m.mu.Unlock()
+    historyCopy := make([]int64, len(m.TrafficHistory))
+    copy(historyCopy, m.TrafficHistory)
+    return historyCopy
+}
+
+func (m *Monitor) GetClientsMap() *sync.Map {
+    return &m.ClientsMap
+}
+
+func (m *Monitor) GetTotalTrafficBytes() int64 {
+    return atomic.LoadInt64(&m.TotalTrafficBytes)
+}
+
+func (m *Monitor) GetLatency() int64 {
+    return atomic.LoadInt64(&m.AverageLatency)
+}
+
 func (m *Monitor) Middleware() gin.HandlerFunc {
     return func(c *gin.Context) {
         // 1. Увеличиваем общий счетчик и текущий RPS сразу при входе запроса
@@ -71,9 +132,27 @@ func (m *Monitor) Middleware() gin.HandlerFunc {
         latency := time.Since(start).Milliseconds()
         m.UpdateLatency(latency) // Метод для расчета среднего значения
         
-        // Считаем размер ответа для статистики трафика
-        responseSize := int64(c.Writer.Size())
-        atomic.AddInt64(&m.CurrentTraffic, responseSize) //Исправить ошибку
+        // Считаем размер ответа от Java-бэкенда
+        size := int64(c.Writer.Size())
+        atomic.AddInt64(&m.TotalTrafficBytes, size)
+        atomic.AddInt64(&m.CurrentTraffic, size)
+
+        // Здесь запрос ПОЛНОСТЬЮ завершился. Мы знаем ВСЁ.
+        ip := c.ClientIP()
+        bytesSent := int64(c.Writer.Size())
+        if bytesSent < 0 { 
+            bytesSent = 0 // На случай, если тело ответа было пустым
+        }
+
+        // Достаем статус блокировки (если IPFilter сработал, там будет true)
+        blockReasonRaw, _ := c.Get("block_reason")
+        blockReason := ""
+        if val, ok := blockReasonRaw.(string); ok {
+            blockReason = val
+        }
+
+        // Фиксируем всё в одном месте асинхронно!
+        m.RecordClientActivity(ip, bytesSent, blockReason)
     }
 }
 
@@ -86,4 +165,20 @@ func (m *Monitor) updateHistory(rps int64, traffic int64) {
 
     // Сдвигаем индекс, если дошли до конца — возвращаемся в начало
     m.bufferIndex = (m.bufferIndex + 1) % 60
+}
+
+func (m *Monitor) RecordClientActivity(ip string, bytes int64, blockReason string) {
+	// Достаем существующую статистику или создаем новую, если IP пришел впервые
+	actual, _ := m.ClientsMap.LoadOrStore(ip, &ClientStats{IP: ip})
+	stats := actual.(*ClientStats)
+
+	// Атомарно увеличиваем счетчики
+	atomic.AddInt64(&stats.TotalRequests, 1)
+	atomic.AddInt64(&stats.BytesTransferred, bytes)
+	switch blockReason {
+	case "blacklist":
+		atomic.AddInt64(&stats.BlockedBlacklist, 1)
+	case "rate_limit":
+		atomic.AddInt64(&stats.BlockedRateLimit, 1)
+	}
 }
