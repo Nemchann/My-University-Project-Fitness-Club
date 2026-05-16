@@ -10,7 +10,15 @@ import (
 	"log"
 )
 
-
+//go:generate mockgen -source=cache_repo.go -destination=mocks/mock_cache_repo.go -package=mocks
+type CacheRepository interface {
+	GetSettings(ctx context.Context) ([]model.CacheSetting, error)
+	GetTTLForPath(ctx context.Context, path string) (int, error)
+	GetByID(ctx context.Context, id string) (*model.CacheSetting, error)
+	DeleteByID(ctx context.Context, id string) error
+	DeleteByPath(ctx context.Context, path string) error
+	UpdateTTL(ctx context.Context, id primitive.ObjectID, ttl int64) error
+}
 
 type MongoCacheRepo struct {
     collection *mongo.Collection
@@ -85,15 +93,12 @@ func (r *MongoCacheRepo) DeleteByPath(ctx context.Context, path string) error {
     return nil
 }
 
-func (r *MongoCacheRepo) UpdateTTL(ctx context.Context, id string, ttl int) error {
-	result, err := r.collection.UpdateOne(ctx, bson.M{"_id": id}, bson.M{"$set": bson.M{"ttl_seconds": ttl}})
+func (r *MongoCacheRepo) UpdateTTL(ctx context.Context, id primitive.ObjectID, ttl int64) error {
+
+	_, err := r.collection.UpdateOne(ctx, bson.M{"_id": id}, bson.M{"$set": bson.M{"ttl_seconds": ttl}})
 
 	if err != nil{
 		return err
-	}
-
-	if result.UpsertedCount == 0{
-		return fmt.Errorf("Документ с данным id %s не найден", id)
 	}
 
 	log.Printf("Updated cache settings with id: %s", id)

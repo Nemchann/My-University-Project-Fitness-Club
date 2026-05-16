@@ -11,6 +11,16 @@ import (
     "fmt"
 )
 
+//go:generate mockgen -source=ip_rules.go -destination=mocks/mock_ip_rules.go -package=mocks
+type IPRepository interface{
+    GetAll(ctx context.Context) ([]model.IPRule, error)
+    InsertRule(ctx context.Context, ip string, ruleType string) error
+    DeleteByID(ctx context.Context, id string) error
+    GetBlackList(ctx context.Context) ([]string, error)
+    GetWhitelist(ctx context.Context) ([]string, error)
+    GetGreylist(ctx context.Context) ([]string, error)
+}
+
 type MongoIPRepo struct {
 	collection *mongo.Collection
 }
@@ -70,4 +80,71 @@ func (r *MongoIPRepo) DeleteByID(ctx context.Context, id string) error {
 
     log.Printf("Deleted IP rule with ID: %v", result.DeletedCount)
     return nil
+}
+
+func (r *MongoIPRepo) GetBlackList(ctx context.Context) ([]string, error) {
+    result, err := r.collection.Find(ctx, bson.M{"type": "black"})
+
+    if err!= nil{
+        erro := []string{""}
+        return erro, err
+    }
+
+    var rules []model.IPRule
+    if err = result.All(ctx, &rules); err != nil {
+        erro := []string{""}
+        return erro, err
+    }
+
+    var blackList []string
+    for _, rule := range rules {
+        blackList = append(blackList, rule.Network)
+    }
+
+    return blackList, nil
+}
+
+
+func (r *MongoIPRepo) GetWhitelist(ctx context.Context) ([]string, error) {
+    result, err := r.collection.Find(ctx, bson.M{"type": "white"})
+
+    if err!= nil{
+        erro := []string{""}
+        return erro, err
+    }
+
+    var rules []model.IPRule
+    if err = result.All(ctx, &rules); err != nil {
+        erro := []string{""}
+        return erro, err
+    }
+
+    var whitelist []string
+    for _, rule := range rules {
+        whitelist = append(whitelist, rule.Network)
+    }
+
+    return whitelist, nil
+}
+
+func (r *MongoIPRepo) GetGreylist(ctx context.Context) ([]string, error) {
+    result, err := r.collection.Find(ctx, bson.M{"type": "grey"})
+
+    if err!= nil{
+        erro := []string{""}
+        return erro, err
+    }
+
+    var rules []model.IPRule
+    if err = result.All(ctx, &rules); err != nil {
+        erro := []string{""}
+        return erro, err
+    }
+
+    var greylist []string
+    for _, rule := range rules {
+        greylist = append(greylist, rule.Network)
+    }
+
+    return greylist, nil
 }
