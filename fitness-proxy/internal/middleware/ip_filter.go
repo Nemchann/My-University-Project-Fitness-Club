@@ -11,7 +11,7 @@ import (
 
 // Добавить метод Clear(), который очищает рейнджеры
 
-func IPFilter(manager *service.IPManager, logChan chan model.AccessLog) gin.HandlerFunc {
+func IPFilter(manager *service.IPManager, logChan chan model.AccessLog, m *service.Monitor) gin.HandlerFunc {
     return func(c *gin.Context) {
         ip := net.ParseIP(c.ClientIP())
         rawIP := c.ClientIP() // На случай, если IP не парсится
@@ -23,7 +23,7 @@ func IPFilter(manager *service.IPManager, logChan chan model.AccessLog) gin.Hand
 
         if !allowed || reason == "blacklisted" {
             log.Printf("BLOCK: IP %s rejected. Reason: %s", ip, reason)
-
+            c.Set("block_reason", "blacklist")
             c.Set("abort_reason", "IP in Blacklist")
             // ТЗ 1.2.1: прерываем запрос с ошибкой 403
             c.AbortWithStatusJSON(403, gin.H{
@@ -38,7 +38,7 @@ func IPFilter(manager *service.IPManager, logChan chan model.AccessLog) gin.Hand
         //         return
         //     }
         // }
-        
+        c.Set("is_blocked", false)
         c.Next()
     }
 }

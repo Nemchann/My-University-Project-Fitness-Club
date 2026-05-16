@@ -49,6 +49,7 @@ func RateLimitMiddleware(limiterManager *service.IPRateLimiter, ipManager *servi
         if !limiters.Second.Allow() || !limiters.Minute.Allow() {
             c.Header("Retry-After", "2")
             c.Set("abort_reason", "Rate limit exceeded") // Чтобы логгер записал причину
+            c.Set("block_reason", "rate_limit")
             c.AbortWithStatusJSON(429, gin.H{"error": "Too many requests. Slow down!"})
             return
         }
