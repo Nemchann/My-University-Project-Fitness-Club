@@ -67,7 +67,7 @@ func CacheMiddleware(cache *service.CacheManager) gin.HandlerFunc {
 
 
 		path := c.Request.URL.Path
-		ttl := cache.GetTTLForPath(path) // Получаем TTL из нашей карты
+		ttl := cache.GetTTLForPathRAM(path) // Получаем TTL из нашей карты
 
 		// 4. После того как Java ответила, сохраняем результат (если статус 200 или 300-400)
 		if c.Writer.Status() == http.StatusOK || (c.Writer.Status() >= 300 && c.Writer.Status() < 400) && ttl > 0 {

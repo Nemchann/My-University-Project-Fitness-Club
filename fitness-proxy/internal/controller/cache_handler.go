@@ -52,7 +52,7 @@ func DeleteSettingByIDHandler(cacheManager *service.CacheManager) gin.HandlerFun
 	return func(c *gin.Context) {
 		id := c.Param("id")
 
-		err := cacheManager.DeleteByID(id)
+		err := cacheManager.DeleteByID(c.Request.Context(), id)
 
 		if err != nil{
 			c.JSON(500, gin.H{"error": "Failed to get cache setting"})
@@ -80,7 +80,7 @@ func DeleteSettingsByPathHandler(cacheManager *service.CacheManager) gin.Handler
 		}
 
 		// Вызываем метод очистки в менеджере
-		count := cacheManager.DeleteByPath(path)
+		count := cacheManager.DeleteFromRAMByPath(path)
 		
 		c.JSON(200, gin.H{
 			"message": "Кеш очищен",
@@ -113,7 +113,7 @@ func UpdateTTLByIDHandler(cacheManager *service.CacheManager) gin.HandlerFunc {
         }
 
         // 1. Обновляем в MongoDB
-        errDB := cacheManager.UpdateTTL(id, input.TTLSeconds)
+        errDB := cacheManager.UpdateTTL(c.Request.Context(), id, input.TTLSeconds)
         if errDB != nil {
 			fmt.Println(errDB.Error())
             c.JSON(500, gin.H{"error": "Ошибка БД"})
