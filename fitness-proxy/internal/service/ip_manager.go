@@ -3,9 +3,9 @@ package service
 import (
 	"fmt"
 	"net"
-
+    "context"
 	"github.com/yl2chen/cidranger"
-
+    "fitness-proxy/internal/repository"
 	"fitness-proxy/internal/model"
 )
 
@@ -14,13 +14,15 @@ type IPManager struct {
     blacklist cidranger.Ranger
     greylist  cidranger.Ranger 
     blockedCount int
+    repository repository.IPRepository
 }
 
-func NewIPManager() *IPManager {
+func NewIPManager(repository repository.IPRepository) *IPManager {
     return &IPManager{
         whitelist: cidranger.NewPCTrieRanger(),
         blacklist: cidranger.NewPCTrieRanger(),
         greylist:  cidranger.NewPCTrieRanger(),
+        repository: repository,
     }
 }
 
@@ -46,10 +48,21 @@ func (m *IPManager) IsAllowed(ip net.IP) (bool, string) {
 }
 
 func (m *IPManager) AddRule(network string, ruleType string) error{
-	
+
     _, ipNet, err := net.ParseCIDR(network)
     if err != nil {
-        return err
+        // Если не получилось, возможно это одиночный IP. Пробуем распарсить его.
+        ip := net.ParseIP(network)
+        if ip == nil {
+            return fmt.Errorf("invalid IP or CIDR address: %s", network)
+        }
+        
+        // Превращаем одиночный IP в CIDR-маску (/32 для IPv4 или /128 для IPv6)
+        mask := net.CIDRMask(32, 32)
+        if ip.To4() == nil {
+            mask = net.CIDRMask(128, 128)
+        }
+        ipNet = &net.IPNet{IP: ip, Mask: mask}
     }
 
     // 2. Создаем запись для рейнджера
@@ -58,11 +71,13 @@ func (m *IPManager) AddRule(network string, ruleType string) error{
     // 3. Распределяем по спискам в зависимости от типа
     switch ruleType {
     case "white":
+        m.repository.InsertRule(context.Background(), network, "white")
         return m.whitelist.Insert(entry)
     case "black":
+        m.repository.InsertRule(context.Background(), network, "black")
         return m.blacklist.Insert(entry)
     case "grey":
-        // Если решишь добавить логику для серых списков
+        m.repository.InsertRule(context.Background(), network, "grey")
         return m.greylist.Insert(entry) 
     default:
         return fmt.Errorf("unknown rule type: %s", ruleType)
@@ -130,4 +145,21 @@ func (m *IPManager) GetBlockedCount() int {
 
 func (m *IPManager) GetRulesCount() int{
     return m.blacklist.Len() + m.whitelist.Len() + m.greylist.Len()
+}
+
+func (m *IPManager) CheckIPAccess(ctx context.Context, ip net.IP) (bool, string) {
+    // 1. Проверяем черный список (высший приоритет п. 1.2.1)
+    if contains, _ := m.blacklist.Contains(ip); contains {
+        m.blockedCount++
+        return false, "blacklisted"
+    }
+    // 2. Проверяем белый список (п. 1.2.2)
+    if contains, _ := m.whitelist.Contains(ip); contains {
+        return true, "whitelisted"
+    }
+    // 3. Серый список
+    if contains, _ := m.greylist.Contains(ip); contains {
+        return true, "grey"
+    }  
+    return true, "default"
 }

@@ -125,14 +125,14 @@ func (m *CacheManager) DeleteByPath(pathPrefix string) int {
 	return deletedCount
 }
 
-func (m *CacheManager) UpdateTTL(id string, ttl int, repo *repository.MongoCacheRepo) {
-	m.mu.Lock()
-	defer m.mu.Unlock()
+// func (m *CacheManager) UpdateTTL(id string, ttl int64, repo *repository.MongoCacheRepo) {
+// 	m.mu.Lock()
+// 	defer m.mu.Unlock()
 
-	repo.UpdateTTL(context.Background(), id, ttl)
+// 	repo.UpdateTTL(context.Background(), id, ttl)
 
-	m.LoadSettings(repo) // Заодно подгружаем настройки кеша
-}
+// 	m.LoadSettings(repo) // Заодно подгружаем настройки кеша
+// }
 
 func (m  *CacheManager) GetKeysCount() int{
 	return len(m.pathSettings)
