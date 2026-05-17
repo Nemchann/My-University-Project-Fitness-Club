@@ -5,6 +5,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"sync/atomic"
 	"sync"
+    "net/http"
 )
 
 type Monitor struct {
@@ -186,4 +187,37 @@ func (m *Monitor) RecordClientActivity(ip string, bytes int64, blockReason strin
 	case "rate_limit":
 		atomic.AddInt64(&stats.BlockedRateLimit, 1)
 	}
+}
+
+func (m *Monitor) MaxConnectionsMiddleware(maxConn int64) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		// Считываем текущее кол-во соединений
+		currentConns := m.GetActiveConnections()
+
+		if currentConns >= maxConn {
+			c.JSON(http.StatusTooManyRequests, gin.H{
+				"error": "Server is busy. Too many active connections.",
+			})
+			c.Abort()
+			return
+		}
+
+		
+		m.IncrementActiveConnections()
+		c.Next()
+		// После завершения запроса декрементируем
+		// m.DecrementActiveConnections()
+	}
+}
+
+func (m *Monitor) IncrementActiveConnections() {
+    m.mu.Lock()
+    defer m.mu.Unlock()
+    m.ActiveConnections++
+}
+
+func (m *Monitor) DecrementActiveConnections() {
+    m.mu.Lock()
+    defer m.mu.Unlock()
+    m.ActiveConnections--
 }
