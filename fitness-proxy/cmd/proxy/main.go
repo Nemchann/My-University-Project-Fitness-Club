@@ -12,6 +12,8 @@ import (
 	"syscall"
 	"os/signal"
 
+	"golang.org/x/time/rate"
+	
 	"fitness-proxy/internal/repository"
 	"fitness-proxy/internal/model"
 	"fitness-proxy/internal/middleware"
@@ -24,6 +26,7 @@ import (
 )
 
 //Запуск: go run cmd/proxy/main.go 
+//Тестировать все: go test -coverpkg=./... -coverprofile=coverage.out ./...
 
 
 func init() {
@@ -138,6 +141,8 @@ func main() {
 
 	r.Use(monitor.Middleware())
 
+	r.Use(monitor.MaxConnectionsMiddleware(10000))
+
 	r.Use(middleware.IPFilter(ipManager, logChan, monitor))
 
 	r.Use(middleware.RateLimitMiddleware(rateLimiter, ipManager))
@@ -147,6 +152,18 @@ func main() {
 	r.Use(middleware.CORSMiddleware())
 
 	r.Use(middleware.MaxBodySize(2 * 1024 * 1024))
+
+	// Разрешаем максимум 100 НОВЫХ запросов в секунду на весь прокси-сервер с burst = 200
+	globalConnLimiter := rate.NewLimiter(rate.Limit(100), 200)
+
+	// И проверять его в отдельном Middleware:
+	r.Use(func(c *gin.Context) {
+    	if !globalConnLimiter.Allow() {
+        	c.AbortWithStatusJSON(http.StatusTooManyRequests, gin.H{"error": "Global connection rate limit exceeded"})
+        	return
+    	}
+    	c.Next()
+	})
 
 
 	// Адрес Java-бэкенда
