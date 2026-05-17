@@ -66,6 +66,7 @@ func (m *Monitor) StartRPSResetter(){
     }
 }
 
+//Сколько запросов в минуту
 func (m *Monitor) GetRequestsPerMinute() int64 {
     var sum int64
     m.mu.Lock()
@@ -76,6 +77,7 @@ func (m *Monitor) GetRequestsPerMinute() int64 {
     return sum / 60
 }
 
+//Среднее время ответа
 func (m *Monitor) GetAverageResponseTime() int64 {
     return atomic.LoadInt64(&m.AverageLatency)
 }
@@ -104,14 +106,17 @@ func (m *Monitor) GetTrafficHistory() []int64 {
     return historyCopy
 }
 
+//Клиенты, их статистика
 func (m *Monitor) GetClientsMap() *sync.Map {
     return &m.ClientsMap
 }
 
+//Сколько всего трафика потрачено
 func (m *Monitor) GetTotalTrafficBytes() int64 {
     return atomic.LoadInt64(&m.TotalTrafficBytes)
 }
 
+//Этот метод у меня дублируется выше
 func (m *Monitor) GetLatency() int64 {
     return atomic.LoadInt64(&m.AverageLatency)
 }
