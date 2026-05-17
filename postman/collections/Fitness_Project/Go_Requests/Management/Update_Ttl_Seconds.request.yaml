@@ -1,0 +1,8 @@
+$kind: http-request
+name: Update_Ttl_Seconds
+url: "{{fullProxyUrl}}/management/cache_settings/6a04692d1515fc6b3b3af2ac"
+method: PUT
+body:
+  type: json
+  content: "{\r\n    \"ttl_seconds\": 600\r\n}"
+order: 4496611222684446

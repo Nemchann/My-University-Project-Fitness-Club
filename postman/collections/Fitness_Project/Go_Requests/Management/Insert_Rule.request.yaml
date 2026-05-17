@@ -1,12 +1,12 @@
 $kind: http-request
 name: Insert_Rule
-url: "{{proxyUrl}}/management/insert_rule"
+url: "{{fullProxyUrl}}/management/insert_rule"
 method: POST
 body:
   type: json
   content: "{\r
 
-    \    \"network\": \"127.0.0.2\",\r
+    \    \"network\": \"127.0.0.3/21\",\r
 
     \    \"type\": \"grey\"\r
 

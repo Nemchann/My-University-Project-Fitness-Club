@@ -1,6 +1,6 @@
 $kind: http-request
 name: Delete_By_Path
-url: "{{proxyUrl}}/management/cache_settings/purge?path=/api/fitness-club/users"
+url: "{{fullProxyUrl}}/management/cache_settings/purge?path=/api/fitness-club/users"
 method: DELETE
 queryParams:
   path: /api/fitness-club/users
