@@ -40,6 +40,8 @@ func SetupRouter(ipManager *service.IPManager,
 
         admin.POST("/insert_rule", AddRuleHandler(ipManager))
 
+        admin.GET("/check_ip", CheckIPStatus(ipManager)) // Новый метод для проверки статуса IP-адреса
+
         admin.GET("/cache_setting/:id", GetSettingByIDHandler(cacheManager)) // Новый метод для получения TTL по ID
 
         admin.PUT("/cache_settings/:id", UpdateTTLByIDHandler(cacheManager)) // Новый метод для добавления или обновления настройки кеша

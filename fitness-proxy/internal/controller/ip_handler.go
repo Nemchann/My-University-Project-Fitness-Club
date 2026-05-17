@@ -5,6 +5,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"fmt"
 	"net/http"
+	"net"
 )
 
 type AddRuleRequest struct {
@@ -118,5 +119,37 @@ func DeleteRuleHandler(ipManager *service.IPManager) gin.HandlerFunc {
 		// После удаления из БД лучше обновить Radix Tree (вызвать Reload)
 		ipManager.Reload(rules) 
 		c.JSON(200, gin.H{"message": "Правило удалено"})
+	}
+}
+
+func CheckIPStatus (ipManager *service.IPManager) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		// Получаем IP из query-параметра, например: /check_ip?ip=192.168.1.1
+		ipStr := c.Query("ip")
+		if ipStr == "" {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Parameter 'ip' is required"})
+			c.Abort()
+			return
+		}
+
+		ip := net.ParseIP(ipStr)
+		if ip == nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid IP address format"})
+			c.Abort()
+			return
+		}
+
+		// Вызываем твой IsAllowed из IPManager
+		_, listName := ipManager.IsAllowed(ip.To4())
+
+		// Если IP не найден ни в одном рейнджере, IsAllowed вернет пустую строку или "default"
+		if listName == "" {
+			listName = "default"
+		}
+
+		c.JSON(http.StatusOK, gin.H{
+			"ip":     ipStr,
+			"status": listName, // вернет "blacklisted", "whitelisted", "grey" или "default"
+		})
 	}
 }

@@ -22,6 +22,10 @@ func GetMetricsHandler(monitor *service.Monitor) gin.HandlerFunc {
 			"rps_history": monitor.GetRPSHistory(),
 			"traffic_history": monitor.GetTrafficHistory(),
 			"latency_ms": monitor.GetLatency(),
+			"total_traffic_bytes": monitor.GetTotalTrafficBytes(),
+			"active_connections": monitor.GetActiveConnections(),
+			"total_requests": monitor.GetTotalRequests(),
+		
 		}
 
 		c.JSON(200, metrics)
