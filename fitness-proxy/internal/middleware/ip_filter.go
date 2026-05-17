@@ -33,7 +33,7 @@ func IPFilter(manager *service.IPManager, logChan chan model.AccessLog, m *servi
             return
         }
         // if reason == "grey"{
-        //     if !captchaPassed(c) {          // ← твоя проверка CAPTCHA
+        //     if !captchaPassed(c) {          //  проверка CAPTCHA
         //         c.AbortWithStatus(http.StatusForbidden) // или редирект на страницу с CAPTCHA
         //         return
         //     }
@@ -49,6 +49,6 @@ func IPFilter(manager *service.IPManager, logChan chan model.AccessLog, m *servi
 //     if err != nil {
 //         return false
 //     }
-//     return validateToken(token) // проверка подписи или обращение к Redis
+//     return validateToken(token) // проверка подписи и срока действия токена
 // }
 
