@@ -7,6 +7,7 @@ import (
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
+    "go.mongodb.org/mongo-driver/mongo/options"
     "go.mongodb.org/mongo-driver/bson/primitive"
     "fmt"
 )
@@ -47,19 +48,22 @@ func (r *MongoIPRepo) GetAll(ctx context.Context) ([]model.IPRule, error) {
 }
 
 func (r *MongoIPRepo) InsertRule(ctx context.Context, ip string, ruleType string) error {
-    doc := bson.M{
-        "network":         ip,
-        "type":       ruleType,
-    }
-
-    //Исправить, если ip был уже в бд, то обновляем тип правила, а не вставляем новый документ
-    result, error := r.collection.InsertOne(ctx, doc)
-    if error != nil {
-        return error
-    }
-    log.Printf("Inserted new IP rule with ID: %v", result.InsertedID)
-
-    return nil
+    // Ищем по полю network
+	filter := bson.M{"network": ip}
+	
+	// Обновляем (или вставляем) поля network и type
+	update := bson.M{
+		"$set": bson.M{
+			"network": ip,
+			"type":    ruleType,
+		},
+	}
+	
+	// Включаем опцию upsert = true
+	opts := options.Update().SetUpsert(true)
+	
+	_, err := r.collection.UpdateOne(ctx, filter, update, opts)
+	return err
 }
 
 
