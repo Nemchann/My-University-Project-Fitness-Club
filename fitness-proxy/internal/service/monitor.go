@@ -67,6 +67,19 @@ func (m *Monitor) StartRPSResetter(){
     }
 }
 
+func (m *Monitor) GetCurrentRPS() int64 {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	var totalRequestsInMinute int64 = 0
+	for _, rps := range m.RPSHistory {
+		totalRequestsInMinute += rps
+	}
+
+	// Возвращаем среднее количество запросов в секунду за последнюю минуту
+	return totalRequestsInMinute / 60
+}
+
 //Сколько запросов в минуту
 func (m *Monitor) GetRequestsPerMinute() int64 {
     var sum int64
