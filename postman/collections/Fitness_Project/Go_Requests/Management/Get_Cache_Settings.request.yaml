@@ -1,0 +1,5 @@
+$kind: http-request
+name: Get_Cache_Settings
+url: "{{fullProxyUrl}}/management/cache_setting/6a04692d1515fc6b3b3af2ac"
+method: GET
+order: 4482285899703203

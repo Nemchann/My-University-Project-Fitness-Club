@@ -6,6 +6,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.time.LocalDate;
 import java.util.Date;
 
 @Entity
@@ -28,15 +29,16 @@ public class ClientSubscription {
     private Subscription subscription;
 
     @Column(name = "start_date", nullable = false)
-    private Date startDate;
+    private LocalDate startDate;
 
     @Column(name = "end_date", nullable = false)
-    private Date endDate;
+    private LocalDate endDate;
 
     @Column(name = "remaining_visits", nullable = false)
     private Integer remainingVisits;
 
-    @Column(name = "subscription_status", nullable = false)
-    private Integer subscriptionStatus;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "subscription_status", nullable = false)
+    private SubscriptionStatus subscriptionStatus;
 
 }

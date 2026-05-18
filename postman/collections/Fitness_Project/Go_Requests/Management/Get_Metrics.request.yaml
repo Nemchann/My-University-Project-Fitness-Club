@@ -1,0 +1,5 @@
+$kind: http-request
+name: Get_Metrics
+url: "{{fullProxyUrl}}/management/metrics"
+method: GET
+order: 4500639317251981

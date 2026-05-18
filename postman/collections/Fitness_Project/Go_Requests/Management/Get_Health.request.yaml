@@ -1,0 +1,4 @@
+$kind: http-request
+url: "{{fullProxyUrl}}/management/health"
+method: GET
+order: 4496328472917785

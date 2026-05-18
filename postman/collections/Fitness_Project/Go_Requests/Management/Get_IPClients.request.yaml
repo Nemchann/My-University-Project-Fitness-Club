@@ -1,0 +1,4 @@
+$kind: http-request
+url: "{{fullProxyUrl}}/management/clients"
+method: GET
+order: 4501046001944463

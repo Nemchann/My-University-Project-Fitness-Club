@@ -1,0 +1,5 @@
+$kind: http-request
+name: Get_All_Rules
+url: "{{fullProxyUrl}}/management/rules"
+method: GET
+order: 4208420550422113

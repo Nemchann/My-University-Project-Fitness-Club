@@ -1,0 +1,7 @@
+$kind: http-request
+name: Check_IP
+url: "{{fullProxyUrl}}/management/check_ip?ip=127.0.0.1"
+method: GET
+queryParams:
+  ip: 127.0.0.1
+order: 4503417263609239

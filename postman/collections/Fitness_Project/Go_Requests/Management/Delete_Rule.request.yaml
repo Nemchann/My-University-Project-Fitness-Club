@@ -1,0 +1,5 @@
+$kind: http-request
+name: Delete_Rule
+url: "{{fullProxyUrl}}/management/rule/69fdaab7d4bc9072ddd6a0f0"
+method: DELETE
+order: 4482808192388143

@@ -1,14 +1,11 @@
 package com.nemchann.fitnessbackend.booking.service;
 
 import com.nemchann.fitnessbackend.booking.dto.*;
-import com.nemchann.fitnessbackend.booking.entity.Booking;
-import com.nemchann.fitnessbackend.booking.entity.BookingStatus;
+import com.nemchann.fitnessbackend.booking.entity.*;
 import com.nemchann.fitnessbackend.booking.enums.BookingStatusEnum;
+import com.nemchann.fitnessbackend.booking.enums.SubscriptionStatusEnum;
 import com.nemchann.fitnessbackend.booking.repository.*;
-import com.nemchann.fitnessbackend.common.exception.AlreadyBookedException;
-import com.nemchann.fitnessbackend.common.exception.BookingNotFoundException;
-import com.nemchann.fitnessbackend.common.exception.BookingStatusNotFoundException;
-import com.nemchann.fitnessbackend.payment.dto.PaymentResponseDto;
+import com.nemchann.fitnessbackend.common.exception.*;
 import com.nemchann.fitnessbackend.schedule.entity.Schedule;
 import com.nemchann.fitnessbackend.schedule.entity.Workout;
 import com.nemchann.fitnessbackend.schedule.service.ScheduleService;
@@ -21,6 +18,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -29,9 +28,9 @@ import java.util.UUID;
 public class BookingService {
     private final BookingRepository bookingRepository;
     private final BookingStatusRepository bookingStatusRepository;
-    private final ClientSubscriptionRepository clientSubscriptionRepository;
-    private final SubscriptionRepository subscriptionRepository;
-    private final SubscriptionStatusRepository subscriptionStatusRepository;
+    private final ClientSubscriptionRepository clientSubscriptionRepository; //Про абонементы
+    private final SubscriptionRepository subscriptionRepository; //Про абонементы
+    private final SubscriptionStatusRepository subscriptionStatusRepository; //Про абонементы
     private final ScheduleService scheduleService;
     private final UserService userService;
 
@@ -46,18 +45,39 @@ public class BookingService {
             throw new AlreadyBookedException("You've already booked this schedule");
         }
 
+        //Если бронировать тренировку за 2 часа до нее и позже
+        LocalDateTime edgeTime = LocalDateTime.now().plusHours(2);
+        if (booking.getSchedule().getStartTime().isAfter(edgeTime)){
+            throw new BookingTooLateException("It is too late to book that schedule");
+        }
+
+        ClientSubscription clientSubscription = clientSubscriptionRepository.findLastByClientId(booking.getClient().getId())
+                .orElseThrow(() -> new ClientSubscriptionNotFoundException("Client subscription is not found"));
+
         try{
             scheduleService.addParticipant(createDto.getScheduleId());
             BookingStatus status = bookingStatusRepository.findByBookingStatusName(BookingStatusEnum.ACCEPTED)
                     .orElseThrow(() -> new BookingNotFoundException("Booking status is not found"));
+
+            Integer remainingVisits = clientSubscription.getRemainingVisits();
+
+            if (remainingVisits > 0){
+                clientSubscription.setRemainingVisits(remainingVisits - 1);
+            }else{
+                //Подумать, что делать, если есть еще активные абонементы у пользователя
+                throw new VisitsEndedException("Your visits ended. Buy new subscription");
+            }
+            //Подумать, что делать с безлимитным посещением
+
             booking.setBookingStatus(status);
+
         }catch(IllegalStateException e){
             BookingStatus status = bookingStatusRepository.findByBookingStatusName(BookingStatusEnum.CANCELLED)
                     .orElseThrow(() -> new BookingNotFoundException("Booking status is not found"));
             booking.setBookingStatus(status);
         }
 
-
+        clientSubscriptionRepository.save(clientSubscription);
         bookingRepository.save(booking);
 
         return mapToResponseDto(booking);
@@ -113,6 +133,32 @@ public class BookingService {
         return userInScheduleDto;
     }
 
+    private SubscriptionResponseDto mapToSubscriptionResponseDto(Subscription subscription){
+        SubscriptionResponseDto dto = new SubscriptionResponseDto();
+
+        dto.setSubscriptionName(subscription.getSubscriptionName());
+        dto.setPrice(subscription.getPrice());
+        dto.setDurationDays(subscription.getDurationDays());
+        dto.setVisitsCount(subscription.getVisitsCount());
+
+        return dto;
+    }
+
+    private ClientSubscriptionResponseDto mapToClientSubscriptionResponseDto(ClientSubscription clientSubscription){
+        ClientSubscriptionResponseDto dto = new ClientSubscriptionResponseDto();
+
+        dto.setStartDate(clientSubscription.getStartDate());
+        dto.setEndDate(clientSubscription.getEndDate());
+
+        SubscriptionStatus status = subscriptionStatusRepository.findBySubscriptionStatusName(clientSubscription.getSubscriptionStatus().getSubscriptionStatusName())
+                .orElseThrow(() -> new SubscriptionStatusNotFoundException("Subscription status is not found"));
+        dto.setSubscriptionStatus(status.getSubscriptionStatusName().name());
+
+        dto.setRemainingVisits(clientSubscription.getRemainingVisits());
+
+        return dto;
+    }
+
     //Проверки на существование пользователя и тренировки происходят тут (внутри сервисов)
     private Booking rewriteFromCreateDto(BookingCreateDto createDto){
         Booking booking = new Booking();
@@ -130,6 +176,27 @@ public class BookingService {
 
         return booking;
     }
+
+    private ClientSubscription rewriteFromSubscriptionCreateDto(CreateClientSubscriptionDto dto){
+        User client = userService.getUser(dto.getClientId());
+
+        Subscription subscription = subscriptionRepository.findSubscriptionById(dto.getSubscriptionId())
+                .orElseThrow(() -> new SubscriptionNotFoundException("Subscription is not found"));
+
+        ClientSubscription clientSubscription = new ClientSubscription();
+
+        clientSubscription.setSubscription(subscription);
+        clientSubscription.setClient(client);
+        clientSubscription.setStartDate(LocalDate.now());
+
+        LocalDate endDate = LocalDate.now().plusDays(subscription.getDurationDays());
+        clientSubscription.setEndDate(endDate);
+        clientSubscription.setRemainingVisits(subscription.getVisitsCount());
+
+        return clientSubscription;
+    }
+
+
 
     @Transactional
     public void cancelBooking(BookingCancelDto cancelDto){
@@ -184,9 +251,63 @@ public class BookingService {
         bookingRepository.saveAll(bookings);
     }
 
-//    public Page<PaymentResponseDto> futureBookings(UUID userId){
-//
-//    }
+    public Page<BookingResponseDto> futureBookings(UUID userId, Pageable pageable){
+        return bookingRepository.findByClientIdAndScheduleScheduleDateAfter(userId, LocalDate.now(), pageable)
+                .map(this::mapToResponseDto);
+    }
 
-    //Сделать список прошедших тренировок у пользователя
+    public Page<BookingResponseDto> pastBookings(UUID clientId, Pageable pageable){
+        return bookingRepository.findByClientIdAndScheduleScheduleDateBefore(clientId, LocalDate.now(), pageable)
+                .map(this::mapToResponseDto);
+    }
+
+    public BookingResponseDto nearestBooking(UUID clientId){
+        Booking booking = bookingRepository.findFirstByClientIdAndScheduleScheduleDateAfter(clientId, LocalDate.now())
+                .orElseThrow(() -> new BookingNotFoundException("Booking is not found"));
+
+        return mapToResponseDto(booking);
+    }
+
+    //Все абонементы
+    public List<SubscriptionResponseDto> allSubscriptions(){
+        return subscriptionRepository.findAll()
+                .stream()
+                .map(this::mapToSubscriptionResponseDto)
+                .toList();
+    }
+
+    @Transactional
+    public ClientSubscriptionResponseDto createClientSubscription(CreateClientSubscriptionDto createClientSubscriptionDto){
+        ClientSubscription clientSubscription = rewriteFromSubscriptionCreateDto(createClientSubscriptionDto);
+
+        SubscriptionStatus subscriptionStatus = subscriptionStatusRepository.findBySubscriptionStatusName(SubscriptionStatusEnum.ACTIVE)
+                        .orElseThrow(() -> new SubscriptionStatusNotFoundException("Subscription status is not found"));
+        clientSubscription.setSubscriptionStatus(subscriptionStatus);
+
+        clientSubscriptionRepository.save(clientSubscription);
+
+        return mapToClientSubscriptionResponseDto(clientSubscription);
+    }
+
+    private void setLapsedSubscriptionStatus(ClientSubscription clientSubscription){
+        LocalDate endDate = clientSubscription.getEndDate();
+
+        if(endDate.isBefore(LocalDate.now())){
+            SubscriptionStatus status = subscriptionStatusRepository.findBySubscriptionStatusName(SubscriptionStatusEnum.LAPSED)
+                    .orElseThrow(() -> new SubscriptionStatusNotFoundException("Subscription status is not found"));
+            clientSubscription.setSubscriptionStatus(status);
+        }
+    }
+
+    @Transactional
+    public ClientSubscriptionResponseDto getClientSubscription(Integer id){
+        ClientSubscription clientSubscription = clientSubscriptionRepository.findClientSubscriptionById(id)
+                .orElseThrow(() -> new ClientSubscriptionNotFoundException("Client subscription is not found"));
+
+        setLapsedSubscriptionStatus(clientSubscription); // Ничего не произойдет,
+        // если дата окончания действия абонемента после текущей
+
+        return mapToClientSubscriptionResponseDto(clientSubscription);
+
+    }
 }

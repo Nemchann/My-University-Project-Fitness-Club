@@ -48,6 +48,32 @@ public class BookingController {
         return new ResponseEntity<>(responseDtos, HttpStatus.OK);
     }
 
+    @GetMapping("/upcoming/{clientId}")
+    @Operation(summary = "Будущие записи клиента")
+    public ResponseEntity<Page<BookingResponseDto>> getFutureBookings(
+            @PathVariable UUID clientId, @PageableDefault(size = 10, sort = "schedule") Pageable pageable){
+        Page<BookingResponseDto> bookingResponseDtos = service.futureBookings(clientId, pageable);
+
+        return new ResponseEntity<>(bookingResponseDtos, HttpStatus.OK);
+    }
+
+    @GetMapping("/past/{clientId}")
+    @Operation(summary = "Прошедшие записи клиента")
+    public ResponseEntity<Page<BookingResponseDto>> getPastBookings(
+            @PathVariable UUID clientId, @PageableDefault(size = 10, sort = "schedule") Pageable pageable){
+        Page<BookingResponseDto> bookingResponseDtos = service.pastBookings(clientId, pageable);
+
+        return new ResponseEntity<>(bookingResponseDtos, HttpStatus.OK);
+    }
+
+    @GetMapping("/nearest/{clientId}")
+    @Operation(summary = "Ближайшая запись")
+    public ResponseEntity<BookingResponseDto> getNearestBooking(@PathVariable UUID clientId){
+        BookingResponseDto dto = service.nearestBooking(clientId);
+
+        return new ResponseEntity<>(dto, HttpStatus.OK);
+    }
+
     @GetMapping("/get_clients_by_schedule/{scheduleId}")
     @Operation(summary = "Посетители данной тренировки")
     public ResponseEntity<List<UserInScheduleDto>> getClientsBySchedule(@PathVariable Integer scheduleId){
@@ -61,4 +87,22 @@ public class BookingController {
     public boolean checkBookingStatus(@PathVariable UUID userId, @RequestParam Integer scheduleId){
         return service.checkBookingStatus(userId, scheduleId);
     }
+
+    @PostMapping("/create_client_subscription")
+    @Operation(summary = "Купить абонемент")
+    public ResponseEntity<ClientSubscriptionResponseDto> createClientSubscription(@RequestBody @Valid CreateClientSubscriptionDto createDto){
+        ClientSubscriptionResponseDto responseDto = service.createClientSubscription(createDto);
+
+        return new ResponseEntity<>(responseDto, HttpStatus.CREATED);
+    }
+
+    @GetMapping("/all_subscriptions")
+    @Operation(summary = "Все абонементы")
+    public ResponseEntity<List<SubscriptionResponseDto>> getAllSubscriptions(){
+        List<SubscriptionResponseDto> dtos = service.allSubscriptions();
+
+        return new ResponseEntity<>(dtos, HttpStatus.OK);
+    }
+
+
 }
