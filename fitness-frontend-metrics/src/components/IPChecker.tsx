@@ -18,7 +18,7 @@ export const IPChecker: React.FC = () => {
     if (!searchIP) return;
 
     try {
-      const response = await fetch(`http://localhost:9000/api/proxy/management/check_ip?ip=${searchIP}`);
+      const response = await fetch(`http://127.0.0.1:9000/api/proxy/management/check_ip?ip=${searchIP}`);
       if (!response.ok) {
         throw new Error("Неверный формат IP или ошибка сервера");
       }
