@@ -15,6 +15,7 @@ type Monitor struct {
 	ActiveConnections int64
 	CurrentTraffic int64
     TotalTrafficBytes int64
+    TotalErrors   int64 // Счетчик ответов со статусами 4xx и 5xx
 	RPSHistory     []int64
     TrafficHistory []int64 // байт в секунду
     bufferIndex    int
@@ -28,6 +29,7 @@ func NewMonitor () *Monitor{
 		TotalRequests: 0,
 		AverageLatency: 0,
 		ActiveConnections: 0,
+        TotalErrors: 0,
 		RPSHistory:     make([]int64, 60), // храним за 60 секунд
         TrafficHistory: make([]int64, 60),
 	}
@@ -147,6 +149,9 @@ func (m *Monitor) Middleware() gin.HandlerFunc {
         start := time.Now()
         c.Next() // Выполнение остальных middleware и самого прокси
         
+        if c.Writer.Status() >= 400 {
+            atomic.AddInt64(&m.TotalErrors, 1) // Атомарно инкрементируем ошибки
+        }
         // 2. После возврата ответа считаем Latency и Трафик
         latency := time.Since(start).Milliseconds()
         m.UpdateLatency(latency) // Метод для расчета среднего значения
