@@ -5,6 +5,7 @@ import { DashboardCharts } from './components/DashboardCharts';
 import { TopClients } from './components/TopClients';
 import { SystemHealth } from './components/SystemHealth'; // <-- Импорт здоровья
 import { SystemStats } from './components/SystemStats';
+import { CaptchaVerification } from './components/CaptchaVerification';
 
 //Запуск: npm run dev
 
@@ -12,6 +13,7 @@ interface MetricsData {
   current_rps: number;
   latency_ms: number;
   active_connections: number;
+  error_rate_percent : number;
   total_traffic_bytes: number;
   rps_history: number[];      // <-- Добавили историю RPS
   traffic_history: number[];  // <-- Добавили историю Трафика
@@ -37,11 +39,14 @@ interface StatsData {
 }
 
 function App() {
+  const [showCaptchaDemo, setShowCaptchaDemo] = useState(false);
+
   const [metrics, setMetrics] = useState<MetricsData>({
     current_rps: 0,
     latency_ms: 0,
     active_connections: 0,
     total_traffic_bytes: 0,
+    error_rate_percent: 0,
     rps_history: new Array(60).fill(0),
     traffic_history: new Array(60).fill(0),
   });
@@ -62,32 +67,90 @@ function App() {
     cache: { total_keys: 0, hit_rate: 0 }
   });
 
+  const [needsCaptcha, setNeedsCaptcha] = useState(false);
+  const [userIP, setUserIP] = useState('127.0.0.1'); // Будем сохранять IP для передачи в капчу
+
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const response = await fetch('http://localhost:9000/api/proxy/management/metrics');
+        const response = await fetch('http://127.0.0.1:9000/api/proxy/management/metrics');
+
+        // И ВОТ ОНА — ПРОВЕРКА: если прокси требует капчу
+        if (response.status === 428 || response.status === 403) {
+          const errData = await response.json();
+          setUserIP(errData.ip || '127.0.0.1'); // Сохраняем IP, который вернул Go
+          setNeedsCaptcha(true);               // Включаем режим капчи
+          return;                              // Выходим, дальше крутить нули не нужно
+        }
+
+        if (response.status === 429) {
+          console.warn("Рейтлимитер временно ограничил запросы (429). Игнорируем.");
+          // Просто выходим из функции, НЕ сбрасывая и НЕ включая капчу
+          return; 
+        }
+
         const data = await response.json();
+
+        // 2. СВЕРХНАДЕЖНЫЙ КОСТЫЛЬ ДЛЯ ДЕМОНСТРАЦИИ: 
+        // Если бэкенд вернул 0 или пустые метрики (так как мы в сером списке и запросы блокируются)
+        if (!data || data.current_rps === 0 && data.active_connections === 0) {
+          // Проверяем: если мы специально включили этот режим для теста
+          // Переводим фронтенд на страницу капчи!
+          setUserIP('127.0.0.1');
+          setNeedsCaptcha(true);
+          return;
+        }
+
         setMetrics(data);
 
         // 2. Загружаем топ клиентов из твоего ClientsHandler
         // Измени URL, если у тебя другой префикс роутера (например, /management/clients)
-        const clientsRes = await fetch('http://localhost:9000/api/proxy/management/clients'); 
-        const clientsData = await clientsRes.json();
+        // const clientsRes = await fetch('http://127.0.0.1:9000/api/proxy/management/clients'); 
+        // const clientsData = await clientsRes.json();
 
-        const healthRes = await fetch('http://localhost:9000/api/proxy/management/health')
-        const healthData = await healthRes.json()
+        // const healthRes = await fetch('http://127.0.0.1:9000/api/proxy/management/health')
+        // const healthData = await healthRes.json()
 
-        const statsRes = await fetch('http://localhost:9000/api/proxy/management/stats')
-        const statsData = await statsRes.json()
+        // const statsRes = await fetch('http://127.0.0.1:9000/api/proxy/management/stats')
+        // const statsData = await statsRes.json()
 
-        setHealth(healthData);
-        setStats(statsData);
+        // setHealth(healthData);
+        // setStats(statsData);
 
-        // В Go-хендлере ключ называется "top_clients"
-        setTopClients(clientsData.top_clients || []);
+        // // В Go-хендлере ключ называется "top_clients"
+        // setTopClients(clientsData.top_clients || []);
+
+        // Запрашиваем остальные данные (их тоже защищаем от падения)
+        try {
+          const clientsRes = await fetch('http://127.0.0.1:9000/api/proxy/management/clients');
+        if (clientsRes.ok) {
+          const clientsData = await clientsRes.json();
+          setTopClients(clientsData.top_clients || []);
+        } else {
+          console.warn("Clients заблокирован лимитером:", clientsRes.status);
+        }
+
+        const healthRes = await fetch('http://127.0.0.1:9000/api/proxy/management/health');
+        if (healthRes.ok) {
+          const healthData = await healthRes.json();
+          setHealth(healthData);
+        }
+
+        const statsRes = await fetch('http://127.0.0.1:9000/api/proxy/management/stats');
+        if (statsRes.ok) {
+          const statsData = await statsRes.json();
+          setStats(statsData);
+        } 
+        } catch (innerErr) {
+          console.log("Дополнительные метрики заблокированы лимитером или CORS");
+        }
 
       } catch (err) {
         console.error("Ошибка обновления метрик:", err);
+        // Если запрос упал (например, из-за блокировки CORS или 428/403 статуса),
+        // мы принудительно включаем режим капчи!
+        setUserIP('127.0.0.1');
+        setNeedsCaptcha(true)
       }
     };
 
@@ -95,7 +158,17 @@ function App() {
     const interval = setInterval(fetchData, 2000);
     return () => clearInterval(interval);
   }, []);
-
+  
+  if (needsCaptcha) {
+    return (
+      <CaptchaVerification 
+        clientIP={userIP} 
+        onSuccess={() => {
+          setNeedsCaptcha(false);
+        }} 
+      />
+    );
+  }
   return (
     <div className="min-h-screen bg-gray-900 text-gray-100 p-8">
       <header className="mb-8 border-b border-gray-800 pb-4">
@@ -109,6 +182,7 @@ function App() {
         <MetricCard title="Средняя задержка" value={`${metrics.latency_ms} ms`} textColor="text-amber-400" />
         <MetricCard title="Активные соединения" value={metrics.active_connections} textColor="text-emerald-400" />
         <MetricCard title="Всего трафика" value={`${(metrics.total_traffic_bytes / 1024 / 1024).toFixed(2)} MB`} textColor="text-purple-400" />
+        <MetricCard title="Уровень ошибок бэкенда" value={`${metrics.error_rate_percent.toFixed(2)} %`} textColor={metrics.error_rate_percent > 5 ? "text-rose-400" : "text-emerald-400"}/>
       </section>
 
       {/* 2. Блок системных метрик и здоровья */}
@@ -126,7 +200,10 @@ function App() {
       {/* Блок интерактивных графиков */}
       <DashboardCharts rpsHistory={metrics.rps_history} trafficHistory={metrics.traffic_history} />
     </div>
+    
   );
+  
+
 }
 
 export default App;
