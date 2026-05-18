@@ -24,6 +24,8 @@ func SetupRouter(ipManager *service.IPManager,
     {
         admin.GET("/reload", ReloadRulesHandler(ipManager))
 
+        admin.POST("/ip_access/verify-captcha", VerifyCaptchaHandler())
+
         admin.GET("/stats", GetStatsHandler(limiterManager, cacheManager, ipManager, m))
 
         admin.GET("/metrics", GetMetricsHandler(m))

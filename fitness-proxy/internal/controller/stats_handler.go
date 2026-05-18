@@ -16,6 +16,14 @@ func GetStatsHandler(limiterManager *service.IPRateLimiter, cacheManager *servic
         var m runtime.MemStats
         runtime.ReadMemStats(&m)
 
+        hits := cacheManager.GetHitRate()
+        totalReq := monitor.GetTotalRequests();
+        var actualHitRate float64 = 0.0
+
+        if (totalReq > 0){
+            actualHitRate = float64(hits) / float64(totalReq)
+        }
+
         stats := gin.H{
             "uptime":   time.Since(startTime).String(),
             "goroutines": runtime.NumGoroutine(),
@@ -24,7 +32,7 @@ func GetStatsHandler(limiterManager *service.IPRateLimiter, cacheManager *servic
             "average_response_time_ms": monitor.GetAverageResponseTime(),
             "cache": gin.H{
                 "total_keys": cacheManager.GetKeysCount(),
-                "hit_rate":   cacheManager.GetHitRate(), 
+                "hit_rate":  actualHitRate, 
             },
             "security": gin.H{
                 "active_rules": ipManager.GetRulesCount(),
