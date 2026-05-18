@@ -3,23 +3,39 @@ package middleware
 import (
 	"log"
 	"net"
-    //"net/http"
+    "net/http"
 	"fitness-proxy/internal/service"
 	"github.com/gin-gonic/gin"
     "fitness-proxy/internal/model"
+    "sync"
+    "time"
 )
 
-// Добавить метод Clear(), который очищает рейнджеры
+var verifiedClients = sync.Map{} // Ключ: string (IP), Значение: time.Time (время прохождения)
 
 func IPFilter(manager *service.IPManager, logChan chan model.AccessLog, m *service.Monitor) gin.HandlerFunc {
     return func(c *gin.Context) {
-        ip := net.ParseIP(c.ClientIP())
-        rawIP := c.ClientIP() // На случай, если IP не парсится
-        if ip != nil && ip.To4() != nil {
-            rawIP = ip.To4().String() // Всегда будет 127.0.0.1
+
+        if c.Request.Method == "OPTIONS" {
+            c.Next()
+            return
+        }
+        // ЕСЛИ ЗАПРОС ИДЕТ НА ПРОХОЖДЕНИЕ КАПЧИ — ПРОПУСКАЕМ БЕЗ ПРОВЕРОК СЛИСКОВ!
+        if c.FullPath() == "/api/proxy/management/ip_access/verify-captcha" || c.Request.URL.Path == "/api/proxy/management/ip_access/verify-captcha" {
+            c.Next()
+            return
         }
 
-        allowed, reason := manager.IsAllowed(ip.To4()) //Это нужно для того, если пришел адрес ::1
+        rawIP := c.ClientIP()
+
+        // Если пришел локальный IPv6, принудительно делаем из него IPv4 loopback
+        if rawIP == "::1" {
+            rawIP = "127.0.0.1"
+        }
+
+        ip := net.ParseIP(rawIP)
+
+        allowed, reason := manager.IsAllowed(ip) 
 
         if !allowed || reason == "blacklisted" {
             log.Printf("BLOCK: IP %s rejected. Reason: %s", ip, reason)
@@ -32,23 +48,49 @@ func IPFilter(manager *service.IPManager, logChan chan model.AccessLog, m *servi
             })
             return
         }
-        // if reason == "grey"{
-        //     if !captchaPassed(c) {          //  проверка CAPTCHA
-        //         c.AbortWithStatus(http.StatusForbidden) // или редирект на страницу с CAPTCHA
-        //         return
-        //     }
-        // }
+        if reason == "grey" {
+            checkIP := rawIP
+            if checkIP == "::1" || checkIP == "localhost" {
+                checkIP = "127.0.0.1"
+            }
+            
+            if !captchaPassed(rawIP) {
+                log.Printf("CAPTCHA REQUIRED: IP %s must pass verification", rawIP)
+                
+                // Возвращаем статус 403 (или специальный 428 Precondition Required), 
+                // сообщая фронтенду, что требуется капча
+                c.AbortWithStatusJSON(http.StatusPreconditionRequired, gin.H{
+                    "error":   "Captcha verification required",
+                    "status":  "grey_list",
+                    "ip":      rawIP,
+                })
+                return
+            }
+            log.Printf("CAPTCHA PASSED PREVIOUSLY: IP %s allowed via cookie", rawIP)
+        }
         c.Set("is_blocked", false)
         c.Next()
     }
 }
 
-//Функция для капчи, которую стоит доработать
-// func captchaPassed(c *gin.Context) bool {
-//     token, err := c.Cookie("captcha_token")
-//     if err != nil {
-//         return false
-//     }
-//     return validateToken(token) // проверка подписи и срока действия токена
-// }
+// Простая и надежная проверка прохождения капчи через Cookie
+func captchaPassed(rawIP string) bool {
+    val, found := verifiedClients.Load(rawIP)
+    if !found {
+        return false
+    }
+    
+    verifiedTime := val.(time.Time)
+    // Проверяем время действия капчи — например, 10 минут
+    if time.Since(verifiedTime) > 10*time.Minute {
+        verifiedClients.Delete(rawIP) // Время истекло, удаляем
+        return false
+    }
+    
+    return true
+}
+
+func StoreMap(ip string, time time.Time){
+    verifiedClients.Store(ip, time)
+}
 
