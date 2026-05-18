@@ -172,8 +172,32 @@ function App() {
   return (
     <div className="min-h-screen bg-gray-900 text-gray-100 p-8">
       <header className="mb-8 border-b border-gray-800 pb-4">
-        <h1 className="text-3xl font-bold text-emerald-400">Fitness Proxy Admin Panel 📊</h1>
-        <p className="text-gray-400 text-sm mt-1">Панель управления шлюзом безопасности фитнес-клуба</p>
+        <div>
+          <h1 className="text-3xl font-bold text-emerald-400">Fitness Proxy Admin Panel 📊</h1>
+          <p className="text-gray-400 text-sm mt-1">Панель управления шлюзом безопасности фитнес-клуба</p>
+        </div>
+        {/* КНОПКА ФЛАША КЭША */}
+        <button
+          onClick={async () => {
+          try {
+            const response = await fetch('http://127.0.0.1:9000/api/proxy/management/cache', {
+              method: 'DELETE', // или POST, смотря как написано в Go
+            });
+            if (response.ok) {
+              alert('🗑️ Прокси-кэш успешно полностью очищен!');
+            } else {
+              alert('❌ Ошибка при очистке кэша: ' + response.status);
+            }
+          }catch (err) {
+            console.error(err);
+            alert('💥 Не удалось связаться с прокси для очистки кэша');
+          }
+        }
+        }
+        className="bg-amber-600/20 border border-amber-500/50 hover:bg-amber-600/40 text-amber-300 font-medium px-4 py-2 rounded-lg transition text-sm flex items-center gap-2"
+        >
+        <span>🔄 Flush Cache</span>
+      </button>
       </header>
 
       {/* Сетка наших переиспользуемых карточек */}
