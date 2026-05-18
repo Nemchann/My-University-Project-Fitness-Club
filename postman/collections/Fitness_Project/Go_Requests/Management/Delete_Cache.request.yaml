@@ -2,4 +2,4 @@ $kind: http-request
 name: Delete_Cache
 url: "{{fullProxyUrl}}/management/cache"
 method: DELETE
-order: 2287904718438948
+order: 4482909754194370
