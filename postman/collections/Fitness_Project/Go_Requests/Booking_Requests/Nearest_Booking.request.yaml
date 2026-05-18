@@ -1,0 +1,5 @@
+$kind: http-request
+name: Nearest_Booking
+url: "{{proxyUrl}}/{{bookingControllerUrl}}/nearest/5a5eb2cc-c54a-43cc-bcbc-590088610db8"
+method: GET
+order: 4492420112398390

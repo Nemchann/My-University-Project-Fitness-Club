@@ -1,0 +1,7 @@
+$kind: http-request
+url: "{{fullProxyUrl}}/management/ip_access/verify-captcha"
+method: POST
+body:
+  type: json
+  content: "{\r\n  \"ip\": \"127.0.0.1\"\r\n}"
+order: 4503574810150311

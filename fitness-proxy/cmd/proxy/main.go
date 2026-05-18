@@ -12,6 +12,8 @@ import (
 	"syscall"
 	"os/signal"
 
+	"golang.org/x/time/rate"
+	
 	"fitness-proxy/internal/repository"
 	"fitness-proxy/internal/model"
 	"fitness-proxy/internal/middleware"
@@ -24,6 +26,7 @@ import (
 )
 
 //Запуск: go run cmd/proxy/main.go 
+//Тестировать все: go test -coverpkg=./... -coverprofile=coverage.out ./...
 
 
 func init() {
@@ -31,6 +34,22 @@ func init() {
         log.Print("Файл .env не найден")
     }
 }
+
+
+// @title           Swagger Example API
+// @version         1.0
+// @description     Пример сервера для документации
+// @termsOfService  http://swagger.io/terms/
+
+// @contact.name   API Support
+// @contact.url    http://www.swagger.io/support
+// @contact.email  support@swagger.io
+
+// @license.name  Apache 2.0
+// @license.url   http://apache.org
+
+// @host      localhost:9000
+// @BasePath  /api/proxy
 
 func main() {
 
@@ -63,7 +82,7 @@ func main() {
 	
 
 	// 2. Инициализируем репозиторий
-    logRepo := repository.NewMongoLogRepo(db)
+    logRepo := repository.NewMongoLogRepository(db)
 
     // 3. Создаем канал для логов
     logChan := make(chan model.AccessLog, 500)
@@ -80,20 +99,25 @@ func main() {
     // 5. Передаем канал в Middleware
 	r := gin.Default()
 
-	//Сразу доверяем localhost, чтобы не париться с реальными IP при тестах
-	r.SetTrustedProxies([]string{"127.0.0.1"})
+	r.Use(middleware.RequestID())
 
 	r.Use(middleware.AsyncLogger(logChan))
 
 	// 1. Инициализируем репозиторий IP
 	ipRepo := repository.NewMongoIPRepo(db)
 
-	// 2. Создаем менеджер (пока пустой)
-	ipManager := service.NewIPManager()
+	// 2. Создаем менеджер для IP-правил и другие сервисы
+	ipManager := service.NewIPManager(ipRepo) //Тут нужно подправить
 
-	rateLimiter := service.NewIPRateLimiter(1, 2) // 1 запрос в секунду, с "burst" до 2
+	rateLimiter := service.NewIPRateLimiter(1, 2) // Нужно будет убрать параметры, они задаются в middleware в зависимости от типа IP (черный, белый, серый)
 
-	cacheManager := service.NewCacheManager(5 * time.Minute) // Кеш на 5 минут
+	logsService := service.NewLogService(logRepo) // Сервис для получения логов, который будет использоваться в контроллере
+
+	cacheRepo := repository.NewMongoCacheRepo(db)
+
+	cacheManager := service.NewCacheManager(5 * time.Minute, cacheRepo) // Кеш на 5 минут
+
+	cacheManager.LoadSettings()
 
 	// 3. Загружаем правила из базы (делаем это ОДИН РАЗ при старте)
 	rules, err := ipRepo.GetAll(context.Background())
@@ -112,11 +136,34 @@ func main() {
 
 	log.Printf("Загружено правил для IP: %d", len(rules))
 
-	r.Use(middleware.IPFilter(ipManager, logChan))
+	monitor := service.NewMonitor() // Создаем один экземпляр
+	go monitor.StartRPSResetter() //Подумать, что можно с этим сделать
+
+	r.Use(monitor.Middleware())
+
+	r.Use(monitor.MaxConnectionsMiddleware(10000))
+
+	r.Use(middleware.IPFilter(ipManager, logChan, monitor))
 
 	r.Use(middleware.RateLimitMiddleware(rateLimiter, ipManager))
 
 	r.Use(middleware.CacheMiddleware(cacheManager))
+
+	r.Use(middleware.CORSMiddleware())
+
+	r.Use(middleware.MaxBodySize(2 * 1024 * 1024))
+
+	// Разрешаем максимум 100 НОВЫХ запросов в секунду на весь прокси-сервер с burst = 200
+	globalConnLimiter := rate.NewLimiter(rate.Limit(100), 200)
+
+	// И проверять его в отдельном Middleware:
+	r.Use(func(c *gin.Context) {
+    	if !globalConnLimiter.Allow() {
+        	c.AbortWithStatusJSON(http.StatusTooManyRequests, gin.H{"error": "Global connection rate limit exceeded"})
+        	return
+    	}
+    	c.Next()
+	})
 
 
 	// Адрес Java-бэкенда
@@ -126,6 +173,7 @@ func main() {
 		log.Fatalf("Ошибка конфигурации целевого URL: %v", err)
 	}
 
+	r.Use(controller.ProxyHandler(target))
 	// Настраиваем стандартный Reverse Proxy
 	proxy := httputil.NewSingleHostReverseProxy(remote)
 
@@ -133,19 +181,14 @@ func main() {
 	r.Use(func(c *gin.Context) {
 		log.Printf("Запрос: %s %s от IP: %s", c.Request.Method, c.Request.URL.Path, c.ClientIP())
 		
-		// Здесь будет логика фильтрации IP (п. 1.2)
 		
 		c.Next()
 	})
 
+	admin := controller.SetupRouter(ipManager, rateLimiter, 
+		cacheManager, monitor, client, target, logsService, r) 
 
-	// Группа для управления прокси, потом поменять на router
-	admin := r.Group("/management")
-	{
-    	admin.GET("/reload", controller.ReloadRulesHandler(ipRepo, ipManager))
-		admin.DELETE("/cache", controller.FlushCacheHandler(cacheManager))
-		admin.GET("/stats", controller.GetStatsHandler(rateLimiter))
-	}
+	admin.Handlers.Last() // Нужна для того, чтобы компилятор не ругался, что не использую переменную admin
 
 	// Проксируем всё остальное, что НЕ начинается с /management
 	r.NoRoute(func(c *gin.Context) {
@@ -154,7 +197,6 @@ func main() {
 	})
 
 	log.Println("Proxy запущен на порту :9000")
-	r.Run(":9000") 
 
 
 	//Код для graceful shutdown, чтобы не обрывать активные соединения при остановке сервера (например, Ctrl+C)

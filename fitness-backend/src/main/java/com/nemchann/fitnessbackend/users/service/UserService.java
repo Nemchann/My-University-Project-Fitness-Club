@@ -130,7 +130,8 @@ public class UserService {
     }
 
 
-    //Исправить логику, пока что так, чтоб не было ошибок в коде
+    //Исправить логику, пока что так, чтоб не было ошибок в коде,
+    // ну и потом поудалять пользователей с хешом такого пароля
     private String passwordHash(String password){
         return "good" + password.hashCode() + "fitness";
     }

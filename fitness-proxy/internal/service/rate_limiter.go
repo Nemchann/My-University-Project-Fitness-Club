@@ -24,6 +24,8 @@ func NewIPRateLimiter(r rate.Limit, b int) *IPRateLimiter {
 type IPLimiters struct {
     Second *rate.Limiter
     Minute *rate.Limiter
+	Hour   *rate.Limiter // RPH
+	Day    *rate.Limiter // RPD
 }
 
 // func (i *IPRateLimiter) GetLimiter(ip string, r rate.Limit, b int) *rate.Limiter {
@@ -42,18 +44,24 @@ type IPLimiters struct {
 // 	return limiter
 // }
 
-func (i *IPRateLimiter) GetLimiters(ip string, r float64, b int) *IPLimiters {
+func (i *IPRateLimiter) GetLimiters(ip string, rps float64, rpm, rph, rpd, b int) *IPLimiters {
     i.mu.Lock()
     defer i.mu.Unlock()
 
     limiters, exists := i.ips[ip]
 	if !exists {
-		// Инициализируем наш набор лимитов
 		limiters = &IPLimiters{
-			Second: rate.NewLimiter(rate.Limit(r), b),
-			// rate.Every(time.Minute/60) означает "один раз в секунду", 
-			// но с корзиной (Burst) в 60 токенов. 
-			Minute: rate.NewLimiter(rate.Every(time.Minute/60), 60),
+			// RPS: генерация rps токенов в секунду, размер корзины b
+			Second: rate.NewLimiter(rate.Limit(rps), i.b),
+			
+			// RPM: разрешаем rpm запросов в минуту. 1 токен генерируется каждые (минута / rpm)
+			Minute: rate.NewLimiter(rate.Every(time.Minute/time.Duration(rpm)), rpm),
+			
+			// RPH: разрешаем rph запросов в час. 1 токен каждые (час / rph)
+			Hour:   rate.NewLimiter(rate.Every(time.Hour/time.Duration(rph)), rph),
+			
+			// RPD: разрешаем rpd запросов в сутки. 1 токен каждые (24 часа / rpd)
+			Day:    rate.NewLimiter(rate.Every(24*time.Hour/time.Duration(rpd)), rpd),
 		}
 		i.ips[ip] = limiters
 	}

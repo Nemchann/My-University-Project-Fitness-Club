@@ -45,7 +45,7 @@ public class UserController {
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
 
-    @GetMapping("/{id}")
+    @GetMapping("/get/{id}")
     @Operation(summary = "Получить пользователя по id")
     public ResponseEntity<UserResponseDto> getUser(@PathVariable UUID id){
         UserResponseDto userResponseDto = service.getUserResponse(id);

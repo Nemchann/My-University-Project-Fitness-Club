@@ -1,5 +1,9 @@
 $kind: http-request
 name: Get Available Schedules
-url: "{{proxyUrl}}/{{scheduleControllerUrl}}/get_available_schedules"
+url: "{{proxyUrl}}/{{scheduleControllerUrl}}/get_available_schedules?page=0&size=10&sort=desc"
 method: GET
+queryParams:
+  page: "0"
+  size: "10"
+  sort: desc
 order: 4494130328526189
