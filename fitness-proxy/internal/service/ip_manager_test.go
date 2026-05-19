@@ -1,7 +1,7 @@
 package service_test
 
 import (
-	"fitness-proxy/internal/repository/mocks" // Путь к твоим мокам
+	"fitness-proxy/internal/repository/mocks" // Путь мокам
 	"fitness-proxy/internal/service"
     "fitness-proxy/internal/model"
 	"testing"
