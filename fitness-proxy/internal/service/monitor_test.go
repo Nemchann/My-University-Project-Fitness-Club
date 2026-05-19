@@ -1,7 +1,6 @@
 package service_test
 
 import (
-	//"sync"
 	"testing"
 	"fitness-proxy/internal/service"
 	"github.com/stretchr/testify/assert"
@@ -10,17 +9,17 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+//Тест расчета задержки
 func TestMonitor_BasicMetricsAndLatency(t *testing.T) {
 	m := service.NewMonitor()
 
-	// 1. Проверяем начальные значения через геттеры
+	// Проверяем начальные значения через геттеры
 	assert.Equal(t, int64(0), m.GetTotalRequests())
 	assert.Equal(t, int64(0), m.GetActiveConnections())
 	assert.Equal(t, int64(0), m.GetTotalTrafficBytes())
 	assert.Equal(t, int64(0), m.GetAverageResponseTime())
 
-	// 2. Тестируем расчет Latency (скользящее среднее)
-	// Первый замер — должен установиться как есть
+	// Тестируем расчет Latency
 	m.UpdateLatency(100)
 	assert.Equal(t, int64(100), m.GetAverageResponseTime())
 
@@ -32,10 +31,11 @@ func TestMonitor_BasicMetricsAndLatency(t *testing.T) {
 	assert.Equal(t, int64(95), m.GetLatency())
 }
 
+//Тест историй трафика и RPS
 func TestMonitor_HistoryAndRPM(t *testing.T) {
 	m := service.NewMonitor()
 
-	// Напрямую через историю (так как это срез внутри структуры) мы проверить не можем, 
+	// Напрямую через историю мы проверить не можем, 
 	// но мы можем проверить GetRequestsPerMinute, если в истории появятся данные.
 	// Для Unit-теста мы можем проверить, что история возвращает корректные копии срезов.
 	historyRPS := m.GetRPSHistory()

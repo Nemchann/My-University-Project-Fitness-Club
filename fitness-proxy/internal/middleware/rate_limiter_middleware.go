@@ -6,31 +6,27 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// Глобальные настройки (можно вынести в отдельный config файл)
+// Глобальные настройки 
 const (
-    // ПО УМОЛЧАНИЮ (Обычные пользователи):
-    // Разрешаем короткие всплески, но ограничиваем общее дневное и часовое потребление,
-    // чтобы один клиент не исчерпал лимиты стороннего фитнес-API.
+    // По умолчанию:
     DefaultRateSecond = 10.0
-    DefaultRateMinute = 120    // В среднем 1 запрос в секунду, если размазать на минуту
-    DefaultRateHour   = 2000  // Защита от зациклившихся скриптов на стороне клиента
-    DefaultRateDay    = 20000 // Лимит на сутки для одного стандартного пользователя
+    DefaultRateMinute = 120    
+    DefaultRateHour   = 2000  
+    DefaultRateDay    = 20000 
     DefaultBurst = 20
 
-    // БЕЛЫЙ СПИСОК (Доверенные сервисы / Партнеры / Фронтенд-приложения):
-    // Здесь лимиты огромные, так как мы доверяем этим источникам.
+    // Белый список
     WhiteRateSecond  = 50.0
-    WhiteRateMinute = 1500  // Высокая пропускная способность для аналитики или синхронизации
+    WhiteRateMinute = 1500
     WhiteRateHour   = 30000 
     WhiteRateDay    = 100000
     WhiteBurst = 100
 
-    // СЕРЫЙ СПИСОК (Подозрительные IP / Потенциальные спамеры):
-    // Очень жесткие ограничения. Мы даем им совершать запросы, но заставляем их "страдать" от медлительности.
+    // Серый список
     GreyRateSecond   = 4
-    GreyRateMinute  = 80   // Максимум 20 запросов в минуту
-    GreyRateHour    = 400   // Быстро упрутся в потолок, если это бот
-    GreyRateDay     = 1600  // Суточный лимит, блокирующий парсинг данных
+    GreyRateMinute  = 80   
+    GreyRateHour    = 400   
+    GreyRateDay     = 1600  
     GreyBurst  = 8
 )
 
@@ -39,8 +35,7 @@ func RateLimitMiddleware(limiterManager *service.IPRateLimiter, ipManager *servi
 		ipStr := c.ClientIP()
         ip := net.ParseIP(ipStr)
         
-        // Получаем правило для этого IP из нашего Radix Tree
-        // Тебе нужно будет немного дописать IsAllowed, чтобы он возвращал само правило (IPRule)
+        // Получаем правило для этого IP из Radix Tree
         reason := ipManager.GetRuleInfo(ip) 
 
         var rs float64
@@ -51,7 +46,6 @@ func RateLimitMiddleware(limiterManager *service.IPRateLimiter, ipManager *servi
 
         switch reason {
         case "blacklisted":
-            // Мы уже отсекли их в IPFilter, но на всякий случай
             c.AbortWithStatus(403)
             return
         case "whitelisted":
@@ -64,7 +58,7 @@ func RateLimitMiddleware(limiterManager *service.IPRateLimiter, ipManager *servi
 
         limiters := limiterManager.GetLimiters(ipStr, rs, rm, rh, rd, b) 
 
-        // Запрос проходит, только если ОБА лимитера дали добро
+        // Запрос проходит, только если все лимитеры дали добро
         if !limiters.Second.Allow() || !limiters.Minute.Allow() || !limiters.Hour.Allow() || !limiters.Day.Allow() {
             c.Header("Retry-After", "2")
             c.Set("abort_reason", "Rate limit exceeded") // Чтобы логгер записал причину

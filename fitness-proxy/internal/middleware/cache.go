@@ -41,7 +41,7 @@ func (w responseBodyWriter) Write(b []byte) (int, error) {
 
 func CacheMiddleware(cache *service.CacheManager) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		// 1. Кешируем только GET запросы
+		// Кешируем только GET запросы
 		if c.Request.Method != http.MethodGet || !isCacheable(c.Request.URL.Path){
 			c.Next()
 			return
@@ -50,16 +50,16 @@ func CacheMiddleware(cache *service.CacheManager) gin.HandlerFunc {
 		// Используем полный URI (путь + параметры) как ключ
 		key := c.Request.RequestURI
 
-		// 2. Проверяем кеш
+		// Проверяем кеш
 		if data, found := cache.Get(key); found {
 			c.Data(http.StatusOK, "application/json", data)
 			fmt.Println("Из кеша")
 			cache.IncrementCachedCount()
-			c.Abort() // Дальше к Java не идем!
+			c.Abort() // Дальше к Java не идем
 			return
 		}
 
-		// 3. Если в кеше нет — "шпионим" за ответом Java
+		// Если в кеше нет - следим за ответом Java
 		w := &responseBodyWriter{body: &bytes.Buffer{}, ResponseWriter: c.Writer}
 		c.Writer = w
 
@@ -67,9 +67,9 @@ func CacheMiddleware(cache *service.CacheManager) gin.HandlerFunc {
 
 
 		path := c.Request.URL.Path
-		ttl := cache.GetTTLForPathRAM(path) // Получаем TTL из нашей карты
+		ttl := cache.GetTTLForPathRAM(path) // Получаем TTL из нашей мапы
 
-		// 4. После того как Java ответила, сохраняем результат (если статус 200 или 300-400)
+		// После того как Java ответила, сохраняем результат (если статус 200 или 300-400)
 		if c.Writer.Status() == http.StatusOK || (c.Writer.Status() >= 300 && c.Writer.Status() < 400) && ttl > 0 {
 			cache.Set(key, w.body.Bytes())
 		}

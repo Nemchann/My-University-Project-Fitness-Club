@@ -68,7 +68,7 @@ func AsyncLogger(logChan chan<- model.AccessLog) gin.HandlerFunc {
     }
 }
 
-//Додумать, чтобы можно было нормально делать уровни логирования
+//Уровни логирования
 func getLevel(status int) string {
     if status >= 500 {
         return "ERROR"

@@ -20,7 +20,7 @@ type CacheItem struct {
 
 type CacheManager struct {
     storage map[string]CacheItem
-	pathSettings map[string]time.Duration // Храним тут наши TTL из базы
+	pathSettings map[string]time.Duration // Храним тут TTL из базы
     mu      sync.RWMutex
 	defaultTTL time.Duration
 	cachedCount atomic.Int64
@@ -35,6 +35,7 @@ func NewCacheManager(defaultTTL time.Duration, repository repository.CacheReposi
 	}
 }
 
+//Подкрузка настроек кеша
 func (m *CacheManager) LoadSettings() {
     settings, err := m.cacheRepository.GetSettings(context.Background())
     if err != nil {
@@ -64,7 +65,7 @@ func (c *CacheManager) Set(key string, data []byte) {
 	}
 }
 
-// Get извлекает данные, если они еще живы
+// Get извлекает данные
 func (c *CacheManager) Get(key string) ([]byte, bool) {
 	c.mu.RLock()
 	item, exists := c.storage[key]
@@ -74,7 +75,7 @@ func (c *CacheManager) Get(key string) ([]byte, bool) {
 		return nil, false
 	}
 
-	// Проверяем, не "протухли" ли данные
+	// Проверяем, не протухли ли данные
 	if time.Now().After(item.ExpiresAt) {
 		c.Delete(key) // Удаляем старье
 		return nil, false
@@ -83,6 +84,7 @@ func (c *CacheManager) Get(key string) ([]byte, bool) {
 	return item.Data, true
 }
 
+//Получаем TTL по пути
 func (c *CacheManager) GetTTLForPathRAM(path string) time.Duration {
 	c.mu.RLock()
 	ttl, exists := c.pathSettings[path]
@@ -95,18 +97,21 @@ func (c *CacheManager) GetTTLForPathRAM(path string) time.Duration {
 	return ttl
 }
 
+//Удалить по ключу из оперативной памяти
 func (c *CacheManager) Delete(key string) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	delete(c.storage, key)
 }
 
+//Очистить весь кеш
 func (c *CacheManager) Flush() {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	c.storage = make(map[string]CacheItem)
 }
 
+//Получить настройки кеша по id
 func (c *CacheManager) GetPathSettingsByID(id string) (model.CacheSetting, error) {
 	setting, err := c.cacheRepository.GetByID(context.Background(), id)
 	if err != nil {
@@ -115,6 +120,7 @@ func (c *CacheManager) GetPathSettingsByID(id string) (model.CacheSetting, error
 	return *setting, nil
 }
 
+//Удалить по префиксу из оперативной памяти
 func (m *CacheManager) DeleteFromRAMByPath(pathPrefix string) int {
 	m.mu.Lock()
 	defer m.mu.Unlock()
@@ -129,12 +135,14 @@ func (m *CacheManager) DeleteFromRAMByPath(pathPrefix string) int {
 	return deletedCount
 }
 
+//Удалить настройку кеша по id
 func (m *CacheManager) DeleteByID(ctx context.Context, id string) error {
 	err := m.cacheRepository.DeleteByID(ctx, id)
 
 	return err
 }
 
+//Обновить ttl для определенной настройки кеша
 func (m *CacheManager) UpdateTTL(ctx context.Context, id string, ttl int64) error {
 	objID, err := primitive.ObjectIDFromHex(id)
 
@@ -149,6 +157,7 @@ func (m *CacheManager) UpdateTTL(ctx context.Context, id string, ttl int64) erro
 	return nil
 }
 
+//Получить ttl определенного путя
 func (m *CacheManager) GetTTLForPath(ctx context.Context, path string) (int, error) {
 	ttl, err := m.cacheRepository.GetTTLForPath(ctx, path)
 	if err != nil {
@@ -157,14 +166,17 @@ func (m *CacheManager) GetTTLForPath(ctx context.Context, path string) (int, err
 	return ttl, nil
 }
 
+// Всего ключей
 func (m  *CacheManager) GetKeysCount() int{
 	return len(m.pathSettings)
 }
 
+//Увеличить счетчик
 func (m *CacheManager) IncrementCachedCount() {
 	m.cachedCount.Add(1)
 }
 
+//колько попаданий в кеш
 func (m *CacheManager) GetHitRate() int{
 	return int(m.cachedCount.Load())
 }

@@ -9,15 +9,15 @@ import (
 )
 
 type Monitor struct {
-    CurrentRPS    int64
-    TotalRequests int64
-	AverageLatency int64
-	ActiveConnections int64
-	CurrentTraffic int64
-    TotalTrafficBytes int64
+    CurrentRPS    int64 //Текущая скорость
+    TotalRequests int64 //Всего  запросов
+	AverageLatency int64 
+	ActiveConnections int64 //Всего подключений
+	CurrentTraffic int64 // Текущий Трафик
+    TotalTrafficBytes int64 //Всего потрачено трафика
     TotalErrors   int64 // Счетчик ответов со статусами 4xx и 5xx
-	RPSHistory     []int64
-    TrafficHistory []int64 // байт в секунду
+	RPSHistory     []int64 //Кольцевой буфер истории RPS
+    TrafficHistory []int64 // Кольцевой буфер трафика (байт в секунду)
     bufferIndex    int
     mu             sync.Mutex
     ClientsMap sync.Map // Ключ: string (IP), Значение: *ClientStats
@@ -44,6 +44,7 @@ type ClientStats struct {
     BlockedBlacklist int64 `json:"blocked_blacklist"`  // Забанен по IP
 }
 
+//Средняя задержка
 func (m *Monitor) UpdateLatency(newLatency int64) {
 	old := atomic.LoadInt64(&m.AverageLatency)
     if old == 0 {
@@ -69,6 +70,7 @@ func (m *Monitor) StartRPSResetter(){
     }
 }
 
+//Текущая скорость RPS
 func (m *Monitor) GetCurrentRPS() int64 {
 	m.mu.Lock()
 	defer m.mu.Unlock()
@@ -137,6 +139,7 @@ func (m *Monitor) GetLatency() int64 {
     return atomic.LoadInt64(&m.AverageLatency)
 }
 
+//Используется Gin
 func (m *Monitor) Middleware() gin.HandlerFunc {
     return func(c *gin.Context) {
         // 1. Увеличиваем общий счетчик и текущий RPS сразу при входе запроса
@@ -150,9 +153,9 @@ func (m *Monitor) Middleware() gin.HandlerFunc {
         c.Next() // Выполнение остальных middleware и самого прокси
         
         if c.Writer.Status() >= 400 {
-            atomic.AddInt64(&m.TotalErrors, 1) // Атомарно инкрементируем ошибки
+            atomic.AddInt64(&m.TotalErrors, 1)
         }
-        // 2. После возврата ответа считаем Latency и Трафик
+        // После возврата ответа считаем Latency и Трафик
         latency := time.Since(start).Milliseconds()
         m.UpdateLatency(latency) // Метод для расчета среднего значения
         
@@ -161,21 +164,21 @@ func (m *Monitor) Middleware() gin.HandlerFunc {
         atomic.AddInt64(&m.TotalTrafficBytes, size)
         atomic.AddInt64(&m.CurrentTraffic, size)
 
-        // Здесь запрос ПОЛНОСТЬЮ завершился. Мы знаем ВСЁ.
+        // Здесь запрос полностью завершилс
         ip := c.ClientIP()
         bytesSent := int64(c.Writer.Size())
         if bytesSent < 0 { 
             bytesSent = 0 // На случай, если тело ответа было пустым
         }
 
-        // Достаем статус блокировки (если IPFilter сработал, там будет true)
+        // Достаем статус блокировки 
         blockReasonRaw, _ := c.Get("block_reason")
         blockReason := ""
         if val, ok := blockReasonRaw.(string); ok {
             blockReason = val
         }
 
-        // Фиксируем всё в одном месте асинхронно!
+        // Фиксируем всё в одном месте асинхронно
         m.RecordClientActivity(ip, bytesSent, blockReason)
     }
 }
@@ -187,7 +190,7 @@ func (m *Monitor) updateHistory(rps int64, traffic int64) {
     m.RPSHistory[m.bufferIndex] = rps
     m.TrafficHistory[m.bufferIndex] = traffic
 
-    // Сдвигаем индекс, если дошли до конца — возвращаемся в начало
+    // Сдвигаем индекс, если дошли до конца - возвращаемся в начало
     m.bufferIndex = (m.bufferIndex + 1) % 60
 }
 
@@ -219,21 +222,22 @@ func (m *Monitor) MaxConnectionsMiddleware(maxConn int64) gin.HandlerFunc {
 			c.Abort()
 			return
 		}
-
 		
 		m.IncrementActiveConnections()
 		c.Next()
 		// После завершения запроса декрементируем
-		// m.DecrementActiveConnections()
+		m.DecrementActiveConnections()
 	}
 }
 
+//Увеличиваем количество активных соединений
 func (m *Monitor) IncrementActiveConnections() {
     m.mu.Lock()
     defer m.mu.Unlock()
     m.ActiveConnections++
 }
 
+//Уменьшаем
 func (m *Monitor) DecrementActiveConnections() {
     m.mu.Lock()
     defer m.mu.Unlock()

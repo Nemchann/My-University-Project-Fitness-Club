@@ -30,7 +30,7 @@ func (r *MongoLogRepository) Save(ctx context.Context, entry model.AccessLog) er
 }
 
 func (r *MongoLogRepository) GetLogs(ctx context.Context, filter bson.M, limit int64) ([]model.AccessLog, error) {
-    findOptions := options.Find().SetSort(bson.M{"timestamp": -1}).SetLimit(limit)
+    findOptions := options.Find().SetSort(bson.M{"timestamp": -1}).SetLimit(limit) // по убыванию времени
     cursor, err := r.collection.Find(ctx, filter, findOptions)
     if err != nil {
         return nil, err
