@@ -53,7 +53,7 @@ func TestMonitor_RecordClientActivity(t *testing.T) {
 	m := service.NewMonitor()
 	ip := "192.168.1.50"
 
-	// 1. Первый запрос от клиента (обычный, без блокировок)
+	// Первый запрос от клиента (обычный, без блокировок)
 	m.RecordClientActivity(ip, 500, "")
 
 	clientsMap := m.GetClientsMap()
@@ -66,12 +66,12 @@ func TestMonitor_RecordClientActivity(t *testing.T) {
 	assert.Equal(t, int64(500), stats.BytesTransferred)
 	assert.Equal(t, int64(0), stats.BlockedBlacklist)
 
-	// 2. Второй запрос от того же клиента — попал под раздачу лимитера (rate_limit)
+	// Второй запрос от того же клиента - попал под раздачу rate_limit
 	m.RecordClientActivity(ip, 0, "rate_limit")
 	assert.Equal(t, int64(2), stats.TotalRequests)
 	assert.Equal(t, int64(1), stats.BlockedRateLimit)
 
-	// 3. Третий запрос — забанен по блеклисту (blacklist)
+	// Третий запрос — забанен по blacklist
 	m.RecordClientActivity(ip, 0, "blacklist")
 	assert.Equal(t, int64(3), stats.TotalRequests)
 	assert.Equal(t, int64(1), stats.BlockedBlacklist)

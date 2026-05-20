@@ -10,8 +10,8 @@ import (
 
 type Monitor struct {
     CurrentRPS    int64 //Текущая скорость
-    TotalRequests int64 //Всего  запросов
-	AverageLatency int64 
+    TotalRequests int64 //Всего запросов
+	AverageLatency int64 // Средняя задержка
 	ActiveConnections int64 //Всего подключений
 	CurrentTraffic int64 // Текущий Трафик
     TotalTrafficBytes int64 //Всего потрачено трафика
@@ -142,7 +142,7 @@ func (m *Monitor) GetLatency() int64 {
 //Используется Gin
 func (m *Monitor) Middleware() gin.HandlerFunc {
     return func(c *gin.Context) {
-        // 1. Увеличиваем общий счетчик и текущий RPS сразу при входе запроса
+        // Увеличиваем общий счетчик и текущий RPS сразу при входе запроса
         atomic.AddInt64(&m.TotalRequests, 1) 
         atomic.AddInt64(&m.CurrentRPS, 1) 
 
@@ -164,7 +164,7 @@ func (m *Monitor) Middleware() gin.HandlerFunc {
         atomic.AddInt64(&m.TotalTrafficBytes, size)
         atomic.AddInt64(&m.CurrentTraffic, size)
 
-        // Здесь запрос полностью завершилс
+        // Здесь запрос полностью завершился
         ip := c.ClientIP()
         bytesSent := int64(c.Writer.Size())
         if bytesSent < 0 { 

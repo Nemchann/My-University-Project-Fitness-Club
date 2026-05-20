@@ -22,7 +22,7 @@ func NewIPRateLimiter(r rate.Limit, b int) *IPRateLimiter {
 }
 
 
-// Rate Limiteers по секундам, минутам, часам и дням
+// Rate Limiters по секундам, минутам, часам и дням
 type IPLimiters struct {
     Second *rate.Limiter
     Minute *rate.Limiter

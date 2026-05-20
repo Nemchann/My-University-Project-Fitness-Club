@@ -7,10 +7,10 @@ import (
 	"time"
 
 	"fitness-proxy/internal/model"
-	"fitness-proxy/internal/repository/mocks" // Путь к твоим мокам
+	"fitness-proxy/internal/repository/mocks" 
 	"fitness-proxy/internal/service"
 
-	"github.com/stretchr/testify/assert" // Популярная библиотека для лаконичных проверок
+	"github.com/stretchr/testify/assert" 
 	"go.uber.org/mock/gomock"
 	"go.mongodb.org/mongo-driver/bson"
 )

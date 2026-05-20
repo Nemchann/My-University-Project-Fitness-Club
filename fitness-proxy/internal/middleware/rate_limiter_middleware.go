@@ -4,6 +4,7 @@ import (
 	"net"
 	"fitness-proxy/internal/service"
 	"github.com/gin-gonic/gin"
+    "strings"
 )
 
 // Глобальные настройки 
@@ -57,6 +58,11 @@ func RateLimitMiddleware(limiterManager *service.IPRateLimiter, ipManager *servi
         }
 
         limiters := limiterManager.GetLimiters(ipStr, rs, rm, rh, rd, b) 
+
+        if strings.HasPrefix(c.Request.URL.Path, "/swagger/") {
+            c.Next()
+            return
+        }
 
         // Запрос проходит, только если все лимитеры дали добро
         if !limiters.Second.Allow() || !limiters.Minute.Allow() || !limiters.Hour.Allow() || !limiters.Day.Allow() {

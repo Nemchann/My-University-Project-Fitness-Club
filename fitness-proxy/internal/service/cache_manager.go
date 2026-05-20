@@ -23,7 +23,7 @@ type CacheManager struct {
 	pathSettings map[string]time.Duration // Храним тут TTL из базы
     mu      sync.RWMutex
 	defaultTTL time.Duration
-	cachedCount atomic.Int64
+	cachedCount atomic.Int64 //Всего попаданий в кеш
 	cacheRepository repository.CacheRepository
 }
 

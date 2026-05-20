@@ -13,7 +13,7 @@ func TestIPRateLimiter_GetLimiters_Creation(t *testing.T) {
 
 	ip := "192.168.1.50"
 	
-	// Запрашиваем лимитеры для нового IP (RPS=5, RPM=60, RPH=1000, RPD=5000)
+	// Запрашиваем лимитеры для нового IP
 	limits := limiterManager.GetLimiters(ip, 5.0, 60, 1000, 5000, 10)
 
 	// Проверяем, что объект создался и все интервалы инициализированы
