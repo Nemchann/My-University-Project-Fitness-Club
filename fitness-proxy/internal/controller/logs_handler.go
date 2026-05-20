@@ -21,7 +21,6 @@ func LogsHandler(logService *service.LogService) gin.HandlerFunc {
         levelFilter := c.Query("level")
         ipFilter := c.Query("ip")
 
-        // Вызываем сервис вместо прямого запроса в Mongo
         logs, err := logService.GetAuditLogs(c.Request.Context(), levelFilter, ipFilter)
         if err != nil {
             c.JSON(500, gin.H{"error": "Не удалось получить логи аудита"})

@@ -18,7 +18,7 @@ func GetClientsHandler(monitor *service.Monitor) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var allClients []service.ClientStats
 
-		// 1. Обходим sync.Map и копируем данные в слайс
+		// Обходим sync.Map и копируем данные в слайс
 		monitor.GetClientsMap().Range(func(key, value interface{}) bool {
 			stats := value.(*service.ClientStats)
 			// Считываем атомарные значения, чтобы данные были консистентны
@@ -31,19 +31,19 @@ func GetClientsHandler(monitor *service.Monitor) gin.HandlerFunc {
 			return true // продолжаем обход
 		})
 
-		// 2. Сортируем слайс по убыванию total_requests (сначала самые активные)
+		// Сортируем слайс по убыванию total_requests (сначала самые активные)
 		sort.Slice(allClients, func(i, j int) bool {
 			return allClients[i].TotalRequests > allClients[j].TotalRequests
 		})
 
-		// 3. Обрезаем до Топ-10, если клиентов больше
+		// Обрезаем до Топ-10, если клиентов больше
 		limit := 10
 		if len(allClients) < limit {
 			limit = len(allClients)
 		}
 		topClients := allClients[:limit]
 
-		// 4. Отдаем результат фронтенду
+		// Отдаем результат фронтенду
 		c.JSON(200, gin.H{
 			"top_clients": topClients,
 		})

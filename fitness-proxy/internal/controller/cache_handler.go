@@ -63,8 +63,8 @@ func DeleteSettingByIDHandler(cacheManager *service.CacheManager) gin.HandlerFun
 	}
 }
 
-// @Summary Удалить настройки кеша по началу пути
-// @Description Удаляет все настройки кеша для совпадений по началу пути (например, /api/users. Удалит в том числе /api/users/uuid)
+// @Summary Удалить кеш по началу пути
+// @Description Удаляет весь кеш для совпадений по началу пути (например, /api/users. Удалит в том числе /api/users/uuid)
 // @Tags Cache-Management
 // @Produce  json
 // @Param path query string true "Путь для удаления настроек"
@@ -112,7 +112,7 @@ func UpdateTTLByIDHandler(cacheManager *service.CacheManager) gin.HandlerFunc {
             return
         }
 
-        // 1. Обновляем в MongoDB
+        // Обновляем в MongoDB
         errDB := cacheManager.UpdateTTL(c.Request.Context(), id, input.TTLSeconds)
         if errDB != nil {
 			fmt.Println(errDB.Error())
@@ -120,7 +120,7 @@ func UpdateTTLByIDHandler(cacheManager *service.CacheManager) gin.HandlerFunc {
             return
         }
 
-        // 2. Сразу перегружаем настройки в память прокси
+        // Сразу перегружаем настройки в память прокси
         cacheManager.LoadSettings()
 
         c.JSON(200, gin.H{"message": "TTL обновлен и применен"})
