@@ -4,4 +4,4 @@ url: "{{fullProxyUrl}}/management/cache_settings/purge?path=/api/fitness-club/us
 method: DELETE
 queryParams:
   path: /api/fitness-club/users
-order: 4482999040194594
+order: 4503584948802514

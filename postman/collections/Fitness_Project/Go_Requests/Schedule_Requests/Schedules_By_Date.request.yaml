@@ -1,0 +1,6 @@
+$kind: http-request
+url: http://localhost:9000/api/fitness-club/schedules/get_schedules_by_date?date=2026-05-23
+method: GET
+queryParams:
+  date: 2026-05-23
+order: 4497672187235421
