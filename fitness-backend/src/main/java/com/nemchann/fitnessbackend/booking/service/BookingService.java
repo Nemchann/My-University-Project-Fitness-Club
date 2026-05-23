@@ -51,22 +51,22 @@ public class BookingService {
             throw new BookingTooLateException("It is too late to book that schedule");
         }
 
-        ClientSubscription clientSubscription = clientSubscriptionRepository.findLastByClientId(booking.getClient().getId())
-                .orElseThrow(() -> new ClientSubscriptionNotFoundException("Client subscription is not found"));
+//        ClientSubscription clientSubscription = clientSubscriptionRepository.findLastByClientId(booking.getClient().getId())
+//                .orElseThrow(() -> new ClientSubscriptionNotFoundException("Client subscription is not found"));
 
         try{
             scheduleService.addParticipant(createDto.getScheduleId());
             BookingStatus status = bookingStatusRepository.findByBookingStatusName(BookingStatusEnum.ACCEPTED)
                     .orElseThrow(() -> new BookingNotFoundException("Booking status is not found"));
 
-            Integer remainingVisits = clientSubscription.getRemainingVisits();
+            //Integer remainingVisits = clientSubscription.getRemainingVisits();
 
-            if (remainingVisits > 0){
-                clientSubscription.setRemainingVisits(remainingVisits - 1);
-            }else{
-                //Подумать, что делать, если есть еще активные абонементы у пользователя
-                throw new VisitsEndedException("Your visits ended. Buy new subscription");
-            }
+//            if (remainingVisits > 0){
+//                clientSubscription.setRemainingVisits(remainingVisits - 1);
+//            }else{
+//                //Подумать, что делать, если есть еще активные абонементы у пользователя
+//                throw new VisitsEndedException("Your visits ended. Buy new subscription");
+//            }
             //Подумать, что делать с безлимитным посещением
 
             booking.setBookingStatus(status);
@@ -77,7 +77,7 @@ public class BookingService {
             booking.setBookingStatus(status);
         }
 
-        clientSubscriptionRepository.save(clientSubscription);
+        //clientSubscriptionRepository.save(clientSubscription);
         bookingRepository.save(booking);
 
         return mapToResponseDto(booking);
@@ -107,12 +107,17 @@ public class BookingService {
         Schedule schedule = booking.getSchedule();
         Workout workout = schedule.getWorkout();
 
+        User trainer = schedule.getTrainer();
+        Profile profile = trainer.getProfile();
+
         BookingStatusEnum bookingStatusEnum = booking.getBookingStatus().getBookingStatusName();
         responseDto.setStatus(bookingStatusEnum.name());
 
         responseDto.setStatus(bookingStatusEnum.name());
 
         responseDto.setScheduleName(workout.getWorkoutName());
+
+        responseDto.setTrainerFullName(profile.getSelfname() + " " + profile.getSurname());
 
         responseDto.setScheduleDate(schedule.getScheduleDate());
         responseDto.setStartTime(schedule.getStartTime());

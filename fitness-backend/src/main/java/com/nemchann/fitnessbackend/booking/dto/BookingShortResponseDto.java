@@ -14,4 +14,6 @@ public class BookingShortResponseDto {
     private String status;
 
     private LocalDateTime startTime;
+
+    private String trainerFullName;
 }
