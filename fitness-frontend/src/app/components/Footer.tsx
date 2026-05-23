@@ -1,4 +1,4 @@
-import { Dumbbell, Phone, Mail, MapPin, Instagram, Facebook, Youtube } from 'lucide-react'; //Наверное не поддерживается на территории РФ
+import { Dumbbell, Phone, Mail, MapPin} from 'lucide-react'; //Наверное не поддерживается на территории РФ
 
 export function Footer() {
   return (
@@ -50,22 +50,19 @@ export function Footer() {
                 href="#" 
                 className="bg-gray-800 p-3 rounded-lg hover:bg-pink-500 transition-colors"
                 aria-label="Instagram"
-              >
-                <Instagram className="w-5 h-5" />
+              >Instagram
               </a>
               <a 
                 href="#" 
                 className="bg-gray-800 p-3 rounded-lg hover:bg-pink-500 transition-colors"
                 aria-label="Facebook"
-              >
-                <Facebook className="w-5 h-5" />
+              >Facebook
               </a>
               <a 
                 href="#" 
                 className="bg-gray-800 p-3 rounded-lg hover:bg-pink-500 transition-colors"
                 aria-label="YouTube"
-              >
-                <Youtube className="w-5 h-5" />
+              >Youtube
               </a>
             </div>
           </div>

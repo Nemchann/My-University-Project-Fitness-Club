@@ -1,88 +1,102 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router';
 import { motion, AnimatePresence } from 'motion/react';
 import { Card, CardContent } from './ui/card';
 import { Calendar } from './ui/calendar';
 import { Clock, User, TrendingUp, CalendarDays } from 'lucide-react';
-import { format } from 'date-fns';
+import { format, differenceInMinutes, parseISO } from 'date-fns';
 import { ru } from 'date-fns/locale';
+import { api } from "../../lib/api";
 
-interface ClassItem {
-  time: string;
-  name: string;
-  trainer: string;
-  type: string;
-  duration: string;
+
+interface ScheduleResponseDto {
+  id: number;
+  workoutName: string;
+  trainerFullName: string;
+  workoutType: string;
+  description: string;
+  room: string;
+  scheduleDate: string; // LocalDate приходит в виде строки 'YYYY-MM-DD'
+  startTime: string;    // LocalDateTime приходит в виде ISO строки 'YYYY-MM-DDTHH:mm:ss'
+  endTime: string;      // LocalDateTime приходит в виде ISO строки 'YYYY-MM-DDTHH:mm:ss'
+  maxParticipants: number;
+  currentParticipants: number;
 }
 
-const scheduleData: Record<string, ClassItem[]> = {
-  monday: [
-    { time: '08:00', name: 'Утренняя йога', trainer: 'Елена Смирнова', type: 'Йога', duration: '60 мин' },
-    { time: '10:00', name: 'Пилатес', trainer: 'Анна Петрова', type: 'Пилатес', duration: '55 мин' },
-    { time: '12:00', name: 'Силовая тренировка', trainer: 'Мария Иванова', type: 'Силовая', duration: '50 мин' },
-    { time: '18:00', name: 'Зумба', trainer: 'София Новикова', type: 'Танцевальная', duration: '60 мин' },
-    { time: '19:30', name: 'Растяжка', trainer: 'Елена Смирнова', type: 'Растяжка', duration: '45 мин' },
-  ],
-  tuesday: [
-    { time: '09:00', name: 'Хатха йога', trainer: 'Елена Смирнова', type: 'Йога', duration: '75 мин' },
-    { time: '11:00', name: 'Функциональный тренинг', trainer: 'Мария Иванова', type: 'Силовая', duration: '50 мин' },
-    { time: '17:00', name: 'Стретчинг', trainer: 'Анна Петрова', type: 'Растяжка', duration: '45 мин' },
-    { time: '19:00', name: 'Танцевальная аэробика', trainer: 'София Новикова', type: 'Танцевальная', duration: '60 мин' },
-  ],
-  wednesday: [
-    { time: '08:00', name: 'Утренняя йога', trainer: 'Елена Смирнова', type: 'Йога', duration: '60 мин' },
-    { time: '10:00', name: 'Пилатес Реформер', trainer: 'Анна Петрова', type: 'Пилатес', duration: '55 мин' },
-    { time: '12:00', name: 'Силовая тренировка', trainer: 'Мария Иванова', type: 'Силовая', duration: '50 мин' },
-    { time: '18:00', name: 'Латина', trainer: 'София Новикова', type: 'Танцевальная', duration: '60 мин' },
-    { time: '20:00', name: 'Йога для спины', trainer: 'Елена Смирнова', type: 'Йога', duration: '60 мин' },
-  ],
-  thursday: [
-    { time: '09:00', name: 'Виньяса йога', trainer: 'Елена Смирнова', type: 'Йога', duration: '75 мин' },
-    { time: '11:00', name: 'Круговая тренировка', trainer: 'Мария Иванова', type: 'Кардио', duration: '50 мин' },
-    { time: '17:00', name: 'Стретчинг', trainer: 'Анна Петрова', type: 'Растяжка', duration: '45 мин' },
-    { time: '19:00', name: 'Зумба', trainer: 'София Новикова', type: 'Танцевальная', duration: '60 мин' },
-  ],
-  friday: [
-    { time: '08:00', name: 'Утренняя йога', trainer: 'Елена Смирнова', type: 'Йога', duration: '60 мин' },
-    { time: '10:00', name: 'Пилатес', trainer: 'Анна Петрова', type: 'Пилатес', duration: '55 мин' },
-    { time: '12:00', name: 'Функциональный тренинг', trainer: 'Мария Иванова', type: 'Силовая', duration: '50 мин' },
-    { time: '18:00', name: 'Танцевальный микс', trainer: 'София Новикова', type: 'Танцевальная', duration: '60 мин' },
-    { time: '19:30', name: 'Восстановительная йога', trainer: 'Елена Смирнова', type: 'Йога', duration: '60 мин' },
-  ],
-  saturday: [
-    { time: '10:00', name: 'Йога + медитация', trainer: 'Елена Смирнова', type: 'Йога', duration: '90 мин' },
-    { time: '12:00', name: 'Пилатес для начинающих', trainer: 'Анна Петрова', type: 'Пилатес', duration: '60 мин' },
-    { time: '14:00', name: 'HIIT тренировка', trainer: 'Мария Иванова', type: 'Кардио', duration: '45 мин' },
-  ],
-  sunday: [
-    { time: '11:00', name: 'Йога выходного дня', trainer: 'Елена Смирнова', type: 'Йога', duration: '75 мин' },
-    { time: '13:00', name: 'Растяжка и релакс', trainer: 'Анна Петрова', type: 'Растяжка', duration: '60 мин' },
-  ],
-};
+// interface ClassItem {
+//   time: string;
+//   name: string;
+//   trainer: string;
+//   type: string;
+//   duration: string;
+// }
 
-const dayMap: Record<number, string> = {
-  1: 'monday',
-  2: 'tuesday',
-  3: 'wednesday',
-  4: 'thursday',
-  5: 'friday',
-  6: 'saturday',
-  0: 'sunday',
-};
+// const scheduleData: Record<string, ClassItem[]> = {
+//   monday: [
+//     { time: '08:00', name: 'Утренняя йога', trainer: 'Елена Смирнова', type: 'Йога', duration: '60 мин' },
+//     { time: '10:00', name: 'Пилатес', trainer: 'Анна Петрова', type: 'Пилатес', duration: '55 мин' },
+//     { time: '12:00', name: 'Силовая тренировка', trainer: 'Мария Иванова', type: 'Силовая', duration: '50 мин' },
+//     { time: '18:00', name: 'Зумба', trainer: 'София Новикова', type: 'Танцевальная', duration: '60 мин' },
+//     { time: '19:30', name: 'Растяжка', trainer: 'Елена Смирнова', type: 'Растяжка', duration: '45 мин' },
+//   ],
+//   tuesday: [
+//     { time: '09:00', name: 'Хатха йога', trainer: 'Елена Смирнова', type: 'Йога', duration: '75 мин' },
+//     { time: '11:00', name: 'Функциональный тренинг', trainer: 'Мария Иванова', type: 'Силовая', duration: '50 мин' },
+//     { time: '17:00', name: 'Стретчинг', trainer: 'Анна Петрова', type: 'Растяжка', duration: '45 мин' },
+//     { time: '19:00', name: 'Танцевальная аэробика', trainer: 'София Новикова', type: 'Танцевальная', duration: '60 мин' },
+//   ],
+//   wednesday: [
+//     { time: '08:00', name: 'Утренняя йога', trainer: 'Елена Смирнова', type: 'Йога', duration: '60 мин' },
+//     { time: '10:00', name: 'Пилатес Реформер', trainer: 'Анна Петрова', type: 'Пилатес', duration: '55 мин' },
+//     { time: '12:00', name: 'Силовая тренировка', trainer: 'Мария Иванова', type: 'Силовая', duration: '50 мин' },
+//     { time: '18:00', name: 'Латина', trainer: 'София Новикова', type: 'Танцевальная', duration: '60 мин' },
+//     { time: '20:00', name: 'Йога для спины', trainer: 'Елена Смирнова', type: 'Йога', duration: '60 мин' },
+//   ],
+//   thursday: [
+//     { time: '09:00', name: 'Виньяса йога', trainer: 'Елена Смирнова', type: 'Йога', duration: '75 мин' },
+//     { time: '11:00', name: 'Круговая тренировка', trainer: 'Мария Иванова', type: 'Кардио', duration: '50 мин' },
+//     { time: '17:00', name: 'Стретчинг', trainer: 'Анна Петрова', type: 'Растяжка', duration: '45 мин' },
+//     { time: '19:00', name: 'Зумба', trainer: 'София Новикова', type: 'Танцевальная', duration: '60 мин' },
+//   ],
+//   friday: [
+//     { time: '08:00', name: 'Утренняя йога', trainer: 'Елена Смирнова', type: 'Йога', duration: '60 мин' },
+//     { time: '10:00', name: 'Пилатес', trainer: 'Анна Петрова', type: 'Пилатес', duration: '55 мин' },
+//     { time: '12:00', name: 'Функциональный тренинг', trainer: 'Мария Иванова', type: 'Силовая', duration: '50 мин' },
+//     { time: '18:00', name: 'Танцевальный микс', trainer: 'София Новикова', type: 'Танцевальная', duration: '60 мин' },
+//     { time: '19:30', name: 'Восстановительная йога', trainer: 'Елена Смирнова', type: 'Йога', duration: '60 мин' },
+//   ],
+//   saturday: [
+//     { time: '10:00', name: 'Йога + медитация', trainer: 'Елена Смирнова', type: 'Йога', duration: '90 мин' },
+//     { time: '12:00', name: 'Пилатес для начинающих', trainer: 'Анна Петрова', type: 'Пилатес', duration: '60 мин' },
+//     { time: '14:00', name: 'HIIT тренировка', trainer: 'Мария Иванова', type: 'Кардио', duration: '45 мин' },
+//   ],
+//   sunday: [
+//     { time: '11:00', name: 'Йога выходного дня', trainer: 'Елена Смирнова', type: 'Йога', duration: '75 мин' },
+//     { time: '13:00', name: 'Растяжка и релакс', trainer: 'Анна Петрова', type: 'Растяжка', duration: '60 мин' },
+//   ],
+// };
+
+// const dayMap: Record<number, string> = {
+//   1: 'monday',
+//   2: 'tuesday',
+//   3: 'wednesday',
+//   4: 'thursday',
+//   5: 'friday',
+//   6: 'saturday',
+//   0: 'sunday',
+// };
 
 const getTypeColor = (type: string) => {
   switch (type) {
-    case 'Йога':
+    case 'MIND_AND_BODY':
       return 'bg-purple-100 text-purple-700';
-    case 'Пилатес':
-      return 'bg-blue-100 text-blue-700';
-    case 'Силовая':
+    case 'STRENGTH':
       return 'bg-orange-100 text-orange-700';
-    case 'Кардио':
+    case 'CARDIO':
       return 'bg-red-100 text-red-700';
-    case 'Танцевальная':
+    case 'DANCE':
       return 'bg-pink-100 text-pink-700';
-    case 'Растяжка':
+    case 'WOMEN_HEALTH':
       return 'bg-green-100 text-green-700';
     default:
       return 'bg-gray-100 text-gray-700';
@@ -90,16 +104,65 @@ const getTypeColor = (type: string) => {
 };
 
 export function Schedule() {
+  // const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
+
+  // const getDaySchedule = (date: Date | undefined): ClassItem[] => {
+  //   if (!date) return [];
+  //   const dayOfWeek = date.getDay();
+  //   const dayKey = dayMap[dayOfWeek];
+  //   return scheduleData[dayKey] || [];
+  // };
+
+  // const classes = getDaySchedule(selectedDate);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
+  // Стейт для хранения реальных тренировок с бэкенда
+  const [classes, setClasses] = useState<ScheduleResponseDto[]>([]);
+  // Стейт для анимации загрузки (скелетонов)
+  const [isLoading, setIsLoading] = useState(false);
 
-  const getDaySchedule = (date: Date | undefined): ClassItem[] => {
-    if (!date) return [];
-    const dayOfWeek = date.getDay();
-    const dayKey = dayMap[dayOfWeek];
-    return scheduleData[dayKey] || [];
+  // useEffect будет срабатывать каждый раз, когда пользователь выбирает новую дату
+  useEffect(() => {
+    if (!selectedDate) return;
+
+    const fetchSchedule = async () => {
+      setIsLoading(true);
+      try {
+        // Форматируем дату в строку (например, YYYY-MM-DD), которую ждет твой бэкенд
+        // date-fns format(selectedDate, 'yyyy-MM-dd') отлично подойдет
+        const formattedDate = format(selectedDate, 'yyyy-MM-dd');
+        
+        // Делаем реальный GET-запрос к твоему Go/Java бэкенду
+        // Предположим, твой эндпоинт выглядит как: /api/schedule?date=2026-05-23
+        const response = await api.get(`/fitness-club/schedules/get_schedules_by_date?date=${formattedDate}`);
+        
+        // Кладем ответ бэкенда в стейт
+        setClasses(response.data); 
+      } catch (error) {
+        console.error("Ошибка при получении расписания:", error);
+        setClasses([]); // В случае ошибки очищаем список
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchSchedule();
+  }, [selectedDate]); // Зависимость [selectedDate] запускает этот блок при каждом клике по календарю
+
+  const getWorkoutTimeInfo = (startIso: string, endIso: string) => {
+    const start = parseISO(startIso);
+    const end = parseISO(endIso);
+    
+    // Форматируем время старта, например: "08:00" или "19:30"
+    const startTimeFormatted = format(start, 'HH:mm');
+    
+    // Вычисляем разницу в минутах между endTime и startTime
+    const durationMin = differenceInMinutes(end, start);
+    
+    return {
+      time: startTimeFormatted,
+      duration: `${durationMin} мин`
+    };
   };
-
-  const classes = getDaySchedule(selectedDate);
 
   return (
     <section id="schedule" className="py-20 bg-gradient-to-b from-white to-pink-50/30">
@@ -139,8 +202,8 @@ export function Schedule() {
                   className="rounded-md border-none"
                   locale={ru}
                   classNames={{
-                    day_selected: "bg-pink-500 text-white hover:bg-pink-600 focus:bg-pink-600",
-                    day_today: "bg-pink-100 text-pink-900",
+                    selected: "bg-pink-500 text-white hover:bg-pink-600 focus:bg-pink-600", 
+                    today: "bg-pink-100 text-pink-900", 
                   }}
                 />
                 {selectedDate && (
@@ -163,7 +226,10 @@ export function Schedule() {
             className="space-y-4"
           >
             <AnimatePresence mode="wait">
-              {classes.length > 0 ? (
+              {isLoading ? (
+                // Показываем простую надпись загрузки, пока данные не пришли
+                <div className="text-center py-12 text-gray-500">Загрузка расписания...</div>
+              ) : classes.length > 0 ? (
                 <motion.div
                   key={selectedDate?.toISOString()}
                   initial={{ opacity: 0, y: 10 }}
@@ -172,14 +238,19 @@ export function Schedule() {
                   transition={{ duration: 0.3 }}
                   className="space-y-4"
                 >
-                  {classes.map((classItem, index) => (
+                  {classes.map((classItem, index) =>{
+                    const timeInfo = getWorkoutTimeInfo(classItem.startTime, classItem.endTime);
+                  
+                    return (
+                    
                     <motion.div
                       key={index}
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: index * 0.1 }}
                     >
-                      <Link to={`/class/${index + 1}`}>
+                      {/* Передаем реальный id из базы данных на страницу деталей */}
+                      <Link to={`/class/${classItem.id}`}>
                         <Card className="hover:shadow-xl hover:border-pink-200 transition-all duration-300 border-pink-50 cursor-pointer">
                           <CardContent className="p-6">
                             <div className="grid md:grid-cols-4 gap-4 items-center">
@@ -191,24 +262,24 @@ export function Schedule() {
                                   <Clock className="w-5 h-5 text-pink-600" />
                                 </motion.div>
                                 <div>
-                                  <div className="font-semibold text-gray-900">{classItem.time}</div>
-                                  <div className="text-sm text-gray-500">{classItem.duration}</div>
+                                  <div className="font-semibold text-gray-900">{timeInfo.time}</div>
+                                  <div className="text-sm text-gray-500">{timeInfo.duration}</div>
                                 </div>
                               </div>
 
                               <div>
-                                <div className="font-semibold text-lg text-gray-900">{classItem.name}</div>
+                                <div className="font-semibold text-lg text-gray-900">{classItem.workoutName}</div>
                               </div>
 
                               <div className="flex items-center gap-2 text-gray-600">
                                 <User className="w-4 h-4 text-pink-500" />
-                                <span>{classItem.trainer}</span>
+                                <span>{classItem.trainerFullName}</span>
                               </div>
 
                               <div className="flex items-center justify-end gap-2">
                                 <TrendingUp className="w-4 h-4 text-gray-500" />
-                                <span className={`px-3 py-1 rounded-full text-sm font-medium ${getTypeColor(classItem.type)}`}>
-                                  {classItem.type}
+                                <span className={`px-3 py-1 rounded-full text-sm font-medium ${getTypeColor(classItem.workoutType)}`}>
+                                  {classItem.workoutType}
                                 </span>
                               </div>
                             </div>
@@ -216,7 +287,8 @@ export function Schedule() {
                         </Card>
                       </Link>
                     </motion.div>
-                  ))}
+                  );
+                  })}
                 </motion.div>
               ) : (
                 <motion.div
