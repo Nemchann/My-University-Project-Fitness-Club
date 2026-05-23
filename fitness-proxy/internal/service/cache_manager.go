@@ -19,7 +19,7 @@ type CacheItem struct {
 }
 
 type CacheManager struct {
-    storage map[string]CacheItem
+    storage map[string]CacheItem //В пакете репозиториев
 	pathSettings map[string]time.Duration // Храним тут TTL из базы
     mu      sync.RWMutex
 	defaultTTL time.Duration

@@ -1,5 +1,37 @@
 basePath: /api/proxy
 definitions:
+  controller.CaptchaRequest:
+    properties:
+      ip:
+        type: string
+    required:
+    - ip
+    type: object
+  model.AccessLog:
+    properties:
+      id: {}
+      ip:
+        type: string
+      latency:
+        type: integer
+      level:
+        description: 'Например: "info", "warning", "error"'
+        type: string
+      method:
+        type: string
+      reason:
+        description: 'Например: "Blacklisted by administrator"'
+        type: string
+      requestID:
+        description: Уникальный ID для отслеживания запроса
+        type: string
+      statusCode:
+        type: integer
+      timestamp:
+        type: string
+      url:
+        type: string
+    type: object
   model.IPRule:
     properties:
       burst:
@@ -21,6 +53,23 @@ definitions:
         type: string
       updatedAt:
         type: string
+    type: object
+  service.ClientStats:
+    properties:
+      blocked_blacklist:
+        description: Забанен по IP
+        type: integer
+      blocked_rate_limit:
+        description: Превысил лимит RPS/RPM
+        type: integer
+      blocked_requests:
+        type: integer
+      bytes_transferred:
+        type: integer
+      ip:
+        type: string
+      total_requests:
+        type: integer
     type: object
 host: localhost:9000
 info:
@@ -139,8 +188,8 @@ paths:
       - Cache-Management
   /management/cache_settings/purge:
     delete:
-      description: Удаляет все настройки кеша для совпадений по началу пути (например,
-        /api/users. Удалит в том числе /api/users/uuid)
+      description: Удаляет весь кеш для совпадений по началу пути (например, /api/users.
+        Удалит в том числе /api/users/uuid)
       parameters:
       - description: Путь для удаления настроек
         in: query
@@ -161,9 +210,95 @@ paths:
             additionalProperties:
               type: string
             type: object
-      summary: Удалить настройки кеша по началу пути
+      summary: Удалить кеш по началу пути
       tags:
       - Cache-Management
+  /management/clients:
+    get:
+      description: Возвращает список самых активных IP-адресов с сортировкой по количеству
+        запросов и логами блокировок
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              items:
+                $ref: '#/definitions/service.ClientStats'
+              type: array
+            type: object
+      summary: Получить топ активных клиентов и нарушителей
+      tags:
+      - Monitoring
+  /management/ip_access/verify-captcha:
+    post:
+      consumes:
+      - application/json
+      description: Проверяет запрос от фронтенда и выставляет сессионную куку доверия
+        для IP
+      parameters:
+      - description: Данные верификации
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/controller.CaptchaRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Подтвердить прохождение капчи
+      tags:
+      - Security
+  /management/logs:
+    get:
+      description: Возвращает последние 100 структурированных JSON-логов из MongoDB
+        с возможностью фильтрации по уровню и IP
+      parameters:
+      - description: Фильтр по уровню логов (DEBUG, INFO, WARN, ERROR)
+        in: query
+        name: level
+        type: string
+      - description: Фильтр по IP-адресу клиента
+        in: query
+        name: ip
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              items:
+                $ref: '#/definitions/model.AccessLog'
+              type: array
+            type: object
+        "500":
+          description: 'error: Не удалось прочитать логи из БД'
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Получить асинхронные логи аудита
+      tags:
+      - Monitoring
+  /management/metrics:
+    get:
+      description: Возвращает историю RPS, задержки и трафика за последние 60 секунд
+        для графиков
+      produces:
+      - application/json
+      responses: {}
+      summary: Получить динамические метрики
+      tags:
+      - Monitoring
   /management/reload:
     get:
       description: Обновляет актуальные правила IP
@@ -178,7 +313,7 @@ paths:
             type: object
       summary: Подгрузить правила IP
       tags:
-      - IP Management
+      - IP-Management
   /management/rules:
     get:
       description: Возвращает список всех правил IP
@@ -222,7 +357,7 @@ paths:
             type: object
       summary: Добавить правило IP
       tags:
-      - IP Management
+      - IP-Management
   /management/rules/{id}:
     delete:
       description: Удаляет запись из MongoDB по её ObjectID

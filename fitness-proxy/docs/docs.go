@@ -88,14 +88,14 @@ const docTemplate = `{
         },
         "/management/cache_settings/purge": {
             "delete": {
-                "description": "Удаляет все настройки кеша для совпадений по началу пути (например, /api/users. Удалит в том числе /api/users/uuid)",
+                "description": "Удаляет весь кеш для совпадений по началу пути (например, /api/users. Удалит в том числе /api/users/uuid)",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "Cache-Management"
                 ],
-                "summary": "Удалить настройки кеша по началу пути",
+                "summary": "Удалить кеш по началу пути",
                 "parameters": [
                     {
                         "type": "string",
@@ -215,6 +215,131 @@ const docTemplate = `{
                 }
             }
         },
+        "/management/clients": {
+            "get": {
+                "description": "Возвращает список самых активных IP-адресов с сортировкой по количеству запросов и логами блокировок",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Monitoring"
+                ],
+                "summary": "Получить топ активных клиентов и нарушителей",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "array",
+                                "items": {
+                                    "$ref": "#/definitions/service.ClientStats"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/management/ip_access/verify-captcha": {
+            "post": {
+                "description": "Проверяет запрос от фронтенда и выставляет сессионную куку доверия для IP",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Security"
+                ],
+                "summary": "Подтвердить прохождение капчи",
+                "parameters": [
+                    {
+                        "description": "Данные верификации",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/controller.CaptchaRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/management/logs": {
+            "get": {
+                "description": "Возвращает последние 100 структурированных JSON-логов из MongoDB с возможностью фильтрации по уровню и IP",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Monitoring"
+                ],
+                "summary": "Получить асинхронные логи аудита",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Фильтр по уровню логов (DEBUG, INFO, WARN, ERROR)",
+                        "name": "level",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Фильтр по IP-адресу клиента",
+                        "name": "ip",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "array",
+                                "items": {
+                                    "$ref": "#/definitions/model.AccessLog"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "error: Не удалось прочитать логи из БД",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/management/metrics": {
+            "get": {
+                "description": "Возвращает историю RPS, задержки и трафика за последние 60 секунд для графиков",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Monitoring"
+                ],
+                "summary": "Получить динамические метрики",
+                "responses": {}
+            }
+        },
         "/management/reload": {
             "get": {
                 "description": "Обновляет актуальные правила IP",
@@ -222,7 +347,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "IP Management"
+                    "IP-Management"
                 ],
                 "summary": "Подгрузить правила IP",
                 "responses": {
@@ -278,7 +403,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "IP Management"
+                    "IP-Management"
                 ],
                 "summary": "Добавить правило IP",
                 "parameters": [
@@ -345,6 +470,53 @@ const docTemplate = `{
         }
     },
     "definitions": {
+        "controller.CaptchaRequest": {
+            "type": "object",
+            "required": [
+                "ip"
+            ],
+            "properties": {
+                "ip": {
+                    "type": "string"
+                }
+            }
+        },
+        "model.AccessLog": {
+            "type": "object",
+            "properties": {
+                "id": {},
+                "ip": {
+                    "type": "string"
+                },
+                "latency": {
+                    "type": "integer"
+                },
+                "level": {
+                    "description": "Например: \"info\", \"warning\", \"error\"",
+                    "type": "string"
+                },
+                "method": {
+                    "type": "string"
+                },
+                "reason": {
+                    "description": "Например: \"Blacklisted by administrator\"",
+                    "type": "string"
+                },
+                "requestID": {
+                    "description": "Уникальный ID для отслеживания запроса",
+                    "type": "string"
+                },
+                "statusCode": {
+                    "type": "integer"
+                },
+                "timestamp": {
+                    "type": "string"
+                },
+                "url": {
+                    "type": "string"
+                }
+            }
+        },
         "model.IPRule": {
             "type": "object",
             "properties": {
@@ -373,6 +545,31 @@ const docTemplate = `{
                 },
                 "updatedAt": {
                     "type": "string"
+                }
+            }
+        },
+        "service.ClientStats": {
+            "type": "object",
+            "properties": {
+                "blocked_blacklist": {
+                    "description": "Забанен по IP",
+                    "type": "integer"
+                },
+                "blocked_rate_limit": {
+                    "description": "Превысил лимит RPS/RPM",
+                    "type": "integer"
+                },
+                "blocked_requests": {
+                    "type": "integer"
+                },
+                "bytes_transferred": {
+                    "type": "integer"
+                },
+                "ip": {
+                    "type": "string"
+                },
+                "total_requests": {
+                    "type": "integer"
                 }
             }
         }
