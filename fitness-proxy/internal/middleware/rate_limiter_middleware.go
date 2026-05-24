@@ -10,18 +10,18 @@ import (
 // Глобальные настройки 
 const (
     // По умолчанию:
-    DefaultRateSecond = 10.0
-    DefaultRateMinute = 120    
-    DefaultRateHour   = 2000  
-    DefaultRateDay    = 20000 
-    DefaultBurst = 20
+    DefaultRateSecond = 50.0
+    DefaultRateMinute = 600.0    
+    DefaultRateHour   = 8000.0  
+    DefaultRateDay    = 70000.0 
+    DefaultBurst = 200
 
     // Белый список
-    WhiteRateSecond  = 50.0
-    WhiteRateMinute = 1500
-    WhiteRateHour   = 30000 
-    WhiteRateDay    = 100000
-    WhiteBurst = 100
+    WhiteRateSecond  = 1000.0
+    WhiteRateMinute = 3000
+    WhiteRateHour   = 50000 
+    WhiteRateDay    = 150000
+    WhiteBurst = 2000
 
     // Серый список
     GreyRateSecond   = 4

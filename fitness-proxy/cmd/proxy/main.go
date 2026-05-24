@@ -11,6 +11,7 @@ import (
 	"time"
 	"syscall"
 	"os/signal"
+	"github.com/gin-contrib/cors"
 
 	"golang.org/x/time/rate"
 	
@@ -140,6 +141,11 @@ func main() {
 	go monitor.StartRPSResetter()
 
 	//Используем middleware
+	
+	//r.Use(middleware.CORSMiddleware())
+
+	r.Use(cors.Default())
+
 	r.Use(monitor.Middleware())
 
 	r.Use(monitor.MaxConnectionsMiddleware(10000))
@@ -149,8 +155,6 @@ func main() {
 	r.Use(middleware.RateLimitMiddleware(rateLimiter, ipManager))
 
 	r.Use(middleware.CacheMiddleware(cacheManager))
-
-	r.Use(middleware.CORSMiddleware())
 
 	r.Use(middleware.MaxBodySize(2 * 1024 * 1024))
 
