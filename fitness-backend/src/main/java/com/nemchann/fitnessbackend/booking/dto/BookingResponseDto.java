@@ -20,4 +20,6 @@ public class BookingResponseDto {
     private String status;
 
     private LocalDateTime startTime;
+
+    private String trainerFullName;
 }
