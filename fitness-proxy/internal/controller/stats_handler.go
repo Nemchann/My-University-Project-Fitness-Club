@@ -10,7 +10,7 @@ import (
 
 func GetStatsHandler(limiterManager *service.IPRateLimiter, cacheManager *service.CacheManager, 
     ipManager *service.IPManager, monitor *service.Monitor) gin.HandlerFunc {
-    startTime := time.Now() // Можно вынести в глобальную переменную при старте
+    startTime := time.Now()
 
     return func(c *gin.Context) {
         var m runtime.MemStats
@@ -39,7 +39,7 @@ func GetStatsHandler(limiterManager *service.IPRateLimiter, cacheManager *servic
                 "blocked_requests": ipManager.GetBlockedCount(),
             },
             "system_status": gin.H{
-                "upstream_reachable": true, // Тут можно добавить проверку Java-бэкенда 
+                "upstream_reachable": true,
             },
         }
 

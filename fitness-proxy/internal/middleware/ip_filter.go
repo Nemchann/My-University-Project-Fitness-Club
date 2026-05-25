@@ -20,7 +20,7 @@ func IPFilter(manager *service.IPManager, logChan chan model.AccessLog, m *servi
             c.Next()
             return
         }
-        // ЕСЛИ ЗАПРОС ИДЕТ НА ПРОХОЖДЕНИЕ КАПЧИ — ПРОПУСКАЕМ БЕЗ ПРОВЕРОК СЛИСКОВ!
+        //Если прохождение капчи
         if c.FullPath() == "/api/proxy/management/ip_access/verify-captcha" || c.Request.URL.Path == "/api/proxy/management/ip_access/verify-captcha" {
             c.Next()
             return
@@ -41,7 +41,7 @@ func IPFilter(manager *service.IPManager, logChan chan model.AccessLog, m *servi
             log.Printf("BLOCK: IP %s rejected. Reason: %s", ip, reason)
             c.Set("block_reason", "blacklist")
             c.Set("abort_reason", "IP in Blacklist")
-            // ТЗ 1.2.1: прерываем запрос с ошибкой 403
+
             c.AbortWithStatusJSON(403, gin.H{
                 "error": "Access denied",
                 "ip":    rawIP,
@@ -57,8 +57,7 @@ func IPFilter(manager *service.IPManager, logChan chan model.AccessLog, m *servi
             if !captchaPassed(rawIP) {
                 log.Printf("CAPTCHA REQUIRED: IP %s must pass verification", rawIP)
                 
-                // Возвращаем статус 403 (или специальный 428 Precondition Required), 
-                // сообщая фронтенду, что требуется капча
+                // Возвращаем статус 428 
                 c.AbortWithStatusJSON(http.StatusPreconditionRequired, gin.H{
                     "error":   "Captcha verification required",
                     "status":  "grey_list",
@@ -73,7 +72,7 @@ func IPFilter(manager *service.IPManager, logChan chan model.AccessLog, m *servi
     }
 }
 
-// Простая и надежная проверка прохождения капчи через Cookie
+// Проверка прохождения капчи 
 func captchaPassed(rawIP string) bool {
     val, found := verifiedClients.Load(rawIP)
     if !found {

@@ -7,7 +7,7 @@ import (
 )
 
 type IPRateLimiter struct {
-	ips map[string]*IPLimiters
+	ips map[string]*IPLimiters //Все rate limiters
 	mu  sync.RWMutex
 	r   rate.Limit // сколько токенов в секунду
 	b   int        // размер корзины (burst)
@@ -21,6 +21,8 @@ func NewIPRateLimiter(r rate.Limit, b int) *IPRateLimiter {
 	}
 }
 
+
+// Rate Limiters по секундам, минутам, часам и дням
 type IPLimiters struct {
     Second *rate.Limiter
     Minute *rate.Limiter
@@ -28,21 +30,6 @@ type IPLimiters struct {
 	Day    *rate.Limiter // RPD
 }
 
-// func (i *IPRateLimiter) GetLimiter(ip string, r rate.Limit, b int) *rate.Limiter {
-// 	i.mu.Lock()
-// 	defer i.mu.Unlock()
-
-// 	limiter, exists := i.ips[ip]
-// 	if !exists {
-// 		limiter = rate.NewLimiter(i.r, i.b)
-// 		i.ips[ip] = limiter
-// 	}
-
-// 	limiter.SetLimit(r)
-//     limiter.SetBurst(b)
-
-// 	return limiter
-// }
 
 func (i *IPRateLimiter) GetLimiters(ip string, rps float64, rpm, rph, rpd, b int) *IPLimiters {
     i.mu.Lock()
@@ -69,7 +56,7 @@ func (i *IPRateLimiter) GetLimiters(ip string, rps float64, rpm, rph, rpd, b int
 	return limiters
 }
 
-//Додумать
+//Количество rate limiters в мапе
 func (i *IPRateLimiter) GetCount() int {
 	i.mu.RLock()
 	defer i.mu.RUnlock()

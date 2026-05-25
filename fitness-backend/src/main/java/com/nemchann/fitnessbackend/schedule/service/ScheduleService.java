@@ -268,10 +268,10 @@ public class ScheduleService {
     }
 
     //Получить тренировки данного дня
+    //Исправить с body на сам запрос
     @Transactional
-    public List<ScheduleResponseDto> findSchedulesByDate(ScheduleGetByTimeDto scheduleGetByTimeDto){
-        LocalDate date = scheduleGetByTimeDto.getDate();
-        List<Schedule> schedules = scheduleRepository.findByScheduleDate(date);
+    public List<ScheduleResponseDto> findSchedulesByDate(LocalDate date){
+        List<Schedule> schedules = scheduleRepository.findByScheduleDateOrderByStartTimeAsc(date);
 
         return schedules.stream()
                 .map(this::mapScheduleToResponse)

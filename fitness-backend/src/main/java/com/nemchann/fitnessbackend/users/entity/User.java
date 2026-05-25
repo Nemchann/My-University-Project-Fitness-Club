@@ -65,28 +65,8 @@ public class User {
         this.createdAt = OffsetDateTime.now();
     }
 
-
     public User(){
         this.isActive = true;
     }
-
-
-
-//    {
-//        try {
-//            this.password = getHash();
-//        } catch (Exception e) {
-//            throw new RuntimeException(e);
-//        }
-//    }
-//
-//    private String getHash() throws Exception {
-//        // Создаем экземпляр алгоритма SHA-256
-//        byte[] hash = MessageDigest.getInstance("SHA-256")
-//                .digest(password.getBytes(StandardCharsets.UTF_8));
-//
-//        // Превращаем массив байтов в понятную шестнадцатеричную строку
-//        return HexFormat.of().formatHex(hash);
-//    }
 
 }

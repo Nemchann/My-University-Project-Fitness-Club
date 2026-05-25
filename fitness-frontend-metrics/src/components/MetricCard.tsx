@@ -3,7 +3,7 @@ import React from 'react';
 interface MetricCardProps {
   title: string;
   value: string | number;
-  textColor: string; // например: 'text-blue-400' или 'text-amber-400'
+  textColor: string;
 }
 
 export const MetricCard: React.FC<MetricCardProps> = ({ title, value, textColor }) => {

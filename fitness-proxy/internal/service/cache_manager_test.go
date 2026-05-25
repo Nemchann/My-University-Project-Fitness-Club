@@ -14,6 +14,7 @@ import (
 	"go.uber.org/mock/gomock"
 )
 
+//Тест подгрузки настроек из бд
 func TestCacheManager_LoadSettings_Success(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
@@ -31,20 +32,21 @@ func TestCacheManager_LoadSettings_Success(t *testing.T) {
 	// Вызываем загрузку
 	cm.LoadSettings()
 
-	// Проверяем, что настройки успешно перетекли в RAM (внутренний pathSettings)
-	// Через твой метод GetTTLForPathRAM:
+	// Проверяем, что настройки успешно перетекли в оперативку 
+	// Через метод GetTTLForPathRAM:
 	assert.Equal(t, 60*time.Second, cm.GetTTLForPathRAM("/api/v1/workouts"))
 	assert.Equal(t, 300*time.Second, cm.GetTTLForPathRAM("/api/v1/profile"))
 	// Проверяем количество ключей
 	assert.Equal(t, 2, cm.GetKeysCount())
 }
 
+//При ошибке
 func TestCacheManager_LoadSettings_DatabaseError(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 	mockRepo := mocks.NewMockCacheRepository(ctrl)
 
-	// Имитируем ошибку подключения к MongoDB (например, timeout или connection refused)
+	// Имитируем ошибку подключения к MongoDB 
 	mockRepo.EXPECT().
 		GetSettings(gomock.Any()).
 		Return(nil, errors.New("mongo: connection topology failed or timeout"))
@@ -52,13 +54,14 @@ func TestCacheManager_LoadSettings_DatabaseError(t *testing.T) {
 	// Инициализируем менеджер кэша
 	cm := service.NewCacheManager(time.Minute, mockRepo)
 
-	// Вызываем метод. Под капотом он поймает ошибку, выведет её в лог и безопасно выйдет
+	// Вызываем метод
 	cm.LoadSettings()
 
 	// Проверяем, что паники не произошло, а карта настроек осталась пустой
 	assert.Equal(t, 0, cm.GetKeysCount())
 }
 
+//Когда данные протухли
 func TestCacheManager_Get_Expired(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
@@ -70,16 +73,16 @@ func TestCacheManager_Get_Expired(t *testing.T) {
 	key := "/api/v1/exercises"
 	data := []byte("cached response")
 
-	// 1. Сохраняем данные
+	// Сохраняем данные
 	cm.Set(key, data)
 
-	// 2. Искусственно перематываем время вперед или просто ждем чуть больше 1 секунды
+	// Ждем чуть больше 1 секунды
 	time.Sleep(1100 * time.Millisecond)
 
-	// 3. Пытаемся получить данные
+	//  Пытаемся получить данные
 	cachedData, found := cm.Get(key)
 
-	// 4. Проверяем, что данные признаны протухшими и удалены
+	// Проверяем, что данные признаны протухшими и удалены
 	assert.False(t, found)
 	assert.Nil(t, cachedData)
 }
@@ -89,7 +92,7 @@ func TestCacheManager_GetTTLForPathRAM_Default(t *testing.T) {
 	defer ctrl.Finish()
 	mockRepo := mocks.NewMockCacheRepository(ctrl)
 
-	// Задаем дефолтный TTL, например, 45 секунд
+	// Задаем дефолтный TTL
 	cm := service.NewCacheManager(45*time.Second, mockRepo)
 
 	// Ищем путь, которого точно нет в RAM-карте настроек
@@ -113,7 +116,6 @@ func TestCacheService_GetTTLForPath(t *testing.T) {
 			name: "1. Путь найден в БД — возвращаем сохраненный TTL",
 			path: "/api/v1/fitness/exercises",
 			setupMock: func(m *mocks.MockCacheRepository) {
-				// Ожидаем, что сервис вызовет репозиторий с этим путем
 				m.EXPECT().GetTTLForPath(gomock.Any(), "/api/v1/fitness/exercises").Return(60, nil)
 			},
 			expectedTTL: 60,
@@ -126,7 +128,7 @@ func TestCacheService_GetTTLForPath(t *testing.T) {
 				m.EXPECT().GetTTLForPath(gomock.Any(), "/api/v1/unknown").Return(0, errors.New("mongo: no documents in result"))
 			},
 			expectedTTL: 0,
-			expectErr:   true, // Сервис должен пробросить ошибку или вернуть дефолт (смотря как у тебя написано)
+			expectErr:   true, // Сервис должен пробросить ошибку 
 		},
 	}
 
@@ -138,7 +140,7 @@ func TestCacheService_GetTTLForPath(t *testing.T) {
 
 			tt.setupMock(mockRepo)
 
-			// Создаем сервис кэша и передаем ему наш мок
+			// Создаем сервис кэша и передаем ему мок
 			cacheService := service.NewCacheManager(5 * time.Minute, mockRepo)
 
 			ttl, err := cacheService.GetTTLForPath(context.Background(), tt.path) 
@@ -154,13 +156,13 @@ func TestCacheService_GetTTLForPath(t *testing.T) {
 }
 
 func TestCacheService_DeleteFromRAMByPath(t *testing.T) {
-	// 1. Инициализируем менеджер кэша (допустим, он хранит данные в памяти)
-    cacheManager := service.NewCacheManager(5 * time.Minute, nil) // Репозиторий не нужен для этого теста
+	// Инициализируем менеджер кэша
+    cacheManager := service.NewCacheManager(5 * time.Minute, nil)
 
     path := "/api/v1/fitness/exercises"
     dummyResponse := []byte("{\"status\": \"ok\"}")
 
-    // 2. Искусственно кладём данные в кэш приложения
+    // Искусственно кладём данные в кэш приложения
     cacheManager.Set(path, dummyResponse)
 
     // Проверяем, что они там правда появились
@@ -168,10 +170,10 @@ func TestCacheService_DeleteFromRAMByPath(t *testing.T) {
     assert.True(t, found)
     assert.Equal(t, dummyResponse, cachedData)
 
-    // 3. Вызываем твой третий способ — удаление из RAM
+    //  Вызываем удаление из RAM
     cacheManager.DeleteFromRAMByPath(path)
 
-    // 4. Проверяем, что данных больше нет!
+    // Проверяем, что данных больше нет
     _, foundAfterDelete := cacheManager.Get(path)
     assert.False(t, foundAfterDelete) // Кэш должен быть пуст
 }
@@ -220,12 +222,11 @@ func TestCacheService_UpdateTTL(t *testing.T) {
 	objID, _ := primitive.ObjectIDFromHex(id)
 	var newTTL int64 = 120
 
-	// 1. Ожидаем вызов обновления TTL в базе данных
+	// Ожидаем вызов обновления TTL в базе данных
 	mockRepo.EXPECT().
 		UpdateTTL(gomock.Any(), objID, newTTL).
-		Return(nil) // Успешно обновили
+		Return(nil)
 
-	// 2. ДОБАВЛЯЕМ ОЖИДАНИЕ GETSETTINGS (потому что код сервиса его вызывает!)
 	// Мы возвращаем пустой слайс или тестовые настройки, чтобы сервис не упал дальше
 	mockRepo.EXPECT().
 		GetSettings(gomock.Any()).
@@ -240,25 +241,24 @@ func TestCacheService_UpdateTTL(t *testing.T) {
 func TestCacheManager_UpdateTTL_InvalidID(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
-	mockRepo := mocks.NewMockCacheRepository(ctrl) // Репозиторий вообще не должен вызываться!
+	mockRepo := mocks.NewMockCacheRepository(ctrl)
 
 	cm := service.NewCacheManager(time.Minute, mockRepo)
 
 	// Передаем заведомо некорректный ID
 	err := cm.UpdateTTL(context.Background(), "invalid-id-format", 120)
 
-	// Должна вернуться ошибка валидации гекса, а репозиторий остаться нетронутым
 	assert.Error(t, err)
 }
 
 func TestCacheManager_Flush(t *testing.T) {
-	// 1. Инициализируем менеджер кэша в памяти
+	// Инициализируем менеджер кэша в памяти
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 	mockRepo := mocks.NewMockCacheRepository(ctrl)
 	cacheManager := service.NewCacheManager(5 * time.Minute, mockRepo)
 
-	// 2. Кладем несколько разных записей в оперативку
+	// Кладем несколько разных записей в оперативку
 	cacheManager.Set("/api/v1/exercises", []byte("data1"))
 	cacheManager.Set("/api/v1/workouts", []byte("data2"))
 
@@ -268,10 +268,10 @@ func TestCacheManager_Flush(t *testing.T) {
 	assert.True(t, found1)
 	assert.True(t, found2)
 
-	// 3. Вызываем тотальную очистку
+	// Вызываем тотальную очистку
 	cacheManager.Flush()
 
-	// 4. Проверяем, что кэш абсолютно пуст
+	// Проверяем, что кэш абсолютно пуст
 	_, found1AfterFlush := cacheManager.Get("/api/v1/exercises")
 	_, found2AfterFlush := cacheManager.Get("/api/v1/workouts")
 	

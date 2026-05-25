@@ -11,6 +11,7 @@ import (
 	"time"
 	"syscall"
 	"os/signal"
+	"github.com/gin-contrib/cors"
 
 	"golang.org/x/time/rate"
 	
@@ -55,13 +56,13 @@ func main() {
 
 
 	if err := godotenv.Load(); err != nil {
-    log.Fatalf("Ошибка загрузки .env: %v", err) // Fatalf остановит программу и скажет почему
+    log.Fatalf("Ошибка загрузки .env: %v", err) // Fatalf остановит программу
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	// 1. Подключаемся к Mongo (используя URI из .env)
+	// Подключаемся к Mongo (используя URI из .env)
 
 	uri := os.Getenv("MONGODB_URI")
 	if uri == "" {
@@ -81,13 +82,13 @@ func main() {
 	db := client.Database(os.Getenv("DB_NAME"))
 	
 
-	// 2. Инициализируем репозиторий
+	// Инициализируем репозиторий логов
     logRepo := repository.NewMongoLogRepository(db)
 
-    // 3. Создаем канал для логов
+    // Создаем канал для логов
     logChan := make(chan model.AccessLog, 500)
 
-    // 4. Запускаем "слушателя" канала в фоне (п. 3.1.3 - асинхронность) - воркер, который будет сохранять логи в Mongo
+    // Запускаем "слушателя" канала в фоне - воркер, который будет сохранять логи в Mongo
     go func() {
         for entry := range logChan {
             // Используем фоновый контекст, чтобы не привязываться к HTTP-запросу
@@ -96,20 +97,20 @@ func main() {
     }()
 
 
-    // 5. Передаем канал в Middleware
+    // Передаем канал в Middleware
 	r := gin.Default()
 
 	r.Use(middleware.RequestID())
 
 	r.Use(middleware.AsyncLogger(logChan))
 
-	// 1. Инициализируем репозиторий IP
+	// Инициализируем репозиторий IP
 	ipRepo := repository.NewMongoIPRepo(db)
 
-	// 2. Создаем менеджер для IP-правил и другие сервисы
-	ipManager := service.NewIPManager(ipRepo) //Тут нужно подправить
+	// Создаем менеджер для IP-правил и другие сервисы
+	ipManager := service.NewIPManager(ipRepo)
 
-	rateLimiter := service.NewIPRateLimiter(1, 2) // Нужно будет убрать параметры, они задаются в middleware в зависимости от типа IP (черный, белый, серый)
+	rateLimiter := service.NewIPRateLimiter(1, 2) 
 
 	logsService := service.NewLogService(logRepo) // Сервис для получения логов, который будет использоваться в контроллере
 
@@ -119,13 +120,13 @@ func main() {
 
 	cacheManager.LoadSettings()
 
-	// 3. Загружаем правила из базы (делаем это ОДИН РАЗ при старте)
+	// Загружаем правила из базы
 	rules, err := ipRepo.GetAll(context.Background())
 	if err != nil {
     	log.Fatalf("Не удалось загрузить IP-правила: %v", err)
 	}
 
-	// 4. Наполняем менеджер данными (нужно будет добавить метод Import в менеджер)
+	// Наполняем менеджер данными
 	for _, rule := range rules {
     	err := ipManager.AddRule(rule.Network, rule.Type)
     	if err != nil {
@@ -137,7 +138,13 @@ func main() {
 	log.Printf("Загружено правил для IP: %d", len(rules))
 
 	monitor := service.NewMonitor() // Создаем один экземпляр
-	go monitor.StartRPSResetter() //Подумать, что можно с этим сделать
+	go monitor.StartRPSResetter()
+
+	//Используем middleware
+	
+	//r.Use(middleware.CORSMiddleware())
+
+	r.Use(cors.Default())
 
 	r.Use(monitor.Middleware())
 
@@ -149,11 +156,9 @@ func main() {
 
 	r.Use(middleware.CacheMiddleware(cacheManager))
 
-	r.Use(middleware.CORSMiddleware())
-
 	r.Use(middleware.MaxBodySize(2 * 1024 * 1024))
 
-	// Разрешаем максимум 100 НОВЫХ запросов в секунду на весь прокси-сервер с burst = 200
+	// Разрешаем максимум 100 новых запросов в секунду на весь прокси-сервер с burst = 200
 	globalConnLimiter := rate.NewLimiter(rate.Limit(100), 200)
 
 	// И проверять его в отдельном Middleware:
@@ -185,12 +190,13 @@ func main() {
 		c.Next()
 	})
 
+	//Админка
 	admin := controller.SetupRouter(ipManager, rateLimiter, 
 		cacheManager, monitor, client, target, logsService, r) 
 
 	admin.Handlers.Last() // Нужна для того, чтобы компилятор не ругался, что не использую переменную admin
 
-	// Проксируем всё остальное, что НЕ начинается с /management
+	// Проксируем всё остальное, что не начинается с /management
 	r.NoRoute(func(c *gin.Context) {
 			c.Request.Host = remote.Host
 			proxy.ServeHTTP(c.Writer, c.Request)
@@ -199,7 +205,7 @@ func main() {
 	log.Println("Proxy запущен на порту :9000")
 
 
-	//Код для graceful shutdown, чтобы не обрывать активные соединения при остановке сервера (например, Ctrl+C)
+	//Код для graceful shutdown, чтобы не обрывать активные соединения при остановке сервера
 	srv := &http.Server{
         Addr:    ":9000",
         Handler: r,
@@ -212,14 +218,13 @@ func main() {
         }
     }()
 
-    // Канал для ожидания сигналов от системы (например, Ctrl+C)
+    // Канал для ожидания сигналов от системы
     quit := make(chan os.Signal, 1)
     signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
     <-quit // Блокируемся здесь, пока не придет сигнал
     log.Println("Shutting down proxy server...")
 
     // Даем серверу 5 секунд на завершение текущих запросов
-	//Исправить ошибку компилятора
     shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 5*time.Second)
     defer shutdownCancel()
 

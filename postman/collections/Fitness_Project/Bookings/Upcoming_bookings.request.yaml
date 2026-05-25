@@ -1,0 +1,5 @@
+$kind: http-request
+name: Upcoming_bookings
+url: "{{proxyUrl}}/{{bookingControllerUrl}}/upcoming/48af444f-5d52-49f3-83f9-331641be944e"
+method: GET
+order: 2231814496539280

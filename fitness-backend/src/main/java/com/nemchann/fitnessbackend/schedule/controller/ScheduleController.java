@@ -13,11 +13,13 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/fitness-club/schedules")
+//@CrossOrigin(origins = "http://localhost:5173")
 @RequiredArgsConstructor
 @Tag(name = "Schedule Controller", description = "Управление тренировками и расписанием")
 public class ScheduleController {
@@ -124,8 +126,8 @@ public class ScheduleController {
 
     @GetMapping("/get_schedules_by_date")
     @Operation(summary = "Получить тренировки определенной даты")
-    public ResponseEntity<List<ScheduleResponseDto>> getSchedulesByDate(@Valid @RequestBody ScheduleGetByTimeDto timeDto){
-        List<ScheduleResponseDto> responseDtos = service.findSchedulesByDate(timeDto);
+    public ResponseEntity<List<ScheduleResponseDto>> getSchedulesByDate(@Valid @RequestParam LocalDate date){
+        List<ScheduleResponseDto> responseDtos = service.findSchedulesByDate(date);
 
         return new ResponseEntity<>(responseDtos, HttpStatus.OK);
     }
