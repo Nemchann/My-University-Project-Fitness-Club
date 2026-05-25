@@ -99,7 +99,7 @@ public class UserController {
         return new ResponseEntity<>(userResponseDtos, HttpStatus.OK);
     }
 
-    @GetMapping("/authentification")
+    @PostMapping("/authentification")
     @Operation(summary = "Авторизация существующего пользователя")
     public ResponseEntity<UserResponseDto> authUser(@Valid @RequestBody UserAuthentificationDto dto){
         UserResponseDto userResponseDto = service.authentification(dto);
@@ -107,7 +107,7 @@ public class UserController {
         return ResponseEntity.ok(userResponseDto);
     }
 
-    @PutMapping("/edit_profile/{id}")
+    @PutMapping("/edit_profile")
     @Operation(summary = "Поменять профиль пользователя")
     public ResponseEntity<UserResponseDto> editProfile(@Valid @RequestBody UserEditingDto dto){
         UserResponseDto userResponseDto = service.editProfile(dto);
