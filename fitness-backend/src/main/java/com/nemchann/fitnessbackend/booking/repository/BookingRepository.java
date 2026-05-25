@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -20,7 +21,7 @@ public interface BookingRepository extends JpaRepository<Booking, UUID> {
     List<Booking> findAllByScheduleId(Integer scheduleId);
 
     // Находит будущие записи: дата в расписании больше текущей
-    Page<Booking> findByClientIdAndScheduleScheduleDateAfter(UUID clientId, LocalDate now, Pageable pageable);
+    Page<Booking> findByClientIdAndScheduleStartTimeAfter(UUID clientId, LocalDateTime now, Pageable pageable);
 
     // Находит прошедшие записи: дата в расписании меньше текущей
     Page<Booking> findByClientIdAndScheduleScheduleDateBefore(UUID clientId, LocalDate now, Pageable pageable);

@@ -40,14 +40,16 @@ public class BookingService {
 
         Booking booking = rewriteFromCreateDto(createDto);
 
-        //Добавить: Если эта тренировка есть, но со статусом CANCELLED, то можно записаться
+        //Если эта тренировка есть, но со статусом CANCELLED, то можно записаться
         if (bookingRepository.existsByClientIdAndScheduleId(createDto.getUserId(), createDto.getScheduleId())){
-            throw new AlreadyBookedException("You've already booked this schedule");
+            if (!booking.getBookingStatus().getBookingStatusName().equals(BookingStatusEnum.CANCELLED)){
+                throw new AlreadyBookedException("You've already booked this schedule");
+            }
         }
 
         //Если бронировать тренировку за 2 часа до нее и позже
         LocalDateTime edgeTime = LocalDateTime.now().plusHours(2);
-        if (booking.getSchedule().getStartTime().isAfter(edgeTime)){
+        if (booking.getSchedule().getStartTime().isBefore(edgeTime)){
             throw new BookingTooLateException("It is too late to book that schedule");
         }
 
@@ -89,6 +91,14 @@ public class BookingService {
         Schedule schedule = booking.getSchedule();
         Workout workout = schedule.getWorkout();
 
+        User trainer = schedule.getTrainer();
+
+        Profile profile = trainer.getProfile();
+
+        String trainerFullName = profile.getSelfname() + " " + profile.getSurname();
+
+        responseDto.setTrainerFullName(trainerFullName);
+
         responseDto.setBookingId(booking.getId());
 
         BookingStatusEnum bookingStatusEnum = booking.getBookingStatus().getBookingStatusName();
@@ -112,6 +122,8 @@ public class BookingService {
 
         BookingStatusEnum bookingStatusEnum = booking.getBookingStatus().getBookingStatusName();
         responseDto.setStatus(bookingStatusEnum.name());
+
+        responseDto.setBookingId(booking.getId());
 
         responseDto.setStatus(bookingStatusEnum.name());
 
@@ -228,7 +240,20 @@ public class BookingService {
     public Page<BookingShortResponseDto> getClientBookings(UUID clientId, Pageable pageable){
         Page<Booking> bookings = bookingRepository.findByClientId(clientId, pageable);
 
-        return bookings.map(this::mapToShortResponseDto);
+        return bookings
+                .map(this::setCompletedStatus)
+                .map(this::mapToShortResponseDto);
+    }
+
+    private Booking setCompletedStatus(Booking booking){
+        if (booking.getSchedule().getStartTime().isBefore(LocalDateTime.now())
+                && !booking.getBookingStatus().getBookingStatusName().equals(BookingStatusEnum.CANCELLED)){
+            BookingStatus bookingStatus = bookingStatusRepository.findByBookingStatusName(BookingStatusEnum.COMPLETED)
+                    .orElseThrow(() -> new BookingStatusNotFoundException("Booking status is not found"));
+
+            booking.setBookingStatus(bookingStatus);
+        }
+        return booking;
     }
 
 
@@ -257,12 +282,13 @@ public class BookingService {
     }
 
     public Page<BookingResponseDto> futureBookings(UUID userId, Pageable pageable){
-        return bookingRepository.findByClientIdAndScheduleScheduleDateAfter(userId, LocalDate.now(), pageable)
+        return bookingRepository.findByClientIdAndScheduleStartTimeAfter(userId, LocalDateTime.now(), pageable)
                 .map(this::mapToResponseDto);
     }
 
     public Page<BookingResponseDto> pastBookings(UUID clientId, Pageable pageable){
         return bookingRepository.findByClientIdAndScheduleScheduleDateBefore(clientId, LocalDate.now(), pageable)
+                .map(this::setCompletedStatus)
                 .map(this::mapToResponseDto);
     }
 
