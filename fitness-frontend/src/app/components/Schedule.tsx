@@ -23,68 +23,7 @@ interface ScheduleResponseDto {
   currentParticipants: number;
 }
 
-// interface ClassItem {
-//   time: string;
-//   name: string;
-//   trainer: string;
-//   type: string;
-//   duration: string;
-// }
 
-// const scheduleData: Record<string, ClassItem[]> = {
-//   monday: [
-//     { time: '08:00', name: 'Утренняя йога', trainer: 'Елена Смирнова', type: 'Йога', duration: '60 мин' },
-//     { time: '10:00', name: 'Пилатес', trainer: 'Анна Петрова', type: 'Пилатес', duration: '55 мин' },
-//     { time: '12:00', name: 'Силовая тренировка', trainer: 'Мария Иванова', type: 'Силовая', duration: '50 мин' },
-//     { time: '18:00', name: 'Зумба', trainer: 'София Новикова', type: 'Танцевальная', duration: '60 мин' },
-//     { time: '19:30', name: 'Растяжка', trainer: 'Елена Смирнова', type: 'Растяжка', duration: '45 мин' },
-//   ],
-//   tuesday: [
-//     { time: '09:00', name: 'Хатха йога', trainer: 'Елена Смирнова', type: 'Йога', duration: '75 мин' },
-//     { time: '11:00', name: 'Функциональный тренинг', trainer: 'Мария Иванова', type: 'Силовая', duration: '50 мин' },
-//     { time: '17:00', name: 'Стретчинг', trainer: 'Анна Петрова', type: 'Растяжка', duration: '45 мин' },
-//     { time: '19:00', name: 'Танцевальная аэробика', trainer: 'София Новикова', type: 'Танцевальная', duration: '60 мин' },
-//   ],
-//   wednesday: [
-//     { time: '08:00', name: 'Утренняя йога', trainer: 'Елена Смирнова', type: 'Йога', duration: '60 мин' },
-//     { time: '10:00', name: 'Пилатес Реформер', trainer: 'Анна Петрова', type: 'Пилатес', duration: '55 мин' },
-//     { time: '12:00', name: 'Силовая тренировка', trainer: 'Мария Иванова', type: 'Силовая', duration: '50 мин' },
-//     { time: '18:00', name: 'Латина', trainer: 'София Новикова', type: 'Танцевальная', duration: '60 мин' },
-//     { time: '20:00', name: 'Йога для спины', trainer: 'Елена Смирнова', type: 'Йога', duration: '60 мин' },
-//   ],
-//   thursday: [
-//     { time: '09:00', name: 'Виньяса йога', trainer: 'Елена Смирнова', type: 'Йога', duration: '75 мин' },
-//     { time: '11:00', name: 'Круговая тренировка', trainer: 'Мария Иванова', type: 'Кардио', duration: '50 мин' },
-//     { time: '17:00', name: 'Стретчинг', trainer: 'Анна Петрова', type: 'Растяжка', duration: '45 мин' },
-//     { time: '19:00', name: 'Зумба', trainer: 'София Новикова', type: 'Танцевальная', duration: '60 мин' },
-//   ],
-//   friday: [
-//     { time: '08:00', name: 'Утренняя йога', trainer: 'Елена Смирнова', type: 'Йога', duration: '60 мин' },
-//     { time: '10:00', name: 'Пилатес', trainer: 'Анна Петрова', type: 'Пилатес', duration: '55 мин' },
-//     { time: '12:00', name: 'Функциональный тренинг', trainer: 'Мария Иванова', type: 'Силовая', duration: '50 мин' },
-//     { time: '18:00', name: 'Танцевальный микс', trainer: 'София Новикова', type: 'Танцевальная', duration: '60 мин' },
-//     { time: '19:30', name: 'Восстановительная йога', trainer: 'Елена Смирнова', type: 'Йога', duration: '60 мин' },
-//   ],
-//   saturday: [
-//     { time: '10:00', name: 'Йога + медитация', trainer: 'Елена Смирнова', type: 'Йога', duration: '90 мин' },
-//     { time: '12:00', name: 'Пилатес для начинающих', trainer: 'Анна Петрова', type: 'Пилатес', duration: '60 мин' },
-//     { time: '14:00', name: 'HIIT тренировка', trainer: 'Мария Иванова', type: 'Кардио', duration: '45 мин' },
-//   ],
-//   sunday: [
-//     { time: '11:00', name: 'Йога выходного дня', trainer: 'Елена Смирнова', type: 'Йога', duration: '75 мин' },
-//     { time: '13:00', name: 'Растяжка и релакс', trainer: 'Анна Петрова', type: 'Растяжка', duration: '60 мин' },
-//   ],
-// };
-
-// const dayMap: Record<number, string> = {
-//   1: 'monday',
-//   2: 'tuesday',
-//   3: 'wednesday',
-//   4: 'thursday',
-//   5: 'friday',
-//   6: 'saturday',
-//   0: 'sunday',
-// };
 
 const getTypeColor = (type: string) => {
   switch (type) {
@@ -104,16 +43,7 @@ const getTypeColor = (type: string) => {
 };
 
 export function Schedule() {
-  // const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
 
-  // const getDaySchedule = (date: Date | undefined): ClassItem[] => {
-  //   if (!date) return [];
-  //   const dayOfWeek = date.getDay();
-  //   const dayKey = dayMap[dayOfWeek];
-  //   return scheduleData[dayKey] || [];
-  // };
-
-  // const classes = getDaySchedule(selectedDate);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   // Стейт для хранения реальных тренировок с бэкенда
   const [classes, setClasses] = useState<ScheduleResponseDto[]>([]);
@@ -128,11 +58,9 @@ export function Schedule() {
       setIsLoading(true);
       try {
         // Форматируем дату в строку (например, YYYY-MM-DD), которую ждет твой бэкенд
-        // date-fns format(selectedDate, 'yyyy-MM-dd') отлично подойдет
         const formattedDate = format(selectedDate, 'yyyy-MM-dd');
         
         // Делаем реальный GET-запрос к твоему Go/Java бэкенду
-        // Предположим, твой эндпоинт выглядит как: /api/schedule?date=2026-05-23
         const response = await api.get(`/fitness-club/schedules/get_schedules_by_date?date=${formattedDate}`);
         
         // Кладем ответ бэкенда в стейт

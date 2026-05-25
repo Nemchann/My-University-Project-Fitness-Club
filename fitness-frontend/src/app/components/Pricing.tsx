@@ -1,7 +1,14 @@
+import { useState } from 'react';
 import { Card, CardContent, CardHeader } from './ui/card';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
 import { Check, Gift } from 'lucide-react';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "./ui/dialog";
 
 interface PricingPlan {
   name: string;
@@ -69,11 +76,26 @@ const plans: PricingPlan[] = [
 ];
 
 export function Pricing() {
+
+  const [isOpen, setIsOpen] = useState(false);
+  const [selectedPlan, setSelectedPlan] = useState('');
+
+  const handleBuyClick = (planName: string) => {
+    setSelectedPlan(planName);
+    setIsOpen(true);
+  }; 
+
+  const scrollToSection = (id: string) => {
+    const element = document.getElementById(id);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
   return (
     <section id="pricing" className="py-20 bg-gradient-to-br from-pink-100 via-pink-50 to-purple-50">
       <div className="container mx-auto px-4">
         {/* Блок о бесплатном первом занятии */}
-        <div className="max-w-4xl mx-auto mb-12">
+        <div className="max-w-4xl mx-auto mb-12" id="trial">
           <div className="bg-gradient-to-r from-pink-500 to-pink-600 rounded-2xl p-8 text-white text-center shadow-xl">
             <div className="flex justify-center mb-4">
               <div className="bg-white/20 p-4 rounded-full">
@@ -87,13 +109,14 @@ export function Pricing() {
               Приходите на пробную тренировку и убедитесь в качестве наших услуг. 
               Без обязательств и скрытых платежей.
             </p>
-            <Button size="lg" className="bg-white text-pink-500 hover:bg-pink-50 font-semibold">
+            <Button size="lg" className="bg-white text-pink-500 hover:bg-pink-50 font-semibold"
+              onClick={() => scrollToSection('schedule')}>
               Записаться на бесплатное занятие
             </Button>
           </div>
         </div>
 
-        <div className="text-center mb-12">
+        <div className="text-center mb-12" id="pricing">
           <h2 className="text-4xl font-bold text-gray-900 mb-4">
             Цены и абонементы
           </h2>
@@ -149,11 +172,13 @@ export function Pricing() {
                 </ul>
 
                 <Button 
-                  className={`w-full ${
+                  onClick={() => handleBuyClick(plan.name)}
+                  className={`w-full cursor-pointer text-white font-semibold py-5 ${
                     plan.popular 
                       ? 'bg-pink-500 hover:bg-pink-600' 
                       : 'bg-pink-400 hover:bg-pink-500'
-                  }`}
+                    }`
+                  }
                 >
                   Купить абонемент
                 </Button>
@@ -166,11 +191,62 @@ export function Pricing() {
           <p className="text-gray-600 mb-4">
             Не нашли подходящий вариант? Есть вопросы?
           </p>
-          <Button variant="outline" size="lg" className="border-pink-500 text-pink-500 hover:bg-pink-50">
-            Связаться с нами
+          <Button 
+            variant="outline" 
+              size="lg" 
+              className="border-pink-500 text-pink-600 hover:bg-pink-50 cursor-pointer"
+              onClick={() => handleBuyClick('Индивидуальный запрос')}>
+              Связаться с нами
           </Button>
         </div>
       </div>
+
+      {/* КРАСИВОЕ МОДАЛЬНОЕ ОКНО ДЛЯ ДЕМОНСТРАЦИИ */}
+      <Dialog open={isOpen} onOpenChange={setIsOpen}>
+        <DialogContent className="sm:max-w-md bg-white rounded-2xl p-6">
+          <DialogHeader className="space-y-3 text-center">
+            <div className="w-12 h-12 bg-pink-100 rounded-full flex items-center justify-center mx-auto text-pink-500">
+              <Gift className="w-6 h-6" />
+            </div>
+            <DialogTitle className="text-xl font-bold text-gray-900">
+              {selectedPlan === 'Индивидуальный запрос' ? 'Связаться с нами' : 'Заявка принята!'}
+            </DialogTitle>
+          </DialogHeader>
+  
+          <div className="text-center space-y-4 pt-2">
+            {selectedPlan === 'Индивидуальный запрос' ? (
+              <>
+                <p className="text-sm text-gray-600 leading-relaxed">
+                  Наш менеджер с радостью ответит на все ваши вопросы и подберет идеальный формат занятий!
+                </p>
+                <div className="bg-pink-50 p-4 rounded-xl border border-pink-100 my-2">
+                  <span className="text-xs text-pink-500 font-semibold block uppercase tracking-wider mb-1">Телефон клуба</span>
+                  <a href="tel:+79991234567" className="text-2xl font-black text-gray-900 hover:text-pink-600 transition-colors">
+                    +7 (999) 123-45-67
+                  </a>
+                  <span className="text-xs text-gray-400 block mt-1">Звонки принимаются ежедневно с 9:00 до 22:00</span>
+                </div>
+              </>
+            ) : (
+              <>
+                <p className="text-sm text-gray-600 leading-relaxed">
+                  Вы выбрали абонемент <span className="font-semibold text-pink-600">«{selectedPlan}»</span>.
+                </p>
+                <p className="text-xs text-gray-400">
+                  Интеграция с платежным шлюзом находится в режиме тестирования. Наш менеджер свяжется с Вами по номеру, указанному в профиле, для активации карты.
+                </p>
+              </>
+            )}
+    
+            <Button 
+              onClick={() => setIsOpen(false)}
+              className="w-full bg-pink-500 hover:bg-pink-600 text-white cursor-pointer mt-2"
+            >
+              Понятно
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </section>
   );
 }
