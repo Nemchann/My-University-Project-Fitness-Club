@@ -1,6 +1,8 @@
 $kind: http-request
-name: Auth_User
-url: "{{proxyUrl}}/{{userControllerUrl}}/authentification"
+name: Auth
+url: |+
+  {{baseUrl}}/{{userControllerUrl}}/authentification
+
 method: POST
 body:
   type: json
@@ -11,4 +13,4 @@ body:
     \  \"password\": \"12345678\"\r
 
     }"
-order: 4490023826592803
+order: 1963154379179351
