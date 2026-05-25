@@ -15,8 +15,8 @@ interface MetricsData {
   active_connections: number;
   error_rate_percent : number;
   total_traffic_bytes: number;
-  rps_history: number[];      // <-- Добавили историю RPS
-  traffic_history: number[];  // <-- Добавили историю Трафика
+  rps_history: number[];
+  traffic_history: number[];
 }
 
 interface ClientStats {
@@ -75,7 +75,7 @@ function App() {
       try {
         const response = await fetch('http://127.0.0.1:9000/api/proxy/management/metrics');
 
-        // И ВОТ ОНА — ПРОВЕРКА: если прокси требует капчу
+        // если прокси требует капчу
         if (response.status === 428 || response.status === 403) {
           const errData = await response.json();
           setUserIP(errData.ip || '127.0.0.1'); // Сохраняем IP, который вернул Go
@@ -85,14 +85,13 @@ function App() {
 
         if (response.status === 429) {
           console.warn("Рейтлимитер временно ограничил запросы (429). Игнорируем.");
-          // Просто выходим из функции, НЕ сбрасывая и НЕ включая капчу
+          // Просто выходим из функции
           return; 
         }
 
         const data = await response.json();
-
-        // 2. СВЕРХНАДЕЖНЫЙ КОСТЫЛЬ ДЛЯ ДЕМОНСТРАЦИИ: 
-        // Если бэкенд вернул 0 или пустые метрики (так как мы в сером списке и запросы блокируются)
+ 
+        // Если бэкенд вернул 0 или пустые метрики
         if (!data || data.current_rps === 0 && data.active_connections === 0) {
           // Проверяем: если мы специально включили этот режим для теста
           // Переводим фронтенд на страницу капчи!
@@ -103,8 +102,7 @@ function App() {
 
         setMetrics(data);
 
-        // 2. Загружаем топ клиентов из твоего ClientsHandler
-        // Измени URL, если у тебя другой префикс роутера (например, /management/clients)
+        // Загружаем топ клиентов из твоего ClientsHandle
         // const clientsRes = await fetch('http://127.0.0.1:9000/api/proxy/management/clients'); 
         // const clientsData = await clientsRes.json();
 
@@ -120,7 +118,7 @@ function App() {
         // // В Go-хендлере ключ называется "top_clients"
         // setTopClients(clientsData.top_clients || []);
 
-        // Запрашиваем остальные данные (их тоже защищаем от падения)
+        // Запрашиваем остальные данные
         try {
           const clientsRes = await fetch('http://127.0.0.1:9000/api/proxy/management/clients');
         if (clientsRes.ok) {
@@ -148,7 +146,7 @@ function App() {
       } catch (err) {
         console.error("Ошибка обновления метрик:", err);
         // Если запрос упал (например, из-за блокировки CORS или 428/403 статуса),
-        // мы принудительно включаем режим капчи!
+        // мы принудительно включаем режим капчи
         setUserIP('127.0.0.1');
         setNeedsCaptcha(true)
       }
@@ -181,7 +179,7 @@ function App() {
           onClick={async () => {
           try {
             const response = await fetch('http://127.0.0.1:9000/api/proxy/management/cache', {
-              method: 'DELETE', // или POST, смотря как написано в Go
+              method: 'DELETE',
             });
             if (response.ok) {
               alert('🗑️ Прокси-кэш успешно полностью очищен!');

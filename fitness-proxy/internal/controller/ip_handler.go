@@ -30,14 +30,14 @@ func AddRuleHandler(ipManager *service.IPManager) gin.HandlerFunc {
 			return
 		}
 
-		// 1. Сохраняем в MongoDB
+		// Сохраняем в MongoDB
 		err := ipManager.AddRule(req.IP, req.Type)
 		if err != nil {
 			c.JSON(500, gin.H{"error": "Ошибка сохранения в БД"})
 			return
 		}
 
-		// 2. Обновляем Radix Tree в памяти, чтобы изменения вступили в силу сразу
+		// Обновляем Radix Tree в памяти, чтобы изменения вступили в силу сразу
 		ipManager.UpdateRule(req.IP, req.Type)
 
 		c.JSON(200, gin.H{"status": "success", "message": "Правило добавлено"})
@@ -52,7 +52,6 @@ func AddRuleHandler(ipManager *service.IPManager) gin.HandlerFunc {
 // @Router /management/reload [get]
 func ReloadRulesHandler(ipManager *service.IPManager) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		// Просто дергаем метод менеджера. Менеджер сам знает, как сходить в Mongo.
     	err := ipManager.ReloadFromDB(c.Request.Context())
     	if err != nil {
         	// Если что-то пошло не так на стороне БД или парсинга
@@ -116,7 +115,7 @@ func DeleteRuleHandler(ipManager *service.IPManager) gin.HandlerFunc {
 			return
 		}
 		
-		// После удаления из БД лучше обновить Radix Tree (вызвать Reload)
+		// После удаления из БД лучше обновляем Radix Tree
 		ipManager.Reload(rules) 
 		c.JSON(200, gin.H{"message": "Правило удалено"})
 	}
@@ -124,7 +123,7 @@ func DeleteRuleHandler(ipManager *service.IPManager) gin.HandlerFunc {
 
 func CheckIPStatus (ipManager *service.IPManager) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		// Получаем IP из query-параметра, например: /check_ip?ip=192.168.1.1
+		// Получаем IP из query-параметра
 		ipStr := c.Query("ip")
 		if ipStr == "" {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "Parameter 'ip' is required"})
@@ -139,7 +138,7 @@ func CheckIPStatus (ipManager *service.IPManager) gin.HandlerFunc {
 			return
 		}
 
-		// Вызываем твой IsAllowed из IPManager
+		// Вызываем IsAllowed
 		_, listName := ipManager.IsAllowed(ip.To4())
 
 		// Если IP не найден ни в одном рейнджере, IsAllowed вернет пустую строку или "default"

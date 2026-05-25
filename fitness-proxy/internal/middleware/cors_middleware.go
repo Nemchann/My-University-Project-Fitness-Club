@@ -5,11 +5,10 @@ import (
 )
 
 //Используется для того, чтобы браузер не блокировал запросы к нашему API из-за политики CORS. 
-// В данном случае мы разрешаем все источники, что подходит для разработки, 
-// но в продакшене стоит ограничить список разрешенных доменов.
+// В данном случае мы разрешаем только источник фронтенда
 func CORSMiddleware() gin.HandlerFunc {
     return func(c *gin.Context) {
-        c.Writer.Header().Set("Access-Control-Allow-Origin", "http://localhost:5173")
+        c.Writer.Header().Set("Access-Control-Allow-Origin", "http://localho st:5173")
         c.Writer.Header().Set("Access-Control-Allow-Credentials", "true")
         c.Writer.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
         c.Writer.Header().Set("Access-Control-Allow-Headers", "Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, accept, origin, Cache-Control, X-Requested-With")

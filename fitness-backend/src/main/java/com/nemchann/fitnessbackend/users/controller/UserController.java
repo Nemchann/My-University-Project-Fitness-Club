@@ -18,6 +18,7 @@ import java.util.List;
 import java.util.UUID;
 
 @RestController
+//@CrossOrigin(origins = "http://localhost:5173")
 @RequestMapping("/api/fitness-club/users")
 @RequiredArgsConstructor
 @Tag(name = "User Controller", description = "Управление пользователями и регистрация")
@@ -98,7 +99,7 @@ public class UserController {
         return new ResponseEntity<>(userResponseDtos, HttpStatus.OK);
     }
 
-    @GetMapping("/authentification")
+    @PostMapping("/authentification")
     @Operation(summary = "Авторизация существующего пользователя")
     public ResponseEntity<UserResponseDto> authUser(@Valid @RequestBody UserAuthentificationDto dto){
         UserResponseDto userResponseDto = service.authentification(dto);
@@ -106,7 +107,7 @@ public class UserController {
         return ResponseEntity.ok(userResponseDto);
     }
 
-    @PutMapping("/edit_profile/{id}")
+    @PutMapping("/edit_profile")
     @Operation(summary = "Поменять профиль пользователя")
     public ResponseEntity<UserResponseDto> editProfile(@Valid @RequestBody UserEditingDto dto){
         UserResponseDto userResponseDto = service.editProfile(dto);

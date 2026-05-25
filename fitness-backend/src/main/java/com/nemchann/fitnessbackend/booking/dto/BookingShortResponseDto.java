@@ -4,9 +4,13 @@ import lombok.Data;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Data
 public class BookingShortResponseDto {
+
+    private UUID bookingId;
+
     private String scheduleName;
 
     private LocalDate scheduleDate;
@@ -14,4 +18,6 @@ public class BookingShortResponseDto {
     private String status;
 
     private LocalDateTime startTime;
+
+    private String trainerFullName;
 }

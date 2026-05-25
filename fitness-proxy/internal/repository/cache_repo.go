@@ -30,6 +30,7 @@ func NewMongoCacheRepo(db *mongo.Database) *MongoCacheRepo {
 	}
 }
 
+//Все настройки кеша
 func (r *MongoCacheRepo) GetSettings(ctx context.Context) ([]model.CacheSetting, error) {
     cursor, err := r.collection.Find(ctx, bson.M{})
     if err != nil {

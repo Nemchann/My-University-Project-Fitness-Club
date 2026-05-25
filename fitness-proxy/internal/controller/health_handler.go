@@ -12,7 +12,7 @@ func HealthHandler(db *mongo.Client, javaURL string) gin.HandlerFunc {
         status := "OK"
         details := gin.H{}
 
-        // 1. Проверка MongoDB
+        // Проверка MongoDB
         err := db.Ping(c.Request.Context(), nil)
         if err != nil {
             status = "Partially Available"
@@ -21,7 +21,7 @@ func HealthHandler(db *mongo.Client, javaURL string) gin.HandlerFunc {
             details["mongodb"] = "connected"
         }
 
-        // 2. Проверка Java-бэкенда (Upstream)
+        // Проверка Java-бэкенда
         client := http.Client{Timeout: 2 * time.Second}
         resp, err := client.Get(javaURL + "/api/fitness-club/common/health")
         if err != nil || resp.StatusCode != 200 {

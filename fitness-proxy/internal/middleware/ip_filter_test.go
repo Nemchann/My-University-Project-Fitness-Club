@@ -34,7 +34,7 @@ func TestIPFilter_Middleware(t *testing.T) {
 	ipManager := service.NewIPManager(mockIPRepo)
 	monitor := service.NewMonitor()
 
-	// Та самая заглушка для канала логов
+	// Заглушка для канала логов
 	logChan := make(chan model.AccessLog, 10)
 
 	// Добавляем тестовые правила в оперативную память менеджера

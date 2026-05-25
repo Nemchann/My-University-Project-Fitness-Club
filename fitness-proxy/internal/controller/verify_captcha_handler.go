@@ -28,7 +28,6 @@ func VerifyCaptchaHandler() gin.HandlerFunc {
 			return
 		}
 
-		// Здесь можно добавить дополнительную проверку (например, сверку с IP запроса)
 		// Устанавливаем куку: имя, значение, maxAge (3600 сек = 1 час), путь, домен, secure, httpOnly
 		c.SetCookie("captcha_verified", "proxy_shield_passed", 3600, "/", "localhost", false, true)
 

@@ -11,7 +11,6 @@ import (
 // @Description  Возвращает историю RPS, задержки и трафика за последние 60 секунд для графиков
 // @Tags         Monitoring
 // @Produce      json
-// @Success      200  {object}  model.MetricsResponse
 // @Router       /management/metrics [get]
 func GetMetricsHandler(monitor *service.Monitor) gin.HandlerFunc {
 	return func(c *gin.Context) {

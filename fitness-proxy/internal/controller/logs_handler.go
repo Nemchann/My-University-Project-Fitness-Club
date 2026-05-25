@@ -13,7 +13,7 @@ import (
 // @Produce      json
 // @Param        level query     string  false  "Фильтр по уровню логов (DEBUG, INFO, WARN, ERROR)"
 // @Param        ip    query     string  false  "Фильтр по IP-адресу клиента"
-// @Success      200   {object}  map[string][]LogDocument
+// @Success      200   {object}  map[string][]model.AccessLog
 // @Failure      500   {object}  map[string]string "error: Не удалось прочитать логи из БД"
 // @Router       /management/logs [get]
 func LogsHandler(logService *service.LogService) gin.HandlerFunc {
@@ -21,7 +21,6 @@ func LogsHandler(logService *service.LogService) gin.HandlerFunc {
         levelFilter := c.Query("level")
         ipFilter := c.Query("ip")
 
-        // Вызываем сервис вместо прямого запроса в Mongo
         logs, err := logService.GetAuditLogs(c.Request.Context(), levelFilter, ipFilter)
         if err != nil {
             c.JSON(500, gin.H{"error": "Не удалось получить логи аудита"})

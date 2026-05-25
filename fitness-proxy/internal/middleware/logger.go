@@ -29,7 +29,7 @@ func AsyncLogger(logChan chan<- model.AccessLog) gin.HandlerFunc {
         entry := model.AccessLog{
             IP:         c.ClientIP(),
             URL:        c.Request.URL.Path,
-            Level:      getLevel(c.Writer.Status()),
+            Level:      GetLevel(c.Writer.Status()),
             Method:     c.Request.Method,
             RequestID:  requestID,
             StatusCode: c.Writer.Status(),
@@ -68,8 +68,8 @@ func AsyncLogger(logChan chan<- model.AccessLog) gin.HandlerFunc {
     }
 }
 
-//Додумать, чтобы можно было нормально делать уровни логирования
-func getLevel(status int) string {
+//Уровни логирования
+func GetLevel(status int) string {
     if status >= 500 {
         return "ERROR"
     }

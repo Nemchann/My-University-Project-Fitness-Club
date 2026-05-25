@@ -32,28 +32,28 @@ func SetupRouter(ipManager *service.IPManager,
 
         admin.GET("/health", HealthHandler(client, target))
 
-        admin.GET("/logs", LogsHandler(logsService)) // Новый эндпоинт для получения логов аудита
+        admin.GET("/logs", LogsHandler(logsService)) 
 
         admin.GET("/rules", GetAllRulesHandler(ipManager))
 
         admin.GET("/clients", GetClientsHandler(m))
         
-        admin.DELETE("/cache", FlushCacheHandler(cacheManager)) // Новый метод для очистки кеша
+        admin.DELETE("/cache", FlushCacheHandler(cacheManager)) 
 
         admin.POST("/insert_rule", AddRuleHandler(ipManager))
 
-        admin.GET("/check_ip", CheckIPStatus(ipManager)) // Новый метод для проверки статуса IP-адреса
+        admin.GET("/check_ip", CheckIPStatus(ipManager)) 
 
-        admin.GET("/cache_setting/:id", GetSettingByIDHandler(cacheManager)) // Новый метод для получения TTL по ID
+        admin.GET("/cache_setting/:id", GetSettingByIDHandler(cacheManager)) 
 
-        admin.PUT("/cache_settings/:id", UpdateTTLByIDHandler(cacheManager)) // Новый метод для добавления или обновления настройки кеша
+        admin.PUT("/cache_settings/:id", UpdateTTLByIDHandler(cacheManager)) 
 
         admin.DELETE("/rules/:id", DeleteRuleHandler(ipManager))
 
-        admin.DELETE("/cache_settings/:id", DeleteSettingByIDHandler(cacheManager)) // Новый метод для удаления настройки кеша по ID
+        admin.DELETE("/cache_settings/:id", DeleteSettingByIDHandler(cacheManager)) 
 
         admin.DELETE("/cache_settings/purge", DeleteSettingsByPathHandler(cacheManager)) // Новый метод для удаления настройки кеша
-        // 
+         
         // // Документация будет доступна по адресу http://localhost:9000/swagger/index.html
         r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
     }

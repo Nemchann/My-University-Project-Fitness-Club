@@ -1,0 +1,6 @@
+$kind: http-request
+name: Client_Bookings
+url: "{{proxyUrl}}/{{bookingControllerUrl}}/get_clients_bookings/48af444f-5d52-49f3-83f9-331641be944e"
+method: GET
+examples: .resources/Client_Bookings.resources/examples
+order: 1919442424457823

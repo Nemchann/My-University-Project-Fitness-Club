@@ -1,7 +1,6 @@
 package service_test
 
 import (
-	//"sync"
 	"testing"
 	"fitness-proxy/internal/service"
 	"github.com/stretchr/testify/assert"
@@ -10,17 +9,17 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+//Тест расчета задержки
 func TestMonitor_BasicMetricsAndLatency(t *testing.T) {
 	m := service.NewMonitor()
 
-	// 1. Проверяем начальные значения через геттеры
+	// Проверяем начальные значения через геттеры
 	assert.Equal(t, int64(0), m.GetTotalRequests())
 	assert.Equal(t, int64(0), m.GetActiveConnections())
 	assert.Equal(t, int64(0), m.GetTotalTrafficBytes())
 	assert.Equal(t, int64(0), m.GetAverageResponseTime())
 
-	// 2. Тестируем расчет Latency (скользящее среднее)
-	// Первый замер — должен установиться как есть
+	// Тестируем расчет Latency
 	m.UpdateLatency(100)
 	assert.Equal(t, int64(100), m.GetAverageResponseTime())
 
@@ -32,10 +31,11 @@ func TestMonitor_BasicMetricsAndLatency(t *testing.T) {
 	assert.Equal(t, int64(95), m.GetLatency())
 }
 
+//Тест историй трафика и RPS
 func TestMonitor_HistoryAndRPM(t *testing.T) {
 	m := service.NewMonitor()
 
-	// Напрямую через историю (так как это срез внутри структуры) мы проверить не можем, 
+	// Напрямую через историю мы проверить не можем, 
 	// но мы можем проверить GetRequestsPerMinute, если в истории появятся данные.
 	// Для Unit-теста мы можем проверить, что история возвращает корректные копии срезов.
 	historyRPS := m.GetRPSHistory()
@@ -53,7 +53,7 @@ func TestMonitor_RecordClientActivity(t *testing.T) {
 	m := service.NewMonitor()
 	ip := "192.168.1.50"
 
-	// 1. Первый запрос от клиента (обычный, без блокировок)
+	// Первый запрос от клиента (обычный, без блокировок)
 	m.RecordClientActivity(ip, 500, "")
 
 	clientsMap := m.GetClientsMap()
@@ -66,12 +66,12 @@ func TestMonitor_RecordClientActivity(t *testing.T) {
 	assert.Equal(t, int64(500), stats.BytesTransferred)
 	assert.Equal(t, int64(0), stats.BlockedBlacklist)
 
-	// 2. Второй запрос от того же клиента — попал под раздачу лимитера (rate_limit)
+	// Второй запрос от того же клиента - попал под раздачу rate_limit
 	m.RecordClientActivity(ip, 0, "rate_limit")
 	assert.Equal(t, int64(2), stats.TotalRequests)
 	assert.Equal(t, int64(1), stats.BlockedRateLimit)
 
-	// 3. Третий запрос — забанен по блеклисту (blacklist)
+	// Третий запрос — забанен по blacklist
 	m.RecordClientActivity(ip, 0, "blacklist")
 	assert.Equal(t, int64(3), stats.TotalRequests)
 	assert.Equal(t, int64(1), stats.BlockedBlacklist)

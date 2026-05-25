@@ -1,7 +1,7 @@
 package service_test
 
 import (
-	"fitness-proxy/internal/repository/mocks" // Путь к твоим мокам
+	"fitness-proxy/internal/repository/mocks" // Путь мокам
 	"fitness-proxy/internal/service"
     "fitness-proxy/internal/model"
 	"testing"
@@ -10,7 +10,7 @@ import (
 	"go.uber.org/mock/gomock"
 )
 
-//Тестирровать: go test ./internal/service -coverprofile=coverage.out
+//Тестировать: go test ./internal/service -coverprofile=coverage.out
 func TestIPManager_IsAllowed(t *testing.T) {
 	type testCase struct {
 		name           string
@@ -22,10 +22,9 @@ func TestIPManager_IsAllowed(t *testing.T) {
 
 	tests := []testCase{
 		{
-			name:     "1. IP в черном списке — отказ",
+			name:     "1. IP в черном списке - отказ",
 			clientIP: "192.168.1.100",
 			setupRules: func(mgr *service.IPManager, mockRepo *mocks.MockIPRepository) {
-				// Обучаем мок разрешать вставку в БД
 				mockRepo.EXPECT().InsertRule(gomock.Any(), "192.168.1.100/32", "black").Return(nil)
 				_ = mgr.AddRule("192.168.1.100/32", "black")
 			},
@@ -91,6 +90,7 @@ func TestIPManager_IsAllowed(t *testing.T) {
 	}
 }
 
+//Тест перезагрузки правил IP
 func TestIPManager_Reload(t *testing.T) {
     ctrl := gomock.NewController(t)
     defer ctrl.Finish()
@@ -98,7 +98,7 @@ func TestIPManager_Reload(t *testing.T) {
 
     ipManager := service.NewIPManager(mockRepo)
 
-    // Создаем слайс правил, как будто прочитали из конфига или БД
+    // Создаем слайс правил
     testRules := []model.IPRule{
         {Network: "192.168.50.0/24", Type: "black"},
         {Network: "1.1.1.1/32", Type: "white"},

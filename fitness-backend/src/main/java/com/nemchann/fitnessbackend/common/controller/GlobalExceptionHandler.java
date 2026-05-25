@@ -97,6 +97,22 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(ex.getMessage(), HttpStatus.NOT_FOUND);
     }
 
+    @ExceptionHandler(BookingTooLateException.class)
+    public ResponseEntity<Map<String, String>> handleLateBooking(BookingTooLateException ex) {
+        Map<String, String> response = new HashMap<>();
+        response.put("error", "LATE_BOOKING");
+        response.put("message", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body(response); // 422
+    }
+
+    @ExceptionHandler(VisitsEndedException.class)
+    public ResponseEntity<Map<String, String>> handleNoVisits(VisitsEndedException ex) {
+        Map<String, String> response = new HashMap<>();
+        response.put("error", "NO_VISITS_LEFT");
+        response.put("message", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(response); // 403
+    }
+
     //Когда неправильные логин, email
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<Map<String, String>> handleValidationExceptions(MethodArgumentNotValidException ex) {
