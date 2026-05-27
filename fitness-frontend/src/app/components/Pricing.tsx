@@ -201,7 +201,7 @@ export function Pricing() {
         </div>
       </div>
 
-      {/* КРАСИВОЕ МОДАЛЬНОЕ ОКНО ДЛЯ ДЕМОНСТРАЦИИ */}
+      {/* Модальное окно */}
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
         <DialogContent className="sm:max-w-md bg-white rounded-2xl p-6">
           <DialogHeader className="space-y-3 text-center">

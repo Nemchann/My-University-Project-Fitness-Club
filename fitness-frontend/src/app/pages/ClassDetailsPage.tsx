@@ -41,12 +41,12 @@ export function ClassDetailsPage() {
   const [bookingMessage, setBookingMessage] = useState('');
   const [isSuccess, setIsSuccess] = useState(false);
 
-  // 1. Получаем детали тренировки при загрузке страницы
+  // Получаем детали тренировки при загрузке страницы
   useEffect(() => {
     const fetchWorkoutDetails = async () => {
       try {
         setIsLoading(true);
-        // Запрос к Java через Go-прокси. Твой эндпоинт для одной тренировки по id
+        // Запрос к Java через Go-прокси
         const response = await api.get(`/fitness-club/schedules/get_schedule/${id}`);
         setWorkout(response.data);
       } catch (error) {
@@ -59,7 +59,7 @@ export function ClassDetailsPage() {
     if (id) fetchWorkoutDetails();
   }, [id]);
 
-  // 2. Логика бронирования
+  // Логика бронирования
   const handleBooking = async () => {
     const userId = localStorage.getItem("userId");
     
@@ -73,7 +73,7 @@ export function ClassDetailsPage() {
     setBookingMessage('');
 
     try {
-      // Формируем JSON-тело в соответствии с BookingCreateDto.java
+      // Формируем JSON-тело в соответствии с BookingCreateDto
       const bookingPayload = {
         userId: userId,                   // UUID клиента
         scheduleId: Number(id),           // Integer ID тренировки
@@ -120,13 +120,13 @@ export function ClassDetailsPage() {
     );
   }
 
-  // Вычисляем время и день недели на основе бэкенд-данных
+  // Вычисляем время и день недели
   const start = parseISO(workout.startTime);
   const end = parseISO(workout.endTime);
   const timeString = format(start, 'HH:mm');
   const durationMin = differenceInMinutes(end, start);
   
-  // Получаем день недели с заглавной буквы (например, "Вторник")
+  // Получаем день недели с заглавной буквы
   const dayOfWeek = format(start, 'EEEE', { locale: ru });
   const capitalizedDay = dayOfWeek.charAt(0).toUpperCase() + dayOfWeek.slice(1);
 
@@ -182,7 +182,7 @@ export function ClassDetailsPage() {
                 <div>
                   <div className="text-sm text-gray-400">Время и длительность</div>
                   <div className="font-semibold text-gray-800">{timeString}</div>
-                  <div className="text-sm text-gray-500">Продолжительность: {durationMin} мин</div>
+                  <div className="text-sm text-gray-500">{durationMin} мин</div>
                 </div>
               </div>
 

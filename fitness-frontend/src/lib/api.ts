@@ -1,8 +1,7 @@
 import axios from "axios";
 
-// 1. Создаем инстанс Axios с базовыми настройками
+// Создаем инстанс Axios с базовыми настройками
 export const api = axios.create({
-  // Укажи здесь URL своего Go-прокси или Java-бэкенда
   baseURL: "http://localhost:9000/api", 
   timeout: 5000, // Если бэкенд не ответит за 5 секунд, запрос прервется
   headers: {
@@ -10,7 +9,7 @@ export const api = axios.create({
   },
 });
 
-// 2. Перехватчик (Interceptor) для автоматического добавления токена авторизации
+// Перехватчик (Interceptor) для автоматического добавления токена авторизации
 api.interceptors.request.use(
   (config) => {
     // Берём JWT-токен из localStorage (куда мы его сохраним при логине)

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
 import { useLocation } from 'react-router';
-import { User, Mail, Phone, Calendar, Clock, Award, ChevronLeft, ChevronRight, XCircle } from 'lucide-react';
+import { Calendar, Clock, ChevronLeft, ChevronRight, XCircle } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
@@ -9,8 +9,11 @@ import { Button } from '../components/ui/button';
 import { api } from '../../lib/api';
 import { format, parseISO } from 'date-fns';
 import { ru } from 'date-fns/locale';
+import { useSelector } from 'react-redux';
+import type { RootState } from '../../store';
 
-// 1. Интерфейс, соответствующий твоему BookingShortResponseDto.java
+
+// Интерфейс, соответствующий BookingShortResponseDto.java
 interface BookingShortResponseDto {
   bookingId: string;    // UUID бронирования с бэкенда
   scheduleName: string;
@@ -26,6 +29,13 @@ export function ProfilePage() {
   // Проверяем, передал ли нам RegistrationPage готовые данные пользователя
   const inheritedUser = location.state?.user;
 
+  // Вытаскиваем ID пользователя из глобального стейта Redux Toolkit
+  const reduxUserId = useSelector((state: RootState) => state.auth.userId);
+  
+  // Для проверки в консоли, что Redux работает
+  console.log("ID пользователя из Redux Toolkit:", reduxUserId);
+
+
   const [bookings, setBookings] = useState<BookingShortResponseDto[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   
@@ -33,7 +43,6 @@ export function ProfilePage() {
   const [currentPage, setCurrentPage] = useState(0); // В Spring страницы начинаются с 0
   const [totalPages, setTotalPages] = useState(1);
 
-  // 1. Добавь в самый верх компонента ProfilePage к остальным стейтам:
   const [activeTab, setActiveTab] = useState<'future' | 'past'>('future');
 
   const [user, setUser] = useState<{ fullName: string; email: string; phone: string } | null>(
@@ -51,7 +60,7 @@ export function ProfilePage() {
     patronymic: '',
     phone: '',
     email: '',
-    birthday: '' // сохраним изначальную дату рождения бэка, чтобы отправить её обратно неизменной
+    birthday: '' 
   });
 
   // Стейты для формы смены пароля (PasswordChangeDto)
@@ -66,15 +75,13 @@ export function ProfilePage() {
 
   useEffect(() => {
     if (user) {
-    // Если имя пришло склеенным или у тебя есть доступ к сырым userData в useEffect, 
-    // лучше всего инициализировать стейты прямо в функции fetchProfileAndBookings.
-    // Ниже в fetchProfileAndBookings мы это как раз настроим!
     }
   }, [user]);
 
-  // --- ФУНКЦИЯ ОБНОВЛЕНИЯ ПРОФИЛЯ ---
+  // ФУНКЦИЯ ОБНОВЛЕНИЯ ПРОФИЛЯ 
   const handleUpdateProfile = async (e: React.FormEvent) => {
     e.preventDefault();
+
     const userId = localStorage.getItem("userId");
     if (!userId) return;
 
@@ -83,7 +90,7 @@ export function ProfilePage() {
 
       // Собираем объект строго по UserEditingDto.java
       const editingPayload = {
-        id: userId, // ID внутри DTO, как просит твой бэкенд
+        id: userId,
         surname: profileForm.surname,
         selfname: profileForm.selfname,
         patronymic: profileForm.patronymic || null,
@@ -124,13 +131,13 @@ export function ProfilePage() {
     try {
       setIsChangingPassword(true);
 
-      // Собираем PasswordChangeDto (без id внутри объекта)
+      // Собираем PasswordChangeDto
       const passwordPayload = {
         oldPassword: passwordForm.oldPassword,
         newPassword: passwordForm.newPassword
       };
 
-      // Передаем id в URL как @PathVariable, как требует твой Java-код
+      // Передаем id в URL
       await api.put(`/fitness-club/users/change_password/${userId}`, passwordPayload);
 
       alert("Пароль успешно изменен!");
@@ -160,14 +167,14 @@ export function ProfilePage() {
             email: userData.email || 'Не указан',
             phone: userData.phone || '+7 (999) 000-00-00'
           });
-          // Инициализируем форму актуальными данными с бэкенда!
+          // Инициализируем форму актуальными данными с бэкенда
           setProfileForm({
             surname: userData.surname || '',
             selfname: userData.selfname || '',
             patronymic: userData.patronymic || '',
             phone: userData.phone || '',
             email: userData.email || '',
-            birthday: userData.birthday || '2000-01-01' // Сохраняем её для отправки в DTO
+            birthday: userData.birthday || '2000-01-01' 
           });
         } catch (err) {
           console.error("Не удалось загрузить личные данные:", err);
@@ -179,8 +186,6 @@ export function ProfilePage() {
         }
       }
 
-      // 2. Измени useEffect или функцию fetchProfileAndBookings, чтобы URL зависел от activeTab:
-      // Например, внутри fetchProfileAndBookings:  
       const endpoint = activeTab === 'future' 
       ? `/fitness-club/bookings/upcoming/${clientId}` 
       : `/fitness-club/bookings/past/${clientId}`;
@@ -204,7 +209,7 @@ export function ProfilePage() {
     setCurrentPage(0);
   }, [activeTab]);
 
-  // 2. Функция отмены бронирования по BookingCancelDto
+  // Функция отмены бронирования по BookingCancelDto
   const handleCancelBooking = async (bookingId: string) => {
     const userId = localStorage.getItem("userId");
     if (!userId || !bookingId) return;
@@ -214,14 +219,12 @@ export function ProfilePage() {
     }
 
     try {
-      // Формируем тело запроса строго по BookingCancelDto.java
+      // Формируем тело запроса 
       const cancelPayload = {
         bookingId: bookingId,
         userId: userId
       };
 
-      // Отправляем DELETE или POST (в зависимости от твоего контроллера, обычно для отмены используют POST или PUT/DELETE)
-      // Предположим, эндпоинт выглядит так. Измени метод (post/delete), если у тебя по-другому
       await api.delete('/fitness-club/bookings/cancel_booking', { data: cancelPayload });
 
       alert("Запись успешно отменена");
@@ -249,7 +252,7 @@ export function ProfilePage() {
     }
   };
 
-  // 3. Обновленный маппинг стилей под твои реальные статусы
+  // Обновленный маппинг стилей под статусы
   const getStatusStyle = (status: string) => {
     switch (status) {
       case 'ACCEPTED':
@@ -419,7 +422,8 @@ export function ProfilePage() {
                 </form>
               </CardContent>
             </Card>
-          </div> {/* Конец левой колонки */}
+          </div> 
+          {/* Конец левой колонки */}
 
 
             {/* Правая колонка: Список бронирований из Page.content */}
@@ -491,7 +495,7 @@ export function ProfilePage() {
                               <span className="text-sm font-semibold text-gray-900">{booking.trainerFullName || 'Не указан'}</span>
                             </div>
 
-                            {/* УСЛОВНЫЙ РЕНДЕРИНГ: Кнопка отмены активна ТОЛЬКО для статуса ACCEPTED */}
+                            {/* Кнопка отмены активна только для статуса ACCEPTED */}
                             {booking.status === 'ACCEPTED' && (
                               <Button
                                 onClick={() => handleCancelBooking(booking.bookingId)}

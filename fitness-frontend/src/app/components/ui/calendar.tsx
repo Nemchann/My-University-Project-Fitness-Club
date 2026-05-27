@@ -7,7 +7,6 @@ import { DayPicker } from "react-day-picker";
 import { cn } from "./utils";
 import { buttonVariants } from "./button";
 
-// В 9-й версии тип пропсов берется напрямую из React.ComponentProps<typeof DayPicker>
 export type CalendarProps = React.ComponentProps<typeof DayPicker>;
 
 function Calendar({
@@ -42,7 +41,7 @@ function Calendar({
           buttonVariants({ variant: "ghost" }),
           "size-8 p-0 font-normal aria-selected:opacity-100 text-center rounded-md hover:bg-pink-100 transition-colors"
         ),
-        // Стили для выбранного дня (твоя розовая тема)
+        // Стили для выбранного дня
         selected: "bg-pink-500 text-white hover:bg-pink-600 focus:bg-pink-500 focus:text-white rounded-md",
         today: "bg-accent text-accent-foreground font-bold",
         outside: "day-outside text-muted-foreground opacity-50",
@@ -50,7 +49,6 @@ function Calendar({
         hidden: "invisible",
         ...classNames,
       }}
-      // В 9-й версии кастомные стрелочки передаются через один общий компонент Chevron
       components={{
         Chevron: ({ orientation, ...chevronProps }) => {
           return orientation === "left" ? (

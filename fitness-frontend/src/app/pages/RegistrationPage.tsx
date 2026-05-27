@@ -11,10 +11,10 @@ import { useNavigate } from 'react-router';
 export function RegistrationPage() {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
-    fullName: '',       // Вводится как "Иванов Иван Иванович" или "Петров Петр"
+    fullName: '',
     phone: '',
     email: '',
-    birthday: '',       // Сюда запишется "YYYY-MM-DD" из календарика
+    birthday: '',
     login: '',
     password: '',
     confirmPassword: ''
@@ -28,7 +28,7 @@ export function RegistrationPage() {
     e.preventDefault();
     setErrorMessage('');
 
-    // 1. Простейшая валидация на фронтенде
+    // Простейшая валидация на фронтенде
     if (formData.password !== formData.confirmPassword) {
       setErrorMessage('Пароли не совпадают!');
       return;
@@ -44,7 +44,7 @@ export function RegistrationPage() {
     try {
       setIsLoading(true);
 
-      // 2. Логика разделения ФИО на Фамилию, Имя и Отчество
+      // Логика разделения ФИО на Фамилию, Имя и Отчество
       // Убираем лишние пробелы по краям и делим строку по пробелам
       const nameParts = formData.fullName.trim().split(/\s+/); 
       
@@ -67,7 +67,7 @@ export function RegistrationPage() {
         patronymic = nameParts.slice(2).join(' ');
       }
 
-      // 3. Формируем тело запроса в строгом соответствии с UserRegistrationDto.java
+      // Формируем тело запроса в строгом соответствии с UserRegistrationDto
       const registrationPayload = {
         login: formData.login,
         password: formData.password,
@@ -80,17 +80,15 @@ export function RegistrationPage() {
         createdAt: new Date().toISOString() // OffsetDateTime для бэкенда
       };
 
-      // 4. Отправляем POST-запрос на регистрацию через прокси
+      // Отправляем POST-запрос на регистрацию
       const response = await api.post('/fitness-club/users/register', registrationPayload); 
-      // Замени путь '/fitness-club/users/register' на твой реальный @PostMapping эндпоинт контроллера
 
-      // Твой бэкенд возвращает UserResponseDto, у которого есть поле id (UUID)
       if (response.data && response.data.id) {
          // Сохраняем реальный UUID пользователя в браузере
         localStorage.setItem("userId", response.data.id);
       }
 
-      // Перенаправляем на главную (к расписанию) или сразу в профиль
+      // Перенаправляем сразу в профиль
      navigate('/profile', { 
       state: { 
         user: {

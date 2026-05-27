@@ -22,7 +22,7 @@ export function Footer() {
             <div className="space-y-3">
               <div className="flex items-center gap-2 text-gray-400">
                 <Phone className="w-4 h-4" />
-                <span>+7 (495) 123-45-67</span>
+                <span>+7 (999) 123-45-67</span>
               </div>
               <div className="flex items-center gap-2 text-gray-400">
                 <Mail className="w-4 h-4" />
@@ -30,7 +30,7 @@ export function Footer() {
               </div>
               <div className="flex items-center gap-2 text-gray-400">
                 <MapPin className="w-4 h-4" />
-                <span>Москва, ул. Фитнес, д. 1</span>
+                <span>Саратов, ул. Фитнес, д. 1</span>
               </div>
             </div>
           </div>
