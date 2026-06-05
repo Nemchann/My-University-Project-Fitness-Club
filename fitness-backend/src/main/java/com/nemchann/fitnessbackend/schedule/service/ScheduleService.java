@@ -2,9 +2,11 @@ package com.nemchann.fitnessbackend.schedule.service;
 
 import com.nemchann.fitnessbackend.booking.entity.Booking;
 import com.nemchann.fitnessbackend.booking.entity.BookingStatus;
+import com.nemchann.fitnessbackend.booking.entity.ClientSubscription;
 import com.nemchann.fitnessbackend.booking.enums.BookingStatusEnum;
 import com.nemchann.fitnessbackend.booking.repository.BookingRepository;
 import com.nemchann.fitnessbackend.booking.repository.BookingStatusRepository;
+import com.nemchann.fitnessbackend.booking.repository.ClientSubscriptionRepository;
 import com.nemchann.fitnessbackend.common.exception.*;
 import com.nemchann.fitnessbackend.schedule.dto.*;
 import com.nemchann.fitnessbackend.schedule.entity.Room;
@@ -44,6 +46,7 @@ public class ScheduleService {
     private final UserRepository userRepository;
     private final BookingRepository bookingRepository;
     private final BookingStatusRepository bookingStatusRepository;
+    private final ClientSubscriptionRepository clientSubscriptionRepository;
 
     //Создать вид тренировки
     @Transactional
@@ -67,9 +70,15 @@ public class ScheduleService {
 
     private void rewriteWorkoutDtoToWorkout(WorkoutCreateDto dto, Workout workout, WorkoutType type){
 
-        workout.setWorkoutName(dto.getWorkoutName());
-        workout.setWorkoutType(type);
-        workout.setDescription(dto.getDescription());
+        Optional<Workout> workoutOptional = workoutRepository.findByWorkoutName(dto.getWorkoutName());
+
+        if(workoutOptional.isEmpty()) {
+            workout.setWorkoutName(dto.getWorkoutName());
+            workout.setWorkoutType(type);
+            workout.setDescription(dto.getDescription());
+        }else{
+            throw new WorkoutAlreadyExistsException("This workout already exists");
+        }
 
     }
 
@@ -89,33 +98,53 @@ public class ScheduleService {
     public ScheduleResponseDto createSchedule(ScheduleCreateDto createDto) {
         RoomEnum roomEnum = RoomEnum.valueOf(createDto.getRoomName().toUpperCase());
 
-        Optional<Workout> workoutOptional = workoutRepository.findById(createDto.getWorkoutId());
+
         Room room = roomRepository.findByRoomName(roomEnum)
                 .orElseThrow(() -> new RoomIsNotFoundException("Room is not found"));
 
-        if(workoutOptional.isPresent()){
-            Workout workout = workoutOptional.get();
+        LocalDateTime newStart = createDto.getStartTime();
+        LocalDateTime newEnd = createDto.getEndTime();
 
-            if (userService.isTrainer(createDto.getTrainerId())){
-                Schedule schedule = rewriteCreateDtoToSchedule(createDto, workout, room);
-
-                scheduleRepository.save(schedule);
-
-                return mapScheduleToResponse(schedule);
-
-            }else {
-                throw new IsNotTrainerException("This user is not trainer");
-            }
-
-        }else{
-            throw new WorkoutIsNotFoundException("Workout is not found");
+        if (newEnd.isBefore(newStart) || newEnd.isEqual(newStart)) {
+            throw new StartEndTimeConflictException("End time must be after start time");
         }
+
+        boolean isRoomBusy = scheduleRepository
+                .existsByRoomIdAndStartTimeBeforeAndEndTimeAfterAndIsActiveTrue(room.getId(), newEnd, newStart);
+
+        if (isRoomBusy) {
+            throw new RoomAlreadyOccupiedException("Этот зал уже занят другой тренировкой в указанное время");
+        }
+
+        Workout workout = workoutRepository.findById(createDto.getWorkoutId())
+                .orElseThrow(() -> new WorkoutIsNotFoundException("Workout is not found"));
+
+        if (userService.isTrainer(createDto.getTrainerId())){
+            Schedule schedule = rewriteCreateDtoToSchedule(createDto, workout, room);
+
+            scheduleRepository.save(schedule);
+
+            return mapScheduleToResponse(schedule);
+
+        }else {
+            throw new IsNotTrainerException("This user is not trainer");
+        }
+
     }
 
     private Schedule rewriteCreateDtoToSchedule(ScheduleCreateDto dto, Workout workout, Room room){
         Schedule schedule = new Schedule();
 
         User trainer = userService.getUser(dto.getTrainerId());
+        LocalDateTime startTime = dto.getStartTime();
+        LocalDateTime endTime = dto.getEndTime();
+
+        Optional<Schedule> scheduleOptional = scheduleRepository
+                .findOverlappingTrainerSchedule(trainer.getId(), startTime, endTime);
+
+        if (scheduleOptional.isPresent()){
+            throw new TrainerIsBusyException("Trainer " + trainer.getLogin() + " is busy");
+        }
 
         schedule.setWorkout(workout);
         schedule.setScheduleDate(dto.getScheduleDate());
@@ -138,8 +167,6 @@ public class ScheduleService {
         dto.setWorkoutName(schedule.getWorkout().getWorkoutName());
         dto.setScheduleDate(schedule.getScheduleDate());
 
-//        String fullName = userService.getFullName(schedule.getTrainer());
-//        dto.setTrainerFullName(fullName);
         User trainer = schedule.getTrainer();
         if (trainer != null && trainer.getProfile() != null) {
             String fullName = trainer.getProfile().getSurname() + " " + trainer.getProfile().getSelfname();
@@ -155,6 +182,13 @@ public class ScheduleService {
         dto.setRoom(schedule.getRoom().getRoomName().name());
 
         return dto;
+    }
+
+    public List<WorkoutResponseDto> getAllWorkouts(){
+        return workoutRepository.findAll()
+                .stream()
+                .map(this::mapWorkoutToResponseDto)
+                .toList();
     }
 
     //Найти тренировку по id
@@ -181,13 +215,22 @@ public class ScheduleService {
     //Назначить тренера на тренировку
     @Transactional
     public ScheduleResponseDto appointATrainer(UUID trainerId, Integer scheduleId){
-        //Добавить добавление тренировок самому тренеру в UserService, а также их удаление
         User trainer = userService.getUser(trainerId);
         Schedule schedule = scheduleRepository.findById(scheduleId)
                 .orElseThrow(() -> new ScheduleIsNotFoundException("Schedule is not found"));
 
-        if(userService.isTrainer(trainerId)){
+        if (userService.isTrainer(trainerId)){
             schedule.setTrainer(trainer);
+
+            LocalDateTime startTime = schedule.getStartTime();
+            LocalDateTime endTime = schedule.getEndTime();
+
+            Optional<Schedule> scheduleOptional = scheduleRepository
+                    .findOverlappingTrainerSchedule(trainer.getId(), startTime, endTime);
+
+            if (scheduleOptional.isPresent()){
+                throw new TrainerIsBusyException("Trainer " + trainer.getLogin() + " is busy");
+            }
 
             scheduleRepository.save(schedule);
 
@@ -210,7 +253,6 @@ public class ScheduleService {
     //Деактивировать тренировку
     @Transactional
     public void cancelSchedule(Integer id){
-        //Проверить работоспособность
         Schedule schedule = scheduleRepository.findById(id)
                 .orElseThrow(() -> new ScheduleIsNotFoundException("Schedule is not found"));
         schedule.setActive(false);
@@ -226,6 +268,18 @@ public class ScheduleService {
         Schedule schedule = scheduleRepository.findById(dto.getId())
                 .orElseThrow(() -> new ScheduleIsNotFoundException("Schedule is not found"));
 
+        //Проверка на занятость зала
+        Room room = schedule.getRoom();
+        LocalDateTime start = schedule.getStartTime();
+        LocalDateTime end = schedule.getEndTime();
+
+        boolean isRoomBusy = scheduleRepository
+                .existsByRoomIdAndStartTimeBeforeAndEndTimeAfterAndIsActiveTrue(room.getId(), end, start);
+
+        if (isRoomBusy) {
+            throw new RoomAlreadyOccupiedException("Этот зал уже занят другой тренировкой в указанное время");
+        }
+
         schedule.setScheduleDate(dto.getScheduleDate());
         schedule.setStartTime(dto.getStartTime());
         schedule.setEndTime(dto.getEndTime());
@@ -236,7 +290,6 @@ public class ScheduleService {
     //Поменять комнату проведения тренировки
     @Transactional
     public ScheduleResponseDto editScheduleRoom(ScheduleEditRoomDto scheduleEditRoomDto){
-        ScheduleResponseDto scheduleResponseDto = new ScheduleResponseDto();
 
         Schedule schedule = scheduleRepository.findById(scheduleEditRoomDto.getId())
                 .orElseThrow(() -> new ScheduleIsNotFoundException("Schedule is not found"));
@@ -244,6 +297,16 @@ public class ScheduleService {
         RoomEnum roomEnum = RoomEnum.valueOf(scheduleEditRoomDto.getRoom().toUpperCase());
         Room room = roomRepository.findByRoomName(roomEnum)
                 .orElseThrow(() -> new RoomIsNotFoundException("Room is not found"));
+
+        LocalDateTime start = schedule.getStartTime();
+        LocalDateTime end = schedule.getEndTime();
+
+        boolean isRoomBusy = scheduleRepository
+                .existsByRoomIdAndStartTimeBeforeAndEndTimeAfterAndIsActiveTrue(room.getId(), end, start);
+
+        if (isRoomBusy) {
+            throw new RoomAlreadyOccupiedException("Этот зал уже занят другой тренировкой в указанное время");
+        }
 
         schedule.setRoom(room);
         scheduleRepository.save(schedule);
@@ -354,7 +417,7 @@ public class ScheduleService {
     @Transactional
     public void removeParticipant(Schedule schedule){
 
-        Integer currentParticipants = schedule.getCurrentParticipants() - 1;
+        int currentParticipants = schedule.getCurrentParticipants() - 1;
 
         if(currentParticipants < 0){
             throw new ArithmeticException("Current participants mustn't be negative");
@@ -367,11 +430,29 @@ public class ScheduleService {
 
     @Transactional
     public void cancelBySchedule(Integer scheduleId) {
-        List<Booking> bookings = bookingRepository.findAllByScheduleId(scheduleId);
-        BookingStatus cancelledStatus = bookingStatusRepository.findByBookingStatusName(BookingStatusEnum.CANCELLED)
-                .orElseThrow(() -> new BookingStatusNotFoundException("Booking status is not found"));
-        bookings.forEach(b -> b.setBookingStatus((cancelledStatus))); // устанавливаем объект статуса
-        bookingRepository.saveAll(bookings);
+        // 1. Находим все неотмененные бронирования на эту тренировку
+        BookingStatus cancelledBookingStatus = bookingStatusRepository.findByBookingStatusName(BookingStatusEnum.CANCELLED)
+                .orElseThrow(() -> new BookingNotFoundException("Booking status is not found"));
+
+        List<Booking> bookings = bookingRepository.findAllByScheduleIdAndBookingStatus_BookingStatusNameNot(
+                scheduleId, BookingStatusEnum.CANCELLED
+        );
+
+        for (Booking booking : bookings) {
+            // Возвращаем занятие, если абонемент не безлимитный
+            ClientSubscription sub = clientSubscriptionRepository
+                    .findCurrentActiveSubscription(booking.getClient().getId(), LocalDate.now())
+                    .orElseThrow(() -> new ClientSubscriptionNotFoundException("Your subscription is not found"));
+
+            if (!sub.getSubscription().isUnlimited()) {
+                sub.setRemainingVisits(sub.getRemainingVisits() + 1);
+                clientSubscriptionRepository.save(sub); // Возвращаем занятие на баланс
+            }
+
+            booking.setBookingStatus(cancelledBookingStatus);
+            bookingRepository.save(booking);
+        }
+
     }
 
 

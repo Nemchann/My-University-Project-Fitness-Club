@@ -12,6 +12,8 @@ import org.springframework.stereotype.Repository;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 
 @Repository
 public interface ScheduleRepository extends JpaRepository<Schedule, Integer> {
@@ -35,4 +37,24 @@ public interface ScheduleRepository extends JpaRepository<Schedule, Integer> {
 //    "JOIN w.workoutType wt " +
 //    "HAVING wt = :workoutTypeEnum AND s.isActive = true")
 //    Page<Schedule> findAvailableSchedulesByWorkoutType(@Param("workoutTypeEnum") WorkoutTypeEnum workoutTypeEnum, Pageable pageable);
+
+    @Query("SELECT s FROM Schedule s WHERE s.room.id = :roomId " +
+            "AND s.startTime < :endTime " +
+            "AND s.endTime > :startTime " +
+            "AND s.isActive = true") // Учитываем только активные (не отмененные) тренировки
+    Optional<Schedule> findOverlappingSchedule(@Param("roomId") Integer roomId,
+                                               @Param("startTime") LocalDateTime startTime,
+                                               @Param("endTime") LocalDateTime endTime);
+
+    boolean existsByRoomIdAndStartTimeBeforeAndEndTimeAfterAndIsActiveTrue(
+            Integer roomId, LocalDateTime endTime, LocalDateTime startTime
+    );
+
+    @Query("SELECT s FROM Schedule s WHERE s.trainer.id = :trainerId " +
+            "AND s.startTime < :endTime " +
+            "AND s.endTime > :startTime " +
+            "AND s.isActive = true")
+    Optional<Schedule> findOverlappingTrainerSchedule(@Param("trainerId") UUID trainerId,
+                                                      @Param("startTime") LocalDateTime startTime,
+                                                      @Param("endTime") LocalDateTime endTime);
 }
