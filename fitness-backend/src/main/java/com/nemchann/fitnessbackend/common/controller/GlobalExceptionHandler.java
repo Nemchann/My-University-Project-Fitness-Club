@@ -97,6 +97,26 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(ex.getMessage(), HttpStatus.NOT_FOUND);
     }
 
+    @ExceptionHandler(WorkoutAlreadyExistsException.class)
+    public ResponseEntity<String> handleWorkoutAlreadyExists(WorkoutAlreadyExistsException ex){
+        return new ResponseEntity<>(ex.getMessage(), HttpStatus.CONFLICT);
+    }
+
+    @ExceptionHandler(TrainerIsBusyException.class)
+    public ResponseEntity<String> handleTrainerConflict(TrainerIsBusyException ex){
+        return new ResponseEntity<>(ex.getMessage(), HttpStatus.CONFLICT);
+    }
+
+    @ExceptionHandler(RoomAlreadyOccupiedException.class)
+    public ResponseEntity<String> handleRoomConflict(RoomAlreadyOccupiedException ex){
+        return new ResponseEntity<>(ex.getMessage(), HttpStatus.CONFLICT);
+    }
+
+    @ExceptionHandler(StartEndTimeConflictException.class)
+    public ResponseEntity<String> handleStartEndTimeConflict(StartEndTimeConflictException ex){
+        return new ResponseEntity<>(ex.getMessage(), HttpStatus.UNPROCESSABLE_ENTITY);
+    }
+
     @ExceptionHandler(BookingTooLateException.class)
     public ResponseEntity<Map<String, String>> handleLateBooking(BookingTooLateException ex) {
         Map<String, String> response = new HashMap<>();
