@@ -88,13 +88,15 @@ public class BookingService {
             // Если пакетный - уменьшаем количество визитов
             int remaining = currentSub.getRemainingVisits();
             if (remaining > 0) {
+
+                setLapsedSubscriptionStatus(currentSub);//Ничего не будет, если дата конца позже, чем сейчас
+                if (currentSub.getSubscriptionStatus().getSubscriptionStatusName().equals(SubscriptionStatusEnum.LAPSED)){
+                    clientSubscriptionRepository.save(currentSub);
+                    throw new VisitsEndedException("Your subscriptions' period is ended, buy new subscription");
+                }
                 currentSub.setRemainingVisits(remaining - 1);
                 clientSubscriptionRepository.save(currentSub);
 
-                // Если это было самое последнее занятие - помечаем, что этот абонемент пора закрыть
-//                if (currentSub.getRemainingVisits() == 0) {
-//                    shouldExpire = true;
-//                }
             } else {
                 shouldExpire = true;
             }

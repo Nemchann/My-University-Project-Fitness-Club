@@ -77,7 +77,8 @@ public class ScheduleController {
             ),
             @ApiResponse(
                     responseCode = "422",
-                    description = "Время начала тренировки позже чем время конца",
+                    description = "Время начала тренировки позже чем время конца" +
+                    " или вместимость комнаты меньше, чем максимальное количество клиентов",
                     content = @Content(schema = @Schema(implementation = String.class))
             )
     })

@@ -18,7 +18,6 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/fitness-club/bookings")
-//@CrossOrigin(origins = "http://localhost:5173")
 @RequiredArgsConstructor
 @Tag(name = "Booking Controller", description = "Запись и отмена бронирования тренировок")
 public class BookingController {
@@ -89,7 +88,7 @@ public class BookingController {
         return service.checkBookingStatus(userId, scheduleId);
     }
 
-    @PostMapping("/create_client_subscription")
+    @PostMapping("/client_subscription")
     @Operation(summary = "Купить абонемент")
     public ResponseEntity<ClientSubscriptionResponseDto> createClientSubscription(@RequestBody @Valid CreateClientSubscriptionDto createDto){
         ClientSubscriptionResponseDto responseDto = service.createClientSubscription(createDto);
@@ -97,12 +96,21 @@ public class BookingController {
         return new ResponseEntity<>(responseDto, HttpStatus.CREATED);
     }
 
-    @GetMapping("/all_subscriptions")
+    @GetMapping("/subscriptions")
     @Operation(summary = "Все абонементы")
     public ResponseEntity<List<SubscriptionResponseDto>> getAllSubscriptions(){
         List<SubscriptionResponseDto> dtos = service.allSubscriptions();
 
         return new ResponseEntity<>(dtos, HttpStatus.OK);
+    }
+
+    @GetMapping("/client_subscription/{id}")
+    @Operation(summary = "Получить абонемент клиента по id")
+    public ResponseEntity<ClientSubscriptionResponseDto> getClientSubscriptionById(
+            @PathVariable Integer id){
+        ClientSubscriptionResponseDto dto = service.getClientSubscription(id);
+
+        return new ResponseEntity<>(dto, HttpStatus.OK);
     }
 
 
