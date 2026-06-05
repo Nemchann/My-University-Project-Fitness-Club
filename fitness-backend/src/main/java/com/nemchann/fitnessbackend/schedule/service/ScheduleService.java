@@ -102,6 +102,11 @@ public class ScheduleService {
         Room room = roomRepository.findByRoomName(roomEnum)
                 .orElseThrow(() -> new RoomIsNotFoundException("Room is not found"));
 
+
+        if (room.getCapacity() < createDto.getMaxParticipants()){
+            throw new RoomCapacityExceededException("Max participants are more than rooms' capacity");
+        }
+
         LocalDateTime newStart = createDto.getStartTime();
         LocalDateTime newEnd = createDto.getEndTime();
 
