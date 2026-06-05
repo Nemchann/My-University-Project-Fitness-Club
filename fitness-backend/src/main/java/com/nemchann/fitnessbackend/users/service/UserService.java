@@ -167,14 +167,19 @@ public class UserService {
     private void rewriteFromUserEditingDtoToUser(UserEditingDto userEditingDto, User user){
         Profile profile = user.getProfile();
 
-        profile.setSurname(userEditingDto.getSurname());
-        profile.setSelfname(userEditingDto.getSelfname());
-        profile.setPatronymic(userEditingDto.getPatronymic());
-        profile.setBirthday(userEditingDto.getBirthday());
-        profile.setPhone(userEditingDto.getPhone());
-        profile.setEmail(userEditingDto.getEmail());
+        if(!isExistsEmail(userEditingDto.getEmail())) {
 
-        profileRepository.save(profile);
+            profile.setSurname(userEditingDto.getSurname());
+            profile.setSelfname(userEditingDto.getSelfname());
+            profile.setPatronymic(userEditingDto.getPatronymic());
+            profile.setBirthday(userEditingDto.getBirthday());
+            profile.setPhone(userEditingDto.getPhone());
+            profile.setEmail(userEditingDto.getEmail());
+
+            profileRepository.save(profile);
+        }else{
+            throw new UserAlreadyExistsException("This email already exists");
+        }
     }
 
     //Тут подправить
@@ -226,7 +231,7 @@ public class UserService {
             userRepository.delete(user);
 
         }else{
-            throw new RuntimeException("User not found");
+            throw new UserNotFoundException("User not found");
         }
     }
 
