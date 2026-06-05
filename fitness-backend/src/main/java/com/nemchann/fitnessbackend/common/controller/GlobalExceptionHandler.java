@@ -117,6 +117,11 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(ex.getMessage(), HttpStatus.UNPROCESSABLE_ENTITY);
     }
 
+    @ExceptionHandler(RoomCapacityExceededException.class)
+    public ResponseEntity<String> handleCapacityConflict(RoomCapacityExceededException ex){
+        return new ResponseEntity<>(ex.getMessage(), HttpStatus.UNPROCESSABLE_ENTITY);
+    }
+
     @ExceptionHandler(BookingTooLateException.class)
     public ResponseEntity<Map<String, String>> handleLateBooking(BookingTooLateException ex) {
         Map<String, String> response = new HashMap<>();
