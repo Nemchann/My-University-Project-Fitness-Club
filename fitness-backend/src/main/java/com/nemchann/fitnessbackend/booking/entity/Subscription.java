@@ -31,6 +31,9 @@ public class Subscription {
     @Column(name = "visits_count")
     private Integer visitsCount;
 
+    @Column(name = "is_unlimited")
+    private boolean isUnlimited;
+
     @OneToMany(mappedBy = "subscription", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<ClientSubscription> clientSubscriptionList = new ArrayList<>();
 

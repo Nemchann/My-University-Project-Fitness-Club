@@ -53,37 +53,90 @@ public class BookingService {
             throw new BookingTooLateException("It is too late to book that schedule");
         }
 
-//        ClientSubscription clientSubscription = clientSubscriptionRepository.findLastByClientId(booking.getClient().getId())
-//                .orElseThrow(() -> new ClientSubscriptionNotFoundException("Client subscription is not found"));
+        ClientSubscription currentSub = clientSubscriptionRepository
+                .findCurrentActiveSubscription(booking.getClient().getId(), createDto.getCreatedAt().toLocalDate())
+                .orElseThrow(() -> new VisitsEndedException("Your visits ended. Buy new subscription"));
 
-        try{
+        try {
+            // Пытаемся занять место в зале
             scheduleService.addParticipant(createDto.getScheduleId());
-            BookingStatus status = bookingStatusRepository.findByBookingStatusName(BookingStatusEnum.ACCEPTED)
+
+            BookingStatus acceptedStatus = bookingStatusRepository.findByBookingStatusName(BookingStatusEnum.ACCEPTED)
                     .orElseThrow(() -> new BookingNotFoundException("Booking status is not found"));
+            booking.setBookingStatus(acceptedStatus);
 
-            //Integer remainingVisits = clientSubscription.getRemainingVisits();
+            // Обрабатываем списание занятия или переход на новый абонемент
+            handleSubscriptionProcessing(currentSub, booking.getClient().getId());
 
-//            if (remainingVisits > 0){
-//                clientSubscription.setRemainingVisits(remainingVisits - 1);
-//            }else{
-//                //Подумать, что делать, если есть еще активные абонементы у пользователя
-//                throw new VisitsEndedException("Your visits ended. Buy new subscription");
-//            }
-            //Подумать, что делать с безлимитным посещением
-
-            booking.setBookingStatus(status);
-
-        }catch(IllegalStateException e){
-            BookingStatus status = bookingStatusRepository.findByBookingStatusName(BookingStatusEnum.CANCELLED)
+        } catch (IllegalStateException e) {
+            // Если места кончились, отменяем бронь
+            BookingStatus cancelledStatus = bookingStatusRepository.findByBookingStatusName(BookingStatusEnum.CANCELLED)
                     .orElseThrow(() -> new BookingNotFoundException("Booking status is not found"));
-            booking.setBookingStatus(status);
+            booking.setBookingStatus(cancelledStatus);
         }
 
-        //clientSubscriptionRepository.save(clientSubscription);
         bookingRepository.save(booking);
-
         return mapToResponseDto(booking);
 
+    }
+
+    private void handleSubscriptionProcessing(ClientSubscription currentSub, UUID clientId) {
+        Subscription subscription = currentSub.getSubscription();
+        boolean shouldExpire = false;
+
+        if (!subscription.isUnlimited()) {
+            // Если пакетный - уменьшаем количество визитов
+            int remaining = currentSub.getRemainingVisits();
+            if (remaining > 0) {
+                currentSub.setRemainingVisits(remaining - 1);
+                clientSubscriptionRepository.save(currentSub);
+
+                // Если это было самое последнее занятие - помечаем, что этот абонемент пора закрыть
+//                if (currentSub.getRemainingVisits() == 0) {
+//                    shouldExpire = true;
+//                }
+            } else {
+                shouldExpire = true;
+            }
+        } else {
+            // Если безлимитный — проверяем только срок годности
+            if (currentSub.getEndDate().isBefore(LocalDate.now())) {
+                shouldExpire = true;
+            }
+        }
+
+        // Если абонемент исчерпан (по дням или по занятиям) — закрываем его и ищем замену
+        if (shouldExpire) {
+            // Переводим текущий абонемент в LAPSED
+            SubscriptionStatus lapsedStatus = subscriptionStatusRepository
+                    .findBySubscriptionStatusName(SubscriptionStatusEnum.LAPSED)
+                    .orElseThrow(() -> new SubscriptionStatusNotFoundException("Subscription status LAPSED not found"));
+
+            currentSub.setSubscriptionStatus(lapsedStatus);
+            clientSubscriptionRepository.save(currentSub);
+
+            // Ищем следующий абонемент в очереди (PENDING)
+            ClientSubscription nextSub = clientSubscriptionRepository
+                    .findNextPendingSubscription(clientId)
+                    .orElseThrow(() -> new VisitsEndedException("Your visits ended. No other subscriptions in queue."));
+
+            // Активируем следующий абонемент (ACTIVE)
+            SubscriptionStatus activeStatus = subscriptionStatusRepository
+                    .findBySubscriptionStatusName(SubscriptionStatusEnum.ACTIVE)
+                    .orElseThrow(() -> new SubscriptionStatusNotFoundException("Subscription status ACTIVE not found"));
+
+            nextSub.setSubscriptionStatus(activeStatus);
+            nextSub.setStartDate(LocalDate.now());
+            nextSub.setEndDate(LocalDate.now().plusDays(nextSub.getSubscription().getDurationDays()));
+
+            // Если новый абонемент тоже пакетный, сразу списываем с него ПЕРВОЕ занятие
+            if (!nextSub.getSubscription().isUnlimited()) {
+                nextSub.setRemainingVisits(nextSub.getRemainingVisits() - 1);
+            }
+
+            clientSubscriptionRepository.save(nextSub);
+            System.out.println("Старый абонемент закрыт, новый активирован");
+        }
     }
 
     private BookingResponseDto mapToResponseDto(Booking booking){
@@ -224,6 +277,18 @@ public class BookingService {
         BookingStatus status = bookingStatusRepository.findByBookingStatusName(BookingStatusEnum.CANCELLED)
                 .orElseThrow(() -> new BookingNotFoundException("Booking status is not found"));
 
+        User client = booking.getClient();
+        ClientSubscription clientSubscription = clientSubscriptionRepository
+                .findCurrentActiveSubscription(client.getId(), LocalDate.now())
+                .orElseThrow(() -> new ClientSubscriptionNotFoundException("No active subscriptions"));
+        Subscription subscription = clientSubscription.getSubscription();
+
+        //Отменяем один поход в клуб
+        if (!subscription.isUnlimited()){
+            Integer remainingVisits = clientSubscription.getRemainingVisits();
+            clientSubscription.setRemainingVisits(remainingVisits + 1);
+        }
+
         booking.setBookingStatus(status);
         scheduleService.removeParticipant(booking.getSchedule());
 
@@ -311,8 +376,20 @@ public class BookingService {
     public ClientSubscriptionResponseDto createClientSubscription(CreateClientSubscriptionDto createClientSubscriptionDto){
         ClientSubscription clientSubscription = rewriteFromSubscriptionCreateDto(createClientSubscriptionDto);
 
-        SubscriptionStatus subscriptionStatus = subscriptionStatusRepository.findBySubscriptionStatusName(SubscriptionStatusEnum.ACTIVE)
-                        .orElseThrow(() -> new SubscriptionStatusNotFoundException("Subscription status is not found"));
+        ClientSubscription activeSub = clientSubscriptionRepository
+                .findCurrentActiveSubscription(createClientSubscriptionDto.getClientId(), LocalDate.now())
+                .orElse(null);
+
+        SubscriptionStatus subscriptionStatus;
+
+        if (activeSub != null){
+            subscriptionStatus = subscriptionStatusRepository.findBySubscriptionStatusName(SubscriptionStatusEnum.PENDING)
+                    .orElseThrow(() -> new SubscriptionStatusNotFoundException("Subscription status is not found"));
+        }else{
+            subscriptionStatus = subscriptionStatusRepository.findBySubscriptionStatusName(SubscriptionStatusEnum.ACTIVE)
+                    .orElseThrow(() -> new SubscriptionStatusNotFoundException("Subscription status is not found"));
+        }
+
         clientSubscription.setSubscriptionStatus(subscriptionStatus);
 
         clientSubscriptionRepository.save(clientSubscription);
@@ -341,4 +418,5 @@ public class BookingService {
         return mapToClientSubscriptionResponseDto(clientSubscription);
 
     }
+
 }
