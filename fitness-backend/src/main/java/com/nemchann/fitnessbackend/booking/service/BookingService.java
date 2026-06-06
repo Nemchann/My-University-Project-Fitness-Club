@@ -21,6 +21,7 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -208,6 +209,7 @@ public class BookingService {
     private SubscriptionResponseDto mapToSubscriptionResponseDto(Subscription subscription){
         SubscriptionResponseDto dto = new SubscriptionResponseDto();
 
+        dto.setId(subscription.getId());
         dto.setSubscriptionName(subscription.getSubscriptionName());
         dto.setPrice(subscription.getPrice());
         dto.setDurationDays(subscription.getDurationDays());
@@ -218,6 +220,9 @@ public class BookingService {
 
     private ClientSubscriptionResponseDto mapToClientSubscriptionResponseDto(ClientSubscription clientSubscription){
         ClientSubscriptionResponseDto dto = new ClientSubscriptionResponseDto();
+
+        Subscription subscription = clientSubscription.getSubscription();
+        dto.setUnlimited(subscription.isUnlimited());
 
         dto.setStartDate(clientSubscription.getStartDate());
         dto.setEndDate(clientSubscription.getEndDate());
@@ -254,6 +259,7 @@ public class BookingService {
 
         Subscription subscription = subscriptionRepository.findSubscriptionById(dto.getSubscriptionId())
                 .orElseThrow(() -> new SubscriptionNotFoundException("Subscription is not found"));
+        boolean isUnlimited = subscription.isUnlimited();
 
         ClientSubscription clientSubscription = new ClientSubscription();
 
@@ -263,7 +269,11 @@ public class BookingService {
 
         LocalDate endDate = LocalDate.now().plusDays(subscription.getDurationDays());
         clientSubscription.setEndDate(endDate);
-        clientSubscription.setRemainingVisits(subscription.getVisitsCount());
+        if (!isUnlimited){
+            clientSubscription.setRemainingVisits(subscription.getVisitsCount());
+        }else{
+            clientSubscription.setRemainingVisits(null);
+        }
 
         return clientSubscription;
     }
@@ -418,7 +428,38 @@ public class BookingService {
         // если дата окончания действия абонемента после текущей
 
         return mapToClientSubscriptionResponseDto(clientSubscription);
+    }
 
+    public Page<ClientSubscriptionResponseDto> getPastSubscriptions(UUID clientId, Pageable pageable) {
+        Page<ClientSubscription> lapsedSubs = clientSubscriptionRepository
+                .findByClientIdAndSubscriptionStatus_SubscriptionStatusName(clientId, SubscriptionStatusEnum.LAPSED, pageable);
+
+        return lapsedSubs.map(this::mapToClientSubscriptionResponseDto);
+    }
+
+    public ClientActiveAndFutureSubscriptionsDto getActiveAndFutureSubscriptions(UUID clientId) {
+        // Берем текущий активный абонемент
+        Optional<ClientSubscription> activeSubOpt = clientSubscriptionRepository
+                .findCurrentActiveSubscription(clientId, LocalDate.now());
+
+        // Берем список всех будущих абонементов в очереди (PENDING)
+        List<ClientSubscription> pendingSubs = clientSubscriptionRepository
+                .findPendingSubscriptionsInternal(
+                        clientId,
+                        SubscriptionStatusEnum.PENDING,
+                        org.springframework.data.domain.PageRequest.of(0, 100)
+                );
+
+        // 3. Маппим сущности в DTO
+        ClientSubscriptionResponseDto activeDto = activeSubOpt
+                .map(this::mapToClientSubscriptionResponseDto)
+                .orElse(null); // Если активного нет, фронтенд получит null
+
+        List<ClientSubscriptionResponseDto> pendingDtos = pendingSubs.stream()
+                .map(this::mapToClientSubscriptionResponseDto)
+                .toList();
+
+        return new ClientActiveAndFutureSubscriptionsDto(activeDto, pendingDtos);
     }
 
 }
