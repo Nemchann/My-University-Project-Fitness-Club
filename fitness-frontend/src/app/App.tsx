@@ -18,7 +18,7 @@ export default function App() {
 const rootElement = document.getElementById('root');
 
 if (!rootElement) {
-  throw new Error('Не удалось найти корневой элемент id="root". Проверь index.html!');
+  throw new Error('Не удалось найти корневой элемент id="root". Проверь index.html');
 }
 
 ReactDOM.createRoot(document.getElementById('root')!).render(

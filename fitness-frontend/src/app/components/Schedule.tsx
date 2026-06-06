@@ -59,7 +59,7 @@ export function Schedule() {
         // Форматируем дату в строку (например, YYYY-MM-DD), которую ждет твой бэкенд
         const formattedDate = format(selectedDate, 'yyyy-MM-dd');
         
-        // Делаем реальный GET-запрос к твоему Go/Java бэкенду
+        // Делаем реальный GET-запрос к Go/Java бэкенду
         const response = await api.get(`/fitness-club/schedules/get_schedules_by_date?date=${formattedDate}`);
         
         // Кладем ответ бэкенда в стейт
