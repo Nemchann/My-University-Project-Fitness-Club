@@ -113,5 +113,22 @@ public class BookingController {
         return new ResponseEntity<>(dto, HttpStatus.OK);
     }
 
+    @GetMapping("/subscriptions/past/{clientId}")
+    @Operation(summary = "Прошлые абонементы пользователя")
+    public ResponseEntity<Page<ClientSubscriptionResponseDto>> pastSubscriptions(
+            @PathVariable UUID clientId, @PageableDefault(size = 10, sort = "startDate") Pageable pageable){
+        Page<ClientSubscriptionResponseDto> responseDtos = service.getPastSubscriptions(clientId, pageable);
+
+        return new ResponseEntity<>(responseDtos, HttpStatus.OK);
+    }
+
+    @GetMapping("/subscriptions/upcoming/{clientId}")
+    @Operation(summary = "Активные и будущие абонементы пользователя")
+    public ResponseEntity<ClientActiveAndFutureSubscriptionsDto> futureSubscriptions(
+            @PathVariable UUID clientId){
+        ClientActiveAndFutureSubscriptionsDto subscriptionsDto = service.getActiveAndFutureSubscriptions(clientId);
+
+        return new ResponseEntity<>(subscriptionsDto, HttpStatus.OK);
+    }
 
 }
