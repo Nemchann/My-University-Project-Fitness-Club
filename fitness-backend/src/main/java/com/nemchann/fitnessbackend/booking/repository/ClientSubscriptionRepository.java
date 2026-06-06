@@ -63,4 +63,10 @@ public interface ClientSubscriptionRepository extends JpaRepository<ClientSubscr
         );
         return result.stream().findFirst();
     }
+
+    Page<ClientSubscription> findByClientIdAndSubscriptionStatus_SubscriptionStatusName(
+            UUID clientId,
+            SubscriptionStatusEnum status,
+            Pageable pageable
+    );
 }
