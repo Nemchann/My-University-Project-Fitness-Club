@@ -7,6 +7,8 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class SubscriptionResponseDto {
 
+    private Integer id;
+
     private String subscriptionName;
 
     private Double price;
