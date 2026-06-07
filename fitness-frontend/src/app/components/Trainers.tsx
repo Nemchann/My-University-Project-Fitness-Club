@@ -1,6 +1,6 @@
 import { Card, CardContent } from './ui/card';
 import { Badge } from './ui/badge';
-import { ImageWithFallback } from './figma/ImageWithFallback';
+import { ImageWithFallback } from './default_image/ImageWithFallback';
 import trainerCardImg from '../../assets/trainer.png';
 
 interface Trainer {

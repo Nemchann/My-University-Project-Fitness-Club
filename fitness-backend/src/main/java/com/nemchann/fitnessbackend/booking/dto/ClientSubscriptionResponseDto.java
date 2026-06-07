@@ -15,4 +15,6 @@ public class ClientSubscriptionResponseDto {
     private LocalDate endDate;
 
     private String subscriptionStatus;
+
+    private boolean isUnlimited;
 }

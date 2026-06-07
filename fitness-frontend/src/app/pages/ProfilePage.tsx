@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
 import { useLocation } from 'react-router';
-import { User, Mail, Phone, Calendar, Clock, Award, ChevronLeft, ChevronRight, XCircle } from 'lucide-react';
+import { Calendar, Clock, ChevronLeft, ChevronRight, XCircle, CreditCard, Hourglass, Award } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
@@ -9,8 +9,11 @@ import { Button } from '../components/ui/button';
 import { api } from '../../lib/api';
 import { format, parseISO } from 'date-fns';
 import { ru } from 'date-fns/locale';
+import { useSelector } from 'react-redux';
+import type { RootState } from '../../store';
 
-// 1. Интерфейс, соответствующий твоему BookingShortResponseDto.java
+
+// Интерфейс, соответствующий BookingShortResponseDto.java
 interface BookingShortResponseDto {
   bookingId: string;    // UUID бронирования с бэкенда
   scheduleName: string;
@@ -20,22 +23,50 @@ interface BookingShortResponseDto {
   trainerFullName: string;
 }
 
+interface ClientSubscriptionResponseDto {
+  subscriptionName?: string; // имя абонемента (если добавила на бэке, либо выведем дефолтное)
+  startDate: string;         // LocalDate приходит строкой 'YYYY-MM-DD'
+  endDate: string;           // LocalDate
+  remainingVisits: number | null; // может быть null для абонементов с неограниченными посещениями
+  subscriptionStatus: 'ACTIVE' | 'PENDING' | 'LAPSED' | string;
+  unlimited: boolean;
+}
+
+
+interface ClientActiveAndFutureSubscriptionsDto {
+  activeSubscription: ClientSubscriptionResponseDto | null;
+  pendingSubscriptions: ClientSubscriptionResponseDto[];
+}
+
 export function ProfilePage() {
   const location = useLocation();
 
   // Проверяем, передал ли нам RegistrationPage готовые данные пользователя
   const inheritedUser = location.state?.user;
 
+  // Вытаскиваем ID пользователя из глобального стейта Redux Toolkit
+  const reduxUserId = useSelector((state: RootState) => state.auth.userId);
+  
+  // Для проверки в консоли, что Redux работает
+  console.log("ID пользователя из Redux Toolkit:", reduxUserId);
+
+  // --- Стейты для тренировок ---
   const [bookings, setBookings] = useState<BookingShortResponseDto[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  
-  // Состояние для пагинации Spring Data Page
   const [currentPage, setCurrentPage] = useState(0); // В Spring страницы начинаются с 0
   const [totalPages, setTotalPages] = useState(1);
-
-  // 1. Добавь в самый верх компонента ProfilePage к остальным стейтам:
   const [activeTab, setActiveTab] = useState<'future' | 'past'>('future');
 
+  // --- СТЕЙТЫ ДЛЯ АБОНЕМЕНТОВ ---
+  const [activeAndFutureSubs, setActiveAndFutureSubs] = useState<ClientActiveAndFutureSubscriptionsDto | null>(null);
+  const [lapsedSubs, setLapsedSubs] = useState<ClientSubscriptionResponseDto[]>([]);
+  const [isLoadingSubs, setIsLoadingSubs] = useState(true);
+  const [subsTab, setSubsTab] = useState<'current' | 'history'>('current');
+  const [subsPage, setSubsPage] = useState(0); // страница для архивных абонементов
+  const [subsTotalPages, setSubsTotalPages] = useState(1);
+
+
+  // --- Данные пользователя и формы ---
   const [user, setUser] = useState<{ fullName: string; email: string; phone: string } | null>(
     inheritedUser ? {
       fullName: inheritedUser.fullName,
@@ -51,7 +82,7 @@ export function ProfilePage() {
     patronymic: '',
     phone: '',
     email: '',
-    birthday: '' // сохраним изначальную дату рождения бэка, чтобы отправить её обратно неизменной
+    birthday: '' 
   });
 
   // Стейты для формы смены пароля (PasswordChangeDto)
@@ -64,17 +95,53 @@ export function ProfilePage() {
   const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [isChangingPassword, setIsChangingPassword] = useState(false);
 
+  // --- ФУНКЦИЯ ЗАГРУЗКИ АБОНЕМЕНТОВ ---
+  const fetchClientSubscriptions = async () => {
+    const clientId = localStorage.getItem("userId");
+    if (!clientId) return;
+
+    try {
+      setIsLoadingSubs(true);
+      if (subsTab === 'current') {
+        // Первый эндпоинт: возвращает объект с активным и очередью будущих
+        const response = await api.get<ClientActiveAndFutureSubscriptionsDto>(
+          `/fitness-club/bookings/subscriptions/upcoming/${clientId}`
+        );
+        setActiveAndFutureSubs(response.data);
+      } else {
+        // Второй эндпоинт: возвращает Page просроченных (LAPSED)
+        const response = await api.get(`/fitness-club/bookings/subscriptions/past/${clientId}`, {
+          params: { page: subsPage, size: 3 } // берем по 3 штуки в историю для компактности
+        });
+        setLapsedSubs(response.data.content || []);
+        setSubsTotalPages(response.data.totalPages || 1);
+      }
+    } catch (error) {
+      console.error("Ошибка при загрузке абонементов клиента:", error);
+    } {
+      setIsLoadingSubs(false);
+    }
+  };
+
+  // Вызываем загрузку абонементов при смене вкладки или страницы архива
+  useEffect(() => {
+    fetchClientSubscriptions();
+  }, [subsTab, subsPage]);
+
+  // Сброс страницы архива при переключении вкладок абонементов
+  useEffect(() => {
+    setSubsPage(0);
+  }, [subsTab]);
+
   useEffect(() => {
     if (user) {
-    // Если имя пришло склеенным или у тебя есть доступ к сырым userData в useEffect, 
-    // лучше всего инициализировать стейты прямо в функции fetchProfileAndBookings.
-    // Ниже в fetchProfileAndBookings мы это как раз настроим!
     }
   }, [user]);
 
-  // --- ФУНКЦИЯ ОБНОВЛЕНИЯ ПРОФИЛЯ ---
+  // ФУНКЦИЯ ОБНОВЛЕНИЯ ПРОФИЛЯ 
   const handleUpdateProfile = async (e: React.FormEvent) => {
     e.preventDefault();
+
     const userId = localStorage.getItem("userId");
     if (!userId) return;
 
@@ -83,7 +150,7 @@ export function ProfilePage() {
 
       // Собираем объект строго по UserEditingDto.java
       const editingPayload = {
-        id: userId, // ID внутри DTO, как просит твой бэкенд
+        id: userId,
         surname: profileForm.surname,
         selfname: profileForm.selfname,
         patronymic: profileForm.patronymic || null,
@@ -124,13 +191,13 @@ export function ProfilePage() {
     try {
       setIsChangingPassword(true);
 
-      // Собираем PasswordChangeDto (без id внутри объекта)
+      // Собираем PasswordChangeDto
       const passwordPayload = {
         oldPassword: passwordForm.oldPassword,
         newPassword: passwordForm.newPassword
       };
 
-      // Передаем id в URL как @PathVariable, как требует твой Java-код
+      // Передаем id в URL
       await api.put(`/fitness-club/users/change_password/${userId}`, passwordPayload);
 
       alert("Пароль успешно изменен!");
@@ -160,14 +227,14 @@ export function ProfilePage() {
             email: userData.email || 'Не указан',
             phone: userData.phone || '+7 (999) 000-00-00'
           });
-          // Инициализируем форму актуальными данными с бэкенда!
+          // Инициализируем форму актуальными данными с бэкенда
           setProfileForm({
             surname: userData.surname || '',
             selfname: userData.selfname || '',
             patronymic: userData.patronymic || '',
             phone: userData.phone || '',
             email: userData.email || '',
-            birthday: userData.birthday || '2000-01-01' // Сохраняем её для отправки в DTO
+            birthday: userData.birthday || '2000-01-01' 
           });
         } catch (err) {
           console.error("Не удалось загрузить личные данные:", err);
@@ -179,8 +246,6 @@ export function ProfilePage() {
         }
       }
 
-      // 2. Измени useEffect или функцию fetchProfileAndBookings, чтобы URL зависел от activeTab:
-      // Например, внутри fetchProfileAndBookings:  
       const endpoint = activeTab === 'future' 
       ? `/fitness-club/bookings/upcoming/${clientId}` 
       : `/fitness-club/bookings/past/${clientId}`;
@@ -204,7 +269,7 @@ export function ProfilePage() {
     setCurrentPage(0);
   }, [activeTab]);
 
-  // 2. Функция отмены бронирования по BookingCancelDto
+  // Функция отмены бронирования по BookingCancelDto
   const handleCancelBooking = async (bookingId: string) => {
     const userId = localStorage.getItem("userId");
     if (!userId || !bookingId) return;
@@ -214,14 +279,12 @@ export function ProfilePage() {
     }
 
     try {
-      // Формируем тело запроса строго по BookingCancelDto.java
+      // Формируем тело запроса 
       const cancelPayload = {
         bookingId: bookingId,
         userId: userId
       };
 
-      // Отправляем DELETE или POST (в зависимости от твоего контроллера, обычно для отмены используют POST или PUT/DELETE)
-      // Предположим, эндпоинт выглядит так. Измени метод (post/delete), если у тебя по-другому
       await api.delete('/fitness-club/bookings/cancel_booking', { data: cancelPayload });
 
       alert("Запись успешно отменена");
@@ -249,7 +312,7 @@ export function ProfilePage() {
     }
   };
 
-  // 3. Обновленный маппинг стилей под твои реальные статусы
+  // Обновленный маппинг стилей под статусы
   const getStatusStyle = (status: string) => {
     switch (status) {
       case 'ACCEPTED':
@@ -272,6 +335,15 @@ export function ProfilePage() {
       case 'CANCELLED': return 'Отменена';
       case 'COMPLETED': return 'Посещено';
       default: return status;
+    }
+  };
+
+  // Вспомогательная функция для форматирования дат абонементов
+  const formatDateString = (dateStr: string) => {
+    try {
+      return format(parseISO(dateStr), 'd MMMM yyyy', { locale: ru });
+    } catch {
+      return dateStr;
     }
   };
 
@@ -419,11 +491,14 @@ export function ProfilePage() {
                 </form>
               </CardContent>
             </Card>
-          </div> {/* Конец левой колонки */}
+          </div> 
+          {/* Конец левой колонки */}
 
 
             {/* Правая колонка: Список бронирований из Page.content */}
-            <div className="space-y-4">
+            <div className="space-y-8">
+
+              {/* БЛОК 1: МОИ ТРЕНИРОВКИ */}
               <Card className="shadow-sm border-gray-100 bg-white">
                 <CardHeader className="pb-2">
                   <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -491,7 +566,7 @@ export function ProfilePage() {
                               <span className="text-sm font-semibold text-gray-900">{booking.trainerFullName || 'Не указан'}</span>
                             </div>
 
-                            {/* УСЛОВНЫЙ РЕНДЕРИНГ: Кнопка отмены активна ТОЛЬКО для статуса ACCEPTED */}
+                            {/* Кнопка отмены активна только для статуса ACCEPTED */}
                             {booking.status === 'ACCEPTED' && (
                               <Button
                                 onClick={() => handleCancelBooking(booking.bookingId)}
@@ -539,6 +614,168 @@ export function ProfilePage() {
                       <Calendar className="w-16 h-16 text-pink-300 mx-auto mb-4" />
                       <h3 className="text-xl font-semibold text-gray-700 mb-2">Нет записей</h3>
                       <p className="text-gray-500">Вы еще не записались ни на одну тренировку.</p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* НОВЫЙ БЛОК 2: МОИ АБОНЕМЕНТЫ */}
+              <Card className="shadow-sm border-gray-100 bg-white">
+                <CardHeader className="pb-2">
+                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                    <CardTitle className="text-lg font-bold">Мои абонементы</CardTitle>
+                    
+                    {/* Переключатель вкладок абонементов */}
+                    <div className="flex bg-gray-100 p-1 rounded-xl w-full sm:w-auto">
+                      <button 
+                        onClick={() => setSubsTab('current')} 
+                        className={`flex-1 sm:flex-none px-4 py-2 text-sm font-medium rounded-lg transition-all cursor-pointer ${
+                          subsTab === 'current' ? 'bg-white text-pink-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'
+                        }`}
+                      >
+                        Текущие
+                      </button>
+                      <button 
+                        onClick={() => setSubsTab('history')} 
+                        className={`flex-1 sm:flex-none px-4 py-2 text-sm font-medium rounded-lg transition-all cursor-pointer ${
+                          subsTab === 'history' ? 'bg-white text-pink-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'
+                        }`}
+                      >
+                        История
+                      </button>
+                    </div>
+                  </div>
+                </CardHeader>
+                
+                <CardContent className="space-y-4">
+                  {isLoadingSubs ? (
+                    <div className="text-center py-12 text-gray-500">Загрузка данных об абонементах...</div>
+                  ) : subsTab === 'current' ? (
+                    // === ВКЛАДКА: ТЕКУЩИЕ И БУДУЩИЕ АБОНЕМЕНТЫ ===
+                    <div className="space-y-6">
+                      
+                      {/* А. Активный абонемент */}
+                      <div>
+                        <h4 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-3">Активный абонемент</h4>
+                        {activeAndFutureSubs?.activeSubscription ? (
+                          <div className="p-5 rounded-2xl bg-gradient-to-r from-pink-500 to-purple-600 text-white shadow-md relative overflow-hidden">
+                            <div className="absolute right-4 bottom-2 opacity-10">
+                              <CreditCard className="w-36 h-36" />
+                            </div>
+                            <div className="flex justify-between items-start mb-4">
+                              <div>
+                                <h5 className="text-xl font-bold">
+                                  {activeAndFutureSubs.activeSubscription.subscriptionName || 'Клубный абонемент'}
+                                </h5>
+                                <p className="text-pink-100 text-xs mt-1">
+                                  Действует до: {formatDateString(activeAndFutureSubs.activeSubscription.endDate)}
+                                </p>
+                              </div>
+                              <span className="bg-white/20 text-white text-xs px-2.5 py-1 rounded-full font-semibold uppercase tracking-wider border border-white/20">
+                                Активен
+                              </span>
+                            </div>
+                            <div className="grid grid-cols-2 gap-4 pt-2 border-t border-white/20">
+                              <div>
+                                <span className="text-xs text-pink-200 block">Осталось визитов</span>
+                                <span className="text-2xl font-black uppercase tracking-wide">
+                                  {activeAndFutureSubs.activeSubscription.unlimited 
+                                    ? 'Безлимит' 
+                                    : activeAndFutureSubs.activeSubscription.remainingVisits}
+                                </span>
+                              </div>
+                              <div className="text-right">
+                                <span className="text-xs text-pink-200 block">Дата старта</span>
+                                <span className="text-lg font-bold">{formatDateString(activeAndFutureSubs.activeSubscription.startDate)}</span>
+                              </div>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="p-4 rounded-xl border border-dashed border-gray-200 text-center text-gray-500 text-sm">
+                            У вас сейчас нет активных абонементов.
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Б. Будущие абонементы в очереди */}
+                      <div>
+                        <h4 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-3">Очередь активации (Будущие)</h4>
+                        {activeAndFutureSubs?.pendingSubscriptions && activeAndFutureSubs.pendingSubscriptions.length > 0 ? (
+                          <div className="space-y-3">
+                            {activeAndFutureSubs.pendingSubscriptions.map((sub, idx) => (
+                              <div key={idx} className="flex items-center justify-between p-4 rounded-xl border border-gray-100 bg-gray-50/50 hover:border-purple-100 transition-all">
+                                <div className="flex items-center gap-3">
+                                  <div className="p-2 bg-purple-50 rounded-lg text-purple-500">
+                                    <Hourglass className="w-5 h-5" />
+                                  </div>
+                                  <div>
+                                    <h5 className="font-bold text-gray-900">{sub.subscriptionName || 'Следующий абонемент'}</h5>
+                                    <p className="text-xs text-gray-500">
+                                      Плановый период: с {formatDateString(sub.startDate)} по {formatDateString(sub.endDate)}
+                                    </p>
+                                  </div>
+                                </div>
+                                <div className="text-right">
+                                  <span className="text-xs font-bold text-purple-600 bg-purple-50 border border-purple-100 px-2 py-0.5 rounded-full">
+                                    В очереди
+                                  </span>
+                                  <span className="text-xs text-gray-400 block mt-1">
+                                    {sub.unlimited ? 'Безлимитное посещение' : `${sub.remainingVisits} визитов`}
+                                  </span>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <div className="text-xs text-gray-400 italic">Очередь пуста. Купленные заранее абонементы появятся здесь.</div>
+                        )}
+                      </div>
+
+                    </div>
+                  ) : (
+                    // === ВКЛАДКА: ИСТОРsecondary (ПРОСРОЧЕННЫЕ) ===
+                    <div className="space-y-4">
+                      {lapsedSubs.length > 0 ? (
+                        <div className="space-y-3">
+                          {lapsedSubs.map((sub, idx) => (
+                            <div key={idx} className="flex flex-col sm:flex-row justify-between sm:items-center p-4 rounded-xl border border-gray-100 bg-white opacity-75">
+                              <div className="space-y-1">
+                                <div className="flex items-center gap-2">
+                                  <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-gray-100 text-gray-500 border border-gray-200">
+                                    Истёк
+                                  </span>
+                                </div>
+                                <h5 className="font-bold text-gray-700 text-base">{sub.subscriptionName || 'Архивный абонемент'}</h5>
+                                <p className="text-xs text-gray-400">
+                                  Действовал: {formatDateString(sub.startDate)} — {formatDateString(sub.endDate)}
+                                </p>
+                              </div>
+                              <div className="text-left sm:text-right pt-2 sm:pt-0 border-t sm:border-t-0 border-gray-50">
+                                <span className="text-xs text-gray-400 block">
+                                  {sub.unlimited ? 'Тип карты:' : 'Осталось визитов:'}
+                                </span>
+                                <span className="text-sm font-bold text-gray-600">
+                                  {sub.unlimited ? 'Безлимит' : sub.remainingVisits}
+                                </span>
+                              </div>
+                            </div>
+                          ))}
+
+                          {/* Пагинация для архива абонементов */}
+                          {subsTotalPages > 1 && (
+                            <div className="flex items-center justify-center gap-2 pt-4 border-t border-gray-100">
+                              <Button variant="outline" size="icon" onClick={() => setSubsPage((prev) => Math.max(0, prev - 1))} disabled={subsPage === 0} className="w-8 h-8 cursor-pointer"><ChevronLeft className="w-4 h-4" /></Button>
+                              <span className="text-sm text-gray-600">Страница {subsPage + 1} из {subsTotalPages}</span>
+                              <Button variant="outline" size="icon" onClick={() => setSubsPage((prev) => Math.min(subsTotalPages - 1, prev + 1))} disabled={subsPage === subsTotalPages - 1} className="w-8 h-8 cursor-pointer"><ChevronRight className="w-4 h-4" /></Button>
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <div className="text-center py-8 text-gray-500">
+                          <Award className="w-12 h-12 text-gray-300 mx-auto mb-2" />
+                          <p className="text-sm">У вас еще нет архивных или просроченных абонементов.</p>
+                        </div>
+                      )}
                     </div>
                   )}
                 </CardContent>
