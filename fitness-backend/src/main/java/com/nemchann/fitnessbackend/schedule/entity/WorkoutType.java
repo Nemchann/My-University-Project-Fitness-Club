@@ -19,7 +19,7 @@ public class WorkoutType {
     @GeneratedValue(strategy = GenerationType.AUTO)
     private Integer id;
 
-    //STRETCH, YOGA, STRENGTH, CARDIO, DANCE
+    //STRETCH, MIND_AND_BODY, STRENGTH, CARDIO, DANCE
     @Enumerated(EnumType.STRING)
     @Column(name = "type_name", nullable = false, unique = true)
     private WorkoutTypeEnum typeName;

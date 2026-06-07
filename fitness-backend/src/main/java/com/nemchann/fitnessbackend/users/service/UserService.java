@@ -26,31 +26,33 @@ public class UserService {
     private final ProfileRepository profileRepository;
     private final RoleRepository roleRepository;
     private final UserRepository userRepository;
-    private final BookingStatusRepository bookingStatusRepository; //Подумать насчет этого
 
-    //Создает обычного пользователя типа CLIENT
+    // Создает обычного пользователя типа CLIENT
     @Transactional
     public UserResponseDto createUser(UserRegistrationDto userRegistrationDto){
         User user = new User();
         Profile profile = new Profile();
 
+        // Используем методы-мапперы
         rewriteUserDtoToUser(userRegistrationDto, user);
         rewriteUserDtoToProfile(userRegistrationDto, profile);
 
         Role defaultRole = roleRepository.findByRoleName(UserRole.CLIENT)
-                .orElseThrow(() -> new RoleNotFoundException("Error: Role CLIENT not found."));
+                .orElseThrow(() -> new RoleNotFoundException("Role CLIENT not found"));
 
         user.setRole(defaultRole);
         profile.setUser(user);
         user.setProfile(profile);
 
         userRepository.save(user);
-        //Заодно сохраняем и профиль пользователя
+        // Заодно сохраняем и профиль пользователя
         profileRepository.save(profile);
 
         return mapToResponseDto(user);
     }
 
+
+    // Создает обычного пользователя типа TRAINER, такая же логика, как и у обычного клиента
     @Transactional
     public UserResponseDto createTrainer(UserRegistrationDto userRegistrationDto){
         User user = new User();
@@ -60,7 +62,7 @@ public class UserService {
         rewriteUserDtoToProfile(userRegistrationDto, profile);
 
         Role trainerRole = roleRepository.findByRoleName(UserRole.TRAINER)
-                .orElseThrow(() -> new RoleNotFoundException("Error: Role TRAINER not found"));
+                .orElseThrow(() -> new RoleNotFoundException("Role TRAINER not found"));
 
         user.setRole(trainerRole);
         profile.setUser(user);
@@ -73,8 +75,10 @@ public class UserService {
         return mapToResponseDto(user);
     }
 
-    //Методы для переписания из dto в entity
-    //Метод хеширования пароля вызывать здесь
+    // Методы для переписания из dto в entity
+
+    // Метод для проверки UserRegistrationDto логина и присваивания пароля
+    // Метод хеширования пароля вызывается здесь
     private void rewriteUserDtoToUser(UserRegistrationDto userRegistrationDto, User user){
         if(!isExistsLogin(userRegistrationDto.getLogin())){
             user.setLogin(userRegistrationDto.getLogin());
@@ -82,10 +86,11 @@ public class UserService {
             String hashedPassword = passwordHash(userRegistrationDto.getPassword());
             user.setPassword(hashedPassword);
         }else{
-            throw new UserAlreadyExistsException("This login is already used");
+            throw new UserAlreadyExistsException("Данный логин уже занят");
         }
     }
 
+    // Метод для конвертации UserRegistrationDto в данные профиля
     private void rewriteUserDtoToProfile(UserRegistrationDto registrationDto, Profile profile){
         if(!isExistsEmail(registrationDto.getEmail())){
             profile.setSurname(registrationDto.getSurname());
@@ -96,11 +101,11 @@ public class UserService {
             profile.setPhone(registrationDto.getPhone());
             profile.setEmail(registrationDto.getEmail());
         }else{
-            throw new UserAlreadyExistsException("This email is already used");
+            throw new UserAlreadyExistsException("Данный email уже занят");
         }
     }
 
-    //Метод для преобразования обычного entity в dto
+    // Метод для преобразования обычного entity User в UserResponseDto
     private UserResponseDto mapToResponseDto(User user){
         UserResponseDto userResponseDto = new UserResponseDto();
         Profile profile = user.getProfile();
@@ -115,7 +120,7 @@ public class UserService {
     }
 
 
-    //Проверка на наличие таких же логина и электронной почты в бд
+    // Проверка на наличие таких же логина и электронной почты в бд
     public boolean isExistsLogin(String login){
         Optional<User> userOptionalLogin = userRepository.findByLogin(login);
 
@@ -129,12 +134,12 @@ public class UserService {
     }
 
 
-    //Исправить логику, пока что так, чтоб не было ошибок в коде,
-    // ну и потом поудалять пользователей с хешом такого пароля
+    // Очень забавное хеширование пароля с солью
     private String passwordHash(String password){
         return "good" + password.hashCode() + "fitness";
     }
 
+    // Получить UserResponseDto по id пользователя
     public UserResponseDto getUserResponse(UUID id){
         Optional<User> userOptional = userRepository.findById(id);
 
@@ -143,11 +148,11 @@ public class UserService {
 
             return mapToResponseDto(user);
         }else{
-            throw new UserNotFoundException("User is not found");
+            throw new UserNotFoundException("Данный пользователь не найден");
         }
     }
 
-    //Поменять профиль
+    // Изменение профиля
     @Transactional
     public UserResponseDto editProfile(UserEditingDto userEditingDto){
         Optional<User> userOptional = userRepository.findById(userEditingDto.getId());
@@ -160,10 +165,12 @@ public class UserService {
             return mapToResponseDto(user);
 
         }else{
-            throw new UserNotFoundException("User is not found");
+            throw new UserNotFoundException("Данный пользователь не найден");
         }
     }
 
+
+    // Метод-маппер для конвертации UserEditingDto в данные профиля
     private void rewriteFromUserEditingDtoToUser(UserEditingDto userEditingDto, User user){
         Profile profile = user.getProfile();
 
@@ -178,11 +185,11 @@ public class UserService {
 
             profileRepository.save(profile);
         }else{
-            throw new UserAlreadyExistsException("This email already exists");
+            throw new UserAlreadyExistsException("Данный email уже занят");
         }
     }
 
-    //Тут подправить
+    // Page всех пользователей, в т.ч. тренеров и админом
     @Transactional
     public Page<UserResponseDto> findAllUsers(Pageable pageable){
         return userRepository.findAllByIsActiveTrue(pageable)
@@ -190,35 +197,37 @@ public class UserService {
     }
 
 
-    //Метод поменять пароль
+    // Метод изменения пароля
     @Transactional
     public void changePassword(UUID id, PasswordChangeDto passwordChangeDto){
         Optional<User> userOptional = userRepository.findById(id);
 
         if(userOptional.isPresent()){
             User user = userOptional.get();
-            String actualPassword = user.getPassword();
+            String actualPassword = user.getPassword(); // Действующий хеш пароля пользователя, какой он записан в БД
 
+            // Старый пароль, записанный пользователем на фронтенде
             String oldDtoPassword = passwordHash(passwordChangeDto.getOldPassword());
 
+            // Если актуальный пароль совпадает с записанным в графе "текущий пароль" на фронтенде
             if(actualPassword.equals(oldDtoPassword)){
-                String newHashedPassword = passwordHash(passwordChangeDto.getNewPassword());
+                String newHashedPassword = passwordHash(passwordChangeDto.getNewPassword()); // Хешируем новый пароль
 
                 user.setPassword(newHashedPassword);
 
                 userRepository.save(user);
 
             }else{
-                throw new InvalidPasswordException("Not correct password");
+                throw new InvalidPasswordException("Неверный старый пароль");
             }
 
 
         }else{
-            throw new UserNotFoundException("User is not found");
+            throw new UserNotFoundException("Данный пользователь не найден");
         }
     }
 
-    //Метод удаление пользователя с его профилем
+    // Метод удаления пользователя с его профилем
     @Transactional
     public void deleteUser(UserEditingDto userEditingDto){
         Optional<User> userOptional = userRepository.findById(userEditingDto.getId());
@@ -231,11 +240,11 @@ public class UserService {
             userRepository.delete(user);
 
         }else{
-            throw new UserNotFoundException("User not found");
+            throw new UserNotFoundException("Данный пользователь не найден");
         }
     }
 
-    //Метод для входа в систему
+    // Метод для входа в систему
     @Transactional
     public UserResponseDto authentification(UserAuthentificationDto userAuthentificationDto){
         Optional<User> userOpt = userRepository.findByLogin(userAuthentificationDto.getLogin());
@@ -243,20 +252,24 @@ public class UserService {
         if (userOpt.isPresent()){
             User user = userOpt.get();
             UserResponseDto userResponseDto = mapToResponseDto(user);
-            String userHashedPassword = user.getPassword();
+            String userHashedPassword = user.getPassword(); // Актуальный хеш пароля
 
+            // Хеш введенного пароля
             String hashedPassword = passwordHash(userAuthentificationDto.getPassword());
 
+            // Сравнение паролей
             if (userHashedPassword.equals(hashedPassword)){
                 return userResponseDto;
             }else{
-                throw new InvalidPasswordException("Invalid password");
+                throw new InvalidPasswordException("Неверный пароль");
             }
         }else{
-            throw new InvalidLoginException("Invalid login");
+            throw new InvalidLoginException("Неверный логин");
         }
     }
 
+
+    // Деактивация пользователя - мягкое удаление
     @Transactional
     public void deactivateUser(UUID id){
         Optional<User> userOptional = userRepository.findById(id);
@@ -268,21 +281,24 @@ public class UserService {
             userRepository.save(user);
 
         }else{
-            throw new UserNotFoundException("User is not found");
+            throw new UserNotFoundException("Данный пользователь не найден");
         }
     }
 
 
+    // Получение пользователя по id. Для использования другими сервисами
     public User getUser(UUID id){
         Optional<User> userOptional = userRepository.findById(id);
 
         if(userOptional.isPresent()){
             return userOptional.get();
         }else{
-            throw new UserNotFoundException("User is not found");
+            throw new UserNotFoundException("Данный пользователь не найден");
         }
     }
 
+
+    // Проверка является ли пользователь тренером
     public boolean isTrainer(UUID id){
         Optional<User> userOptional = userRepository.findById(id);
 
@@ -296,82 +312,38 @@ public class UserService {
             return UserRole.TRAINER.equals(userRole);
 
         }else{
-            throw new UserNotFoundException("User is not found");
+            throw new UserNotFoundException("Данный пользователь не найден");
         }
     }
 
-    //Подумать, что с этим делать
-    public String getFullName(User user){
-        if (userRepository.exists(Example.of(user))){
-            Profile profile = user.getProfile();
-            return profile.getSurname() + " " + profile.getSelfname();
-
-        }else{
-            throw new UserNotFoundException("User is not found");
-        }
-    }
-
-//    public void addBookingToUser(UUID userId, Booking booking){
-//        User user = userRepository.findById(userId)
-//                .orElseThrow(() -> new UserNotFoundException("User is not found"));
-//
-//        Role role = user.getRole();
-//
-//        if(!role.getRoleName().equals(UserRole.CLIENT)){
-//            throw new NotEnoughPrivilegesException("You're not client");
-//        }
-//
-//        List<Booking> bookingList = user.getClientBookings();
-//        bookingList.add(booking);
-//
-//        userRepository.save(user);
-//    }
-
-//    @Transactional
-//    public void cancelBookingFromUser(UUID userId, Booking booking){
-//        User user = userRepository.findById(userId)
-//                .orElseThrow(() -> new UserNotFoundException("User is not found"));
-//
-//        Role role = user.getRole();
-//
-//        if(!role.getRoleName().equals(UserRole.CLIENT)){
-//            throw new NotEnoughPrivilegesException("You're not client");
-//        }
-//        List<Booking> bookingList = user.getClientBookings();
-//
-//        for (Booking b : bookingList){
-//            if(b.equals(booking)){
-//                BookingStatus bookingStatus = bookingStatusRepository.findByBookingStatusName(BookingStatusEnum.CANCELLED)
-//                                .orElseThrow(() -> new BookingStatusNotFoundException("Booking status is not found"));
-//                b.setBookingStatus(bookingStatus);
-//            }
-//        }
-//    }
-
+    // Получить Page пользователей по имени роли
     public Page<UserResponseDto> getByRoleName(String roleName, Pageable pageable){
         UserRole userRole = UserRole.valueOf(roleName.toUpperCase());
 
         Role role = roleRepository.findByRoleName(userRole)
-                .orElseThrow(() -> new RoleNotFoundException("Role is not found"));
+                .orElseThrow(() -> new RoleNotFoundException("Данная роль не найдена"));
 
         return userRepository.findAllByRole(pageable, role)
                 .map(this::mapToResponseDto);
 
     }
 
+    // Получить Page клиентов
     public Page<UserResponseDto> getAllClients(Pageable pageable){
         Role role = roleRepository.findByRoleName(UserRole.CLIENT)
-                .orElseThrow(() -> new RoleNotFoundException("Role is not found"));
+                .orElseThrow(() -> new RoleNotFoundException("Данная роль не найдена"));
 
         return userRepository.findAllByRole(pageable, role)
                 .map(this::mapToResponseDto);
     }
 
+    // Получить Page тренеров
     public Page<UserResponseDto> getAllTrainers(Pageable pageable){
         Role role = roleRepository.findByRoleName(UserRole.TRAINER)
-                .orElseThrow(() -> new RoleNotFoundException("Role is not found"));
+                .orElseThrow(() -> new RoleNotFoundException("Данная роль не найдена"));
 
         return userRepository.findAllByRole(pageable, role)
                 .map(this::mapToResponseDto);
     }
+
 }

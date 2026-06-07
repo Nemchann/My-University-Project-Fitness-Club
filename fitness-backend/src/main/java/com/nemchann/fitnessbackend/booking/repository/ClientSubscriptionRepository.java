@@ -20,7 +20,7 @@ public interface ClientSubscriptionRepository extends JpaRepository<ClientSubscr
 
     Optional<ClientSubscription> findLastByClientId(UUID clientId);
 
-    // 1. Ищем действующий абонемент. Вместо LIMIT используем Pageable во внутреннем вызове
+    // Ищем действующий абонемент
     @Query("SELECT s FROM ClientSubscription s " +
             "WHERE s.client.id = :clientId " +
             "AND s.subscriptionStatus.subscriptionStatusName = :status " +
@@ -33,7 +33,7 @@ public interface ClientSubscriptionRepository extends JpaRepository<ClientSubscr
             Pageable pageable
     );
 
-    // Удобный дефолтный метод-обертка, который заменяет LIMIT 1
+    // Метод-обертка, который заменяет LIMIT 1
     default Optional<ClientSubscription> findCurrentActiveSubscription(UUID clientId, LocalDate currentDate) {
         List<ClientSubscription> result = findActiveSubscriptionsInternal(
                 clientId,
@@ -44,7 +44,7 @@ public interface ClientSubscriptionRepository extends JpaRepository<ClientSubscr
         return result.stream().findFirst();
     }
 
-    // 2. Ищем следующий абонемент в очереди (PENDING)
+    // Ищем следующий абонемент в очереди (PENDING)
     @Query("SELECT s FROM ClientSubscription s " +
             "WHERE s.client.id = :clientId " +
             "AND s.subscriptionStatus.subscriptionStatusName = :status " +
@@ -55,6 +55,7 @@ public interface ClientSubscriptionRepository extends JpaRepository<ClientSubscr
             Pageable pageable
     );
 
+    // Самый близкий PENDING абонемент
     default Optional<ClientSubscription> findNextPendingSubscription(UUID clientId) {
         List<ClientSubscription> result = findPendingSubscriptionsInternal(
                 clientId,

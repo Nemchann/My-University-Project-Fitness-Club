@@ -20,6 +20,7 @@ public class Room {
     @GeneratedValue(strategy = GenerationType.AUTO)
     private Integer id;
 
+    // GREEN, BLUE, ORANGE, PINK
     @Enumerated(EnumType.STRING)
     @Column(name = "room_name", nullable = false, unique = true)
     private RoomEnum roomName;

@@ -32,7 +32,7 @@ public interface BookingRepository extends JpaRepository<Booking, UUID> {
     // Находит прошедшие записи: дата в расписании меньше текущей
     Page<Booking> findByClientIdAndScheduleScheduleDateBefore(UUID clientId, LocalDate now, Pageable pageable);
 
-    //Находит самую ближайшую запись на занятие
+    // Находит самую ближайшую запись на занятие
     Optional<Booking> findFirstByClientIdAndScheduleScheduleDateAfter(UUID clientId, LocalDate now);
 
     @Modifying
