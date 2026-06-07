@@ -22,7 +22,6 @@ import java.util.List;
 import java.util.UUID;
 
 @RestController
-//@CrossOrigin(origins = "http://localhost:5173")
 @RequestMapping("/api/fitness-club/users")
 @RequiredArgsConstructor
 @Tag(name = "User Controller", description = "Управление пользователями и регистрация")

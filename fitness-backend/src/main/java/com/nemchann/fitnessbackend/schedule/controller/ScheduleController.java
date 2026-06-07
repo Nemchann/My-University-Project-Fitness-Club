@@ -143,12 +143,31 @@ public class ScheduleController {
         return new ResponseEntity<>(scheduleResponseDto, HttpStatus.OK);
     }
 
-    @DeleteMapping("/delete_schedule/{id}")
-    @Operation(summary = "Удалить тренировку")
+//    @DeleteMapping("/delete_schedule/{id}")
+//    @Operation(summary = "Удалить тренировку")
+//    @ApiResponses(value = {
+//            @ApiResponse(
+//                    responseCode = "204",
+//                    description = "Тренировка успешно удалена"
+//            ),
+//            @ApiResponse(
+//                    responseCode = "404",
+//                    description = "Не найдена тренировка по id",
+//                    content = @Content(schema = @Schema(implementation = String.class))
+//            )
+//    })
+//    public ResponseEntity<Void> deleteSchedule(@PathVariable Integer id){
+//        service.deleteSchedule(id);
+//
+//        return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+//    }
+
+    @DeleteMapping("/cancel_schedule/{id}")
+    @Operation(summary = "Отменить тренировку")
     @ApiResponses(value = {
             @ApiResponse(
                     responseCode = "204",
-                    description = "Тренировка успешно удалена"
+                    description = "Тренировка успешно отменена"
             ),
             @ApiResponse(
                     responseCode = "404",
@@ -156,14 +175,6 @@ public class ScheduleController {
                     content = @Content(schema = @Schema(implementation = String.class))
             )
     })
-    public ResponseEntity<Void> deleteSchedule(@PathVariable Integer id){
-        service.deleteSchedule(id);
-
-        return new ResponseEntity<>(HttpStatus.NO_CONTENT);
-    }
-
-    @DeleteMapping("/cancel_schedule/{id}")
-    @Operation(summary = "Отменить тренировку")
     public ResponseEntity<Void> cancelSchedule(@PathVariable Integer id){
         service.cancelSchedule(id);
 
@@ -172,6 +183,28 @@ public class ScheduleController {
 
     @PutMapping("/appoint_trainer/{scheduleId}")
     @Operation(summary = "Назначить тренера на тренировку")
+    @ApiResponses(value = {
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Тренер успешно назначен",
+                    content = @Content(schema = @Schema(implementation = ScheduleResponseDto.class))
+            ),
+            @ApiResponse(
+                    responseCode = "403",
+                    description = "Указанный пользователь - не тренер",
+                    content = @Content(schema = @Schema(implementation = String.class))
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "Не найдена тренер по id",
+                    content = @Content(schema = @Schema(implementation = String.class))
+            ),
+            @ApiResponse(
+                    responseCode = "409",
+                    description = "Тренер уже задействован в другой тренировке",
+                    content = @Content(schema = @Schema(implementation = String.class))
+            )
+    })
     public ResponseEntity<ScheduleResponseDto> appointTrainer(
             @Valid @RequestBody UUID trainerId, @PathVariable Integer scheduleId){
         ScheduleResponseDto scheduleResponseDto = service.appointATrainer(trainerId, scheduleId);
@@ -181,6 +214,28 @@ public class ScheduleController {
 
     @PutMapping("/change_time/{id}")
     @Operation(summary = "Поменять время у тренировки")
+    @ApiResponses(value = {
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Время успешно изменено",
+                    content = @Content(schema = @Schema(implementation = ScheduleResponseDto.class))
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "Не найдена тренировка по id",
+                    content = @Content(schema = @Schema(implementation = String.class))
+            ),
+            @ApiResponse(
+                    responseCode = "409",
+                    description = "Зал уже занят в это время",
+                    content = @Content(schema = @Schema(implementation = String.class))
+            ),
+            @ApiResponse(
+                    responseCode = "422",
+                    description = "Введены нелогичные данные",
+                    content = @Content(schema = @Schema(implementation = String.class))
+            )
+    })
     public ResponseEntity<ScheduleResponseDto> changeTime(@Valid @RequestBody ScheduleEditTimeDto scheduleEditTimeDto){
         ScheduleResponseDto scheduleResponseDto = service.editTime(scheduleEditTimeDto);
 
@@ -189,6 +244,23 @@ public class ScheduleController {
 
     @PutMapping("/change_room/{id}")
     @Operation(summary = "Поменять комнату проведения тренировки")
+    @ApiResponses(value = {
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Зал успешно изменен",
+                    content = @Content(schema = @Schema(implementation = ScheduleResponseDto.class))
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "Не найдена тренировка по id или зал по названию",
+                    content = @Content(schema = @Schema(implementation = String.class))
+            ),
+            @ApiResponse(
+                    responseCode = "409",
+                    description = "Зал уже занят в это время",
+                    content = @Content(schema = @Schema(implementation = String.class))
+            )
+    })
     public ResponseEntity<ScheduleResponseDto> changeRoom(@Valid @RequestBody ScheduleEditRoomDto editRoomDto){
         ScheduleResponseDto scheduleResponseDto = service.editScheduleRoom(editRoomDto);
 
@@ -197,6 +269,23 @@ public class ScheduleController {
 
     @PutMapping("/change_schedule_workout/{scheduleId}")
     @Operation(summary = "Поменять вид тренировки у проводимой тренировки")
+    @ApiResponses(value = {
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Вид тренировки успешно изменен",
+                    content = @Content(schema = @Schema(implementation = ScheduleResponseDto.class))
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "Не найдена тренировка по id или зал по названию",
+                    content = @Content(schema = @Schema(implementation = String.class))
+            ),
+            @ApiResponse(
+                    responseCode = "409",
+                    description = "Зал уже занят в это время",
+                    content = @Content(schema = @Schema(implementation = String.class))
+            )
+    })
     public ResponseEntity<ScheduleResponseDto> changeWorkout(
             @PathVariable Integer scheduleId, @Valid @RequestBody ScheduleEditWorkoutDto editWorkoutDto){
         ScheduleResponseDto scheduleResponseDto = service.editScheduleWorkout(scheduleId, editWorkoutDto);
@@ -206,6 +295,13 @@ public class ScheduleController {
 
     @GetMapping("/get_schedules_by_week")
     @Operation(summary = "Получить все тренировки на данной неделе")
+    @ApiResponses(value = {
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Тренировки на неделю успешно получены",
+                    content = @Content(schema = @Schema(implementation = List.class))
+            )
+    })
     public ResponseEntity<List<ScheduleResponseDto>> getSchedulesByWeek(@Valid @RequestBody WeeklyScheduleDto weeklyScheduleDto){
         List<ScheduleResponseDto> scheduleResponseDtos = service.getWeeklySchedule(weeklyScheduleDto);
 
@@ -214,6 +310,18 @@ public class ScheduleController {
 
     @GetMapping("/get_schedules_by_time_range")
     @Operation(summary = "Получить все сегодняшние тренировки в заданном промежутке времени")
+    @ApiResponses(value = {
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Тренировки успешно получены",
+                    content = @Content(schema = @Schema(implementation = List.class))
+            ),
+            @ApiResponse(
+                    responseCode = "422",
+                    description = "Время введено некорректно",
+                    content = @Content(schema = @Schema(implementation = String.class))
+            )
+    })
     public ResponseEntity<List<ScheduleResponseDto>> getSchedulesByTimeRange(@Valid @RequestBody ScheduleGetByTimePeriodDto timePeriodDto){
         List<ScheduleResponseDto> scheduleResponseDtos = service.getTodaySchedulesByTimeRange(timePeriodDto);
 
@@ -222,6 +330,13 @@ public class ScheduleController {
 
     @GetMapping("/get_schedules_by_date")
     @Operation(summary = "Получить тренировки определенной даты")
+    @ApiResponses(value = {
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Тренировки успешно получены",
+                    content = @Content(schema = @Schema(implementation = List.class))
+            )
+    })
     public ResponseEntity<List<ScheduleResponseDto>> getSchedulesByDate(@Valid @RequestParam LocalDate date){
         List<ScheduleResponseDto> responseDtos = service.findSchedulesByDate(date);
 
@@ -230,6 +345,13 @@ public class ScheduleController {
 
     @GetMapping("/get_available_schedules")
     @Operation(summary = "Получить тренировки, на которые еще можно записаться")
+    @ApiResponses(value = {
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Тренировки успешно получены",
+                    content = @Content(schema = @Schema(implementation = Page.class))
+            )
+    })
     public ResponseEntity<Page<ScheduleResponseDto>> getAvailableSchedules(
             @PageableDefault(size = 10, sort = "workout") Pageable pageable){
         Page<ScheduleResponseDto> scheduleResponseDtos = service.getAvailableWorkouts(pageable);
@@ -239,6 +361,23 @@ public class ScheduleController {
 
     @GetMapping("/get_schedules_by_trainer/{trainerId}")
     @Operation(summary = "Тренировки данного тренера")
+    @ApiResponses(value = {
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Тренировки успешно получены",
+                    content = @Content(schema = @Schema(implementation = ScheduleResponseDto.class))
+            ),
+            @ApiResponse(
+                    responseCode = "403",
+                    description = "Указанный пользователь - не тренер",
+                    content = @Content(schema = @Schema(implementation = String.class))
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "Не найден тренер по id",
+                    content = @Content(schema = @Schema(implementation = String.class))
+            )
+    })
     public ResponseEntity<Page<ScheduleResponseDto>> getSchedulesByTrainer(
             @PathVariable UUID trainerId, @PageableDefault(size = 10, sort = "workout") Pageable pageable){
         Page<ScheduleResponseDto> responseDtos = service.getSchedulesByTrainer(trainerId, pageable);
