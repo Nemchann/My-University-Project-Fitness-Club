@@ -123,19 +123,28 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(BookingTooLateException.class)
-    public ResponseEntity<Map<String, String>> handleLateBooking(BookingTooLateException ex) {
-        Map<String, String> response = new HashMap<>();
-        response.put("error", "LATE_BOOKING");
-        response.put("message", ex.getMessage());
-        return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body(response); // 422
+    public ResponseEntity<String> handleLateBooking(BookingTooLateException ex) {
+        return new ResponseEntity<>(ex.getMessage(), HttpStatus.UNPROCESSABLE_ENTITY);
+    }
+
+    @ExceptionHandler(ScheduleIsNotActiveException.class)
+    public ResponseEntity<String> handleScheduleNotActive(ScheduleIsNotActiveException ex){
+        return new ResponseEntity<>(ex.getMessage(), HttpStatus.UNPROCESSABLE_ENTITY);
+    }
+
+    @ExceptionHandler(InvalidScheduleDurationException.class)
+    public ResponseEntity<String> handleScheduleDurationConflict(InvalidScheduleDurationException ex){
+        return new ResponseEntity<>(ex.getMessage(), HttpStatus.UNPROCESSABLE_ENTITY);
     }
 
     @ExceptionHandler(VisitsEndedException.class)
-    public ResponseEntity<Map<String, String>> handleNoVisits(VisitsEndedException ex) {
-        Map<String, String> response = new HashMap<>();
-        response.put("error", "NO_VISITS_LEFT");
-        response.put("message", ex.getMessage());
-        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(response); // 403
+    public ResponseEntity<String> handleNoVisits(VisitsEndedException ex) {
+        return new ResponseEntity<>(ex.getMessage(), HttpStatus.FORBIDDEN); // 403
+    }
+
+    @ExceptionHandler(IllegalStateException.class)
+    public ResponseEntity<String> handleIllegalState(IllegalStateException ex){
+        return new ResponseEntity<>(ex.getMessage(), HttpStatus.UNPROCESSABLE_ENTITY);
     }
 
     //Когда неправильные логин, email
