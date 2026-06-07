@@ -1,0 +1,14 @@
+$kind: http-request
+name: Buy_Subscription
+url: "{{proxyUrl}}/{{bookingControllerUrl}}/client_subscription"
+method: POST
+body:
+  type: json
+  content: "{\r
+
+    \  \"clientId\": \"2c8febc4-5889-484a-9da2-a8852e62a178\",\r
+
+    \  \"subscriptionId\": 4\r
+
+    }"
+order: 4503599040212205

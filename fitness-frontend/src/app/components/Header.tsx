@@ -3,6 +3,8 @@ import { useState, useEffect } from "react";
 import { Dumbbell, Menu, User, LogOut } from 'lucide-react';
 import { Button } from './ui/button';
 import { api } from "../../lib/api";
+import { useDispatch } from 'react-redux';
+import { setUserId } from '../../store';
 
 import { 
   Dialog, 
@@ -16,18 +18,11 @@ import { Input } from "./ui/input";
 import { Label } from "./ui/label";
 
 export function Header() {
-  const scrollToSection = (id: string) => {
-    const element = document.getElementById(id);
-    if (element) {
-      element.scrollIntoView({ behavior: 'smooth' });
-    }
-  };
   
   const location = useLocation();
   const navigate = useNavigate();
   const isHomePage = location.pathname === '/';
   
-  // Меняем состояние с email на login, так как бэк ожидает login в UserAuthentificationDto
   const [login, setLogin] = useState(""); 
   const [password, setPassword] = useState("");
   const [errorAuth, setErrorAuth] = useState("");
@@ -36,29 +31,30 @@ export function Header() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
+  const dispatch = useDispatch();
+
   // Проверяем статус авторизации при монтировании компонента
   useEffect(() => {
     const userId = localStorage.getItem("userId");
     setIsAuthenticated(!!userId); // превратит строку или null в true/false
   }, []);
 
-  // Функция входа (исправленная под твой UserAuthentificationDto.java)
+  // Функция входа
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorAuth("");
     try {
-      // Отправляем login вместо email, чтобы Spring @NotBlank не ругался
+      // Отправляем login
       const response = await api.post("/fitness-club/users/authentification", { 
         login, 
         password 
       });
       
-      // Допустим, твой бэкенд возвращает UserResponseDto или объект сессии с id пользователя
       if (response.data && response.data.id) {
         localStorage.setItem("userId", response.data.id);
+        dispatch(setUserId(response.data.id));
         setIsAuthenticated(true);
       } else if (response.data && response.data.token) {
-        // Если возвращается токен, можно временно использовать его
         localStorage.setItem("token", response.data.token);
         setIsAuthenticated(true);
       }
@@ -78,6 +74,7 @@ export function Header() {
   // Функция выхода из аккаунта
   const handleLogout = () => {
     localStorage.removeItem("userId");
+    dispatch(setUserId(null));
     localStorage.removeItem("token");
     setIsAuthenticated(false);
     navigate('/'); // Возвращаем на главную
@@ -90,7 +87,7 @@ export function Header() {
         {/* Логотип */}
         <Link to="/" className="flex items-center gap-2 text-pink-600 font-bold text-xl">
           <Dumbbell className="w-6 h-6" />
-          <span>FitLife</span>
+          <span>FitLady</span>
         </Link>
 
         {/* Навигация (показываем только на главной) */}
@@ -114,7 +111,7 @@ export function Header() {
         {/* Блок кнопок с условным рендерингом */}
         <div className="flex items-center gap-4">
           {isAuthenticated ? (
-            // ВАРИАНТ А: Пользователь зашел -> Показываем только Профиль и Выход
+            // Пользователь зашел -> Показываем только Профиль и Выход
             <>
               <Link to="/profile">
                 <Button variant="ghost" className="text-pink-600 hover:text-pink-700 hover:bg-pink-50 gap-2 font-medium cursor-pointer">
@@ -133,7 +130,7 @@ export function Header() {
               </Button>
             </>
           ) : (
-            // ВАРИАНТ Б: Пользователь НЕ зашел -> Показываем только Вход и Регистрацию
+            //  Пользователь НЕ зашел -> Показываем только Вход и Регистрацию
             <>
               {/* Модальное окно Входа */}
               <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>

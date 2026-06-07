@@ -2,15 +2,28 @@ import { useState } from 'react';
 import { Card, CardContent, CardHeader } from './ui/card';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
-import { Check, Gift } from 'lucide-react';
+import { Check, Gift, Loader2 } from 'lucide-react';
+import { useEffect } from 'react';
+import { api } from "../../lib/api";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
+  DialogDescription,
   DialogTitle,
 } from "./ui/dialog";
 
+
+interface SubscriptionResponseDto {
+  id: number; // Предполагаем, что в БД это Integer/Long ID
+  subscriptionName: string;
+  price: number;
+  durationDays: number;
+  visitsCount: number;
+}
 interface PricingPlan {
+  backendName: string; // Поле для связи с бэкендом
+  id?: number;         // Будем записывать сюда ID из БД после загрузки
   name: string;
   price: string;
   description: string;
@@ -19,8 +32,9 @@ interface PricingPlan {
   pricePerClass?: string;
 }
 
-const plans: PricingPlan[] = [
+const initialPlans: PricingPlan[] = [
   {
+    backendName: 'One-time schedule',
     name: 'Разовое занятие',
     price: '600',
     description: 'Попробуйте наш клуб',
@@ -32,6 +46,7 @@ const plans: PricingPlan[] = [
     ],
   },
   {
+    backendName: 'Eight schedules',
     name: '8 занятий',
     price: '4 000',
     pricePerClass: '500 ₽ за занятие',
@@ -45,6 +60,7 @@ const plans: PricingPlan[] = [
     ],
   },
   {
+    backendName: 'Twelve schedules',
     name: '12 занятий',
     price: '5 100',
     pricePerClass: '425 ₽ за занятие',
@@ -60,6 +76,7 @@ const plans: PricingPlan[] = [
     ],
   },
   {
+    backendName: 'Unlimited',
     name: 'Безлимит',
     price: '6 500',
     description: 'Неограниченные тренировки',
@@ -77,13 +94,95 @@ const plans: PricingPlan[] = [
 
 export function Pricing() {
 
+  const [plans, setPlans] = useState<PricingPlan[]>(initialPlans);
   const [isOpen, setIsOpen] = useState(false);
-  const [selectedPlan, setSelectedPlan] = useState('');
+  const [selectedPlan, setSelectedPlan] = useState<PricingPlan | null>(null);
+  const [isBuying, setIsBuying] = useState(false);
+  const [isLoaded, setIsLoaded] = useState(false);
 
-  const handleBuyClick = (planName: string) => {
-    setSelectedPlan(planName);
+  // 1. Подгружаем актуальные цены и ID из бэкенда при сборке компонента
+  useEffect(() => {
+    async function fetchSubscriptions() {
+      try {
+        const response = await api.get<SubscriptionResponseDto[]>('/fitness-club/bookings/subscriptions');
+        
+        // В Axios данные лежат в поле .data
+        const backendSubs = response.data;
+
+        // Скрещиваем данные фронтенда и бэкенда
+        const mergedPlans = initialPlans.map(frontendPlan => {
+          const matchedBackendSub = backendSubs.find(
+            sub => sub.subscriptionName === frontendPlan.backendName
+          );
+
+          if (matchedBackendSub) {
+            return {
+              ...frontendPlan,
+              id: matchedBackendSub.id, // Запоминаем ID для покупки
+              price: matchedBackendSub.price.toLocaleString('ru-RU'), // Ставим актуальную цену из БД
+            };
+          }
+          return frontendPlan;
+        });
+
+        setPlans(mergedPlans);
+      } catch (error) {
+        console.error('Не удалось обновить цены с бэкенда:', error);
+      } finally {
+        setIsLoaded(true);
+      }
+    }
+
+    fetchSubscriptions();
+  }, []);
+
+  // Открытие модалки подтверждения
+  const handleBuyClick = (plan: PricingPlan) => {
+    setSelectedPlan(plan);
     setIsOpen(true);
-  }; 
+  };
+
+  // 2. Функция подтверждения покупки (клиент нажал "Понятно/Подтвердить")
+  const handleConfirmPurchase = async () => {
+    console.log("Кликнули подтверждение! Текущий selectedPlan:", selectedPlan);
+
+    const planId = selectedPlan?.id || 1; //Для теста
+    console.log("Вычисленный planId для отправки:", planId);
+
+    if (!selectedPlan) {
+      console.warn("Покупка отменена: selectedPlan пустой или null!");
+      setIsOpen(false);
+      return;
+    }
+    if (!selectedPlan.id){
+      console.warn("Покупка отменена: selectedPlan не содержит ID из бэкенда!", selectedPlan);
+      alert('Извините, не удалось оформить абонемент. Пожалуйста, попробуйте позже или свяжитесь с нами напрямую.');
+      setIsOpen(false);
+      return;
+    }
+
+    setIsBuying(true);
+    const clientId = localStorage.getItem('userId'); // Забираем ID авторизованного клиента
+
+    try {
+      console.log("Отправляем запрос покупки через Axios...");
+      
+      // Axios сам сериализует объект в JSON и выставит нужные Headers!
+      await api.post('/fitness-club/bookings/client_subscription', {
+        clientId: clientId,
+        subscriptionId: planId,
+      });
+      
+      alert(`Абонемент «${selectedPlan.name}» успешно активирован!`);
+    } catch (error) {
+      console.error(error);
+      alert('Не удалось оформить абонемент. Попробуйте позже.');
+    } finally {
+      setIsBuying(false);
+      setIsOpen(false);
+      setSelectedPlan(null);
+    }
+  };
 
   const scrollToSection = (id: string) => {
     const element = document.getElementById(id);
@@ -172,7 +271,8 @@ export function Pricing() {
                 </ul>
 
                 <Button 
-                  onClick={() => handleBuyClick(plan.name)}
+                  onClick={() => handleBuyClick(plan)}
+                  disabled={!isLoaded}
                   className={`w-full cursor-pointer text-white font-semibold py-5 ${
                     plan.popular 
                       ? 'bg-pink-500 hover:bg-pink-600' 
@@ -193,15 +293,16 @@ export function Pricing() {
           </p>
           <Button 
             variant="outline" 
-              size="lg" 
-              className="border-pink-500 text-pink-600 hover:bg-pink-50 cursor-pointer"
-              onClick={() => handleBuyClick('Индивидуальный запрос')}>
-              Связаться с нами
+            size="lg" 
+            className="border-pink-500 text-pink-600 hover:bg-pink-50 cursor-pointer"
+            onClick={() => handleBuyClick({ backendName: 'custom', name: 'Индивидуальный запрос', price: '0', description: '', features: [] })}
+          >
+            Связаться с нами
           </Button>
         </div>
       </div>
 
-      {/* КРАСИВОЕ МОДАЛЬНОЕ ОКНО ДЛЯ ДЕМОНСТРАЦИИ */}
+      {/* Модальное окно подтверждения покупки */}
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
         <DialogContent className="sm:max-w-md bg-white rounded-2xl p-6">
           <DialogHeader className="space-y-3 text-center">
@@ -209,12 +310,15 @@ export function Pricing() {
               <Gift className="w-6 h-6" />
             </div>
             <DialogTitle className="text-xl font-bold text-gray-900">
-              {selectedPlan === 'Индивидуальный запрос' ? 'Связаться с нами' : 'Заявка принята!'}
+              {selectedPlan?.name === 'Индивидуальный запрос' ? 'Связаться с нами' : 'Подтверждение покупки'}
             </DialogTitle>
+            <DialogDescription className="text-center text-xs text-gray-400">
+              Оформление клубных карт и абонементов фитнес-центра
+            </DialogDescription>
           </DialogHeader>
   
           <div className="text-center space-y-4 pt-2">
-            {selectedPlan === 'Индивидуальный запрос' ? (
+            {selectedPlan?.name === 'Индивидуальный запрос' ? (
               <>
                 <p className="text-sm text-gray-600 leading-relaxed">
                   Наш менеджер с радостью ответит на все ваши вопросы и подберет идеальный формат занятий!
@@ -230,19 +334,21 @@ export function Pricing() {
             ) : (
               <>
                 <p className="text-sm text-gray-600 leading-relaxed">
-                  Вы выбрали абонемент <span className="font-semibold text-pink-600">«{selectedPlan}»</span>.
+                  Вы собираетесь приобрести абонемент <span className="font-semibold text-pink-600">«{selectedPlan?.name}»</span> за <span className="font-bold">{selectedPlan?.price} ₽</span>.
                 </p>
                 <p className="text-xs text-gray-400">
-                  Интеграция с платежным шлюзом находится в режиме тестирования. Наш менеджер свяжется с Вами по номеру, указанному в профиле, для активации карты.
+                  Интеграция с платежным шлюзом находится в режиме тестирования. Нажав кнопку ниже, абонемент автоматически привяжется к вашему аккаунту, а оплата будет произведена на стойке клуба.
                 </p>
               </>
             )}
     
             <Button 
-              onClick={() => setIsOpen(false)}
-              className="w-full bg-pink-500 hover:bg-pink-600 text-white cursor-pointer mt-2"
+              onClick={handleConfirmPurchase}
+              disabled={isBuying}
+              className="w-full bg-pink-500 hover:bg-pink-600 text-white cursor-pointer mt-2 flex items-center justify-center gap-2"
             >
-              Понятно
+              {isBuying && <Loader2 className="w-4 h-4 animate-spin" />}
+              {selectedPlan?.name === 'Индивидуальный запрос' ? 'Понятно' : 'Подтвердить покупку'}
             </Button>
           </div>
         </DialogContent>

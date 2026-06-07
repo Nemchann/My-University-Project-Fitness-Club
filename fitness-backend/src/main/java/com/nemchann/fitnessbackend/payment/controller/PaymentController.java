@@ -22,7 +22,7 @@ public class PaymentController {
     private final PaymentService service;
 
     @PostMapping("/create_payment/{clientId}")
-    @Operation(summary = "Заглушка оплаты")
+    @Operation(summary = "Заглушка оплаты в одну копейку")
     public ResponseEntity<PaymentResponseDto> createPayment(@PathVariable UUID clientId){
         PaymentResponseDto dto = service.createPayment(clientId);
 

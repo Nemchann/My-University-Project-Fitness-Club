@@ -19,7 +19,7 @@ public class BookingStatus {
     @GeneratedValue(strategy = GenerationType.AUTO)
     private Integer id;
 
-    //ACCEPTED, PROCESSING, CANCELLED
+    // ACCEPTED, PROCESSING, CANCELLED, COMPLETED
     @Enumerated(EnumType.STRING)
     @Column(name="booking_status_name", nullable = false, unique = true)
     private BookingStatusEnum bookingStatusName;

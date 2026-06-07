@@ -24,7 +24,6 @@ interface ScheduleResponseDto {
 }
 
 
-
 const getTypeColor = (type: string) => {
   switch (type) {
     case 'MIND_AND_BODY':
@@ -47,7 +46,7 @@ export function Schedule() {
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   // Стейт для хранения реальных тренировок с бэкенда
   const [classes, setClasses] = useState<ScheduleResponseDto[]>([]);
-  // Стейт для анимации загрузки (скелетонов)
+  // Стейт для анимации загрузки
   const [isLoading, setIsLoading] = useState(false);
 
   // useEffect будет срабатывать каждый раз, когда пользователь выбирает новую дату
@@ -60,7 +59,7 @@ export function Schedule() {
         // Форматируем дату в строку (например, YYYY-MM-DD), которую ждет твой бэкенд
         const formattedDate = format(selectedDate, 'yyyy-MM-dd');
         
-        // Делаем реальный GET-запрос к твоему Go/Java бэкенду
+        // Делаем реальный GET-запрос к Go/Java бэкенду
         const response = await api.get(`/fitness-club/schedules/get_schedules_by_date?date=${formattedDate}`);
         
         // Кладем ответ бэкенда в стейт
@@ -80,7 +79,7 @@ export function Schedule() {
     const start = parseISO(startIso);
     const end = parseISO(endIso);
     
-    // Форматируем время старта, например: "08:00" или "19:30"
+    // Форматируем время старта
     const startTimeFormatted = format(start, 'HH:mm');
     
     // Вычисляем разницу в минутах между endTime и startTime

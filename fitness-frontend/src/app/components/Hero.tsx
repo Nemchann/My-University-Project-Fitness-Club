@@ -1,5 +1,5 @@
 import { Button } from './ui/button';
-import { ImageWithFallback } from './figma/ImageWithFallback';
+import { ImageWithFallback } from './default_image/ImageWithFallback';
 import heroGirl from '../../assets/heroGirl.png';
 
 export function Hero() {

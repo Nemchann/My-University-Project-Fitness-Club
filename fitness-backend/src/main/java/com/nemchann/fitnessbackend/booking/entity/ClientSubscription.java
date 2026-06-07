@@ -34,7 +34,7 @@ public class ClientSubscription {
     @Column(name = "end_date", nullable = false)
     private LocalDate endDate;
 
-    @Column(name = "remaining_visits", nullable = false)
+    @Column(name = "remaining_visits")
     private Integer remainingVisits;
 
     @ManyToOne(fetch = FetchType.LAZY)

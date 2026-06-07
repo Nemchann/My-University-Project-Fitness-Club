@@ -19,7 +19,7 @@ public class SubscriptionStatus {
     @GeneratedValue(strategy = GenerationType.AUTO)
     private Integer id;
 
-    //ACTIVE, LAPSED, FROZEN
+    // ACTIVE, LAPSED, FROZEN, PENDING
     @Enumerated(EnumType.STRING)
     @Column(name = "subscription_status_name", nullable = false, unique = true)
     private SubscriptionStatusEnum subscriptionStatusName;

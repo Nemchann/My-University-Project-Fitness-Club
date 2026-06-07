@@ -1,13 +1,9 @@
 $kind: http-request
 name: Get_Clients
-url: "{{proxyUrl}}/api/fitness-club/users/get_all_clients?page=0&size=10&sort=l\
-  ogin,desc"
+url: "{{proxyUrl}}/api/fitness-club/users/get_all_clients?page=0&size=15&sort=login,desc"
 method: GET
 queryParams:
-  - key: page
-    value: "0"
-  - key: size
-    value: "10"
-  - key: sort
-    value: login,desc
+  page: "0"
+  size: "15"
+  sort: login,desc
 order: 4460148457927248
