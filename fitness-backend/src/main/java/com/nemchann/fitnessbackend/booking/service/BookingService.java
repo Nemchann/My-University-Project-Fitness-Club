@@ -5,6 +5,7 @@ import com.nemchann.fitnessbackend.booking.dto.*;
 import com.nemchann.fitnessbackend.booking.entity.*;
 import com.nemchann.fitnessbackend.booking.enums.BookingStatusEnum;
 import com.nemchann.fitnessbackend.booking.enums.SubscriptionStatusEnum;
+import com.nemchann.fitnessbackend.booking.mapper.BookingMapper;
 import com.nemchann.fitnessbackend.booking.repository.*;
 import com.nemchann.fitnessbackend.common.exception.*;
 import com.nemchann.fitnessbackend.schedule.entity.Schedule;
@@ -35,6 +36,7 @@ public class BookingService {
     private final SubscriptionStatusRepository subscriptionStatusRepository; // Про абонементы
     private final ScheduleService scheduleService;
     private final UserService userService;
+    private final BookingMapper mapper;
 
 
     // Создание записи на тренировку
@@ -42,7 +44,7 @@ public class BookingService {
     @Transactional
     public BookingResponseDto createBooking(BookingCreateDto createDto){
 
-        Booking booking = rewriteFromCreateDto(createDto);
+        Booking booking = mapper.rewriteFromCreateDto(createDto);
 
         // Если эта тренировка есть, но со статусом CANCELLED, то можно записаться
         if (bookingRepository.existsByClientIdAndScheduleId(createDto.getUserId(), createDto.getScheduleId())){
@@ -76,10 +78,6 @@ public class BookingService {
                             " Пожалуйста, приобретите новый и можете сколь угодно ходить на наши тренировки!"));
         }
 
-//        ClientSubscription currentSub = clientSubscriptionRepository
-//                .findCurrentActiveSubscription(booking.getClient().getId(), createDto.getCreatedAt().toLocalDate())
-//                .orElseThrow(() -> new VisitsEndedException("У Вас кончился абонемент." +
-//                        " Пожалуйста, приобретите новый и можете сколь угодно ходить на наши тренировки!"));
 
         // Можно получить исключение со стороны ScheduleService
         try {
@@ -106,7 +104,7 @@ public class BookingService {
         }
 
         bookingRepository.save(booking);
-        return mapToResponseDto(booking);
+        return mapper.mapToResponseDto(booking);
 
     }
 
@@ -175,154 +173,6 @@ public class BookingService {
         }
     }
 
-    // Методы мапперы из dto в entity и обратно
-    // Метод-маппер из Booking в BookingResponseDto
-    private BookingResponseDto mapToResponseDto(Booking booking){
-        BookingResponseDto responseDto = new BookingResponseDto();
-        Schedule schedule = booking.getSchedule();
-        Workout workout = schedule.getWorkout();
-
-        User trainer = schedule.getTrainer();
-
-        Profile profile = trainer.getProfile();
-
-        String trainerFullName = profile.getSelfname() + " " + profile.getSurname();
-
-        responseDto.setTrainerFullName(trainerFullName);
-
-        responseDto.setBookingId(booking.getId());
-
-        BookingStatusEnum bookingStatusEnum = booking.getBookingStatus().getBookingStatusName();
-        responseDto.setStatus(bookingStatusEnum.name());
-
-        responseDto.setScheduleName(workout.getWorkoutName());
-
-        responseDto.setScheduleDate(schedule.getScheduleDate());
-        responseDto.setStartTime(schedule.getStartTime());
-
-        return responseDto;
-    }
-
-    // Метод-маппер из Booking в BookingResponseDto
-    // Ничем не отличается от предыдущего, оставлен в качестве обратной совместимости
-    private BookingShortResponseDto mapToShortResponseDto(Booking booking){
-        BookingShortResponseDto responseDto = new BookingShortResponseDto();
-        Schedule schedule = booking.getSchedule();
-        Workout workout = schedule.getWorkout();
-
-        User trainer = schedule.getTrainer();
-        Profile profile = trainer.getProfile();
-
-        BookingStatusEnum bookingStatusEnum = booking.getBookingStatus().getBookingStatusName();
-        responseDto.setStatus(bookingStatusEnum.name());
-
-        responseDto.setBookingId(booking.getId());
-
-        responseDto.setStatus(bookingStatusEnum.name());
-
-        responseDto.setScheduleName(workout.getWorkoutName());
-
-        responseDto.setTrainerFullName(profile.getSelfname() + " " + profile.getSurname());
-
-        responseDto.setScheduleDate(schedule.getScheduleDate());
-        responseDto.setStartTime(schedule.getStartTime());
-
-        return responseDto;
-    }
-
-    // Метод-маппер из Booking в UserInScheduleDto
-    private UserInScheduleDto mapToUserScheduleDto(Booking booking){
-        User user = booking.getClient();
-        Profile profile = user.getProfile();
-
-        UserInScheduleDto userInScheduleDto = new UserInScheduleDto();
-
-        userInScheduleDto.setFullName(profile.getSurname() + " " + profile.getSelfname());
-        userInScheduleDto.setPhone(profile.getPhone());
-        userInScheduleDto.setEmail(profile.getEmail());
-
-        return userInScheduleDto;
-    }
-
-    // Метод-маппер из Subscription в SubscriptionResponseDto
-    private SubscriptionResponseDto mapToSubscriptionResponseDto(Subscription subscription){
-        SubscriptionResponseDto dto = new SubscriptionResponseDto();
-
-        dto.setId(subscription.getId());
-        dto.setSubscriptionName(subscription.getSubscriptionName());
-        dto.setPrice(subscription.getPrice());
-        dto.setDurationDays(subscription.getDurationDays());
-        dto.setVisitsCount(subscription.getVisitsCount());
-
-        return dto;
-    }
-
-    // Метод маппер из ClientSubscription в ClientSubscriptionResponseDto
-    private ClientSubscriptionResponseDto mapToClientSubscriptionResponseDto(ClientSubscription clientSubscription){
-        ClientSubscriptionResponseDto dto = new ClientSubscriptionResponseDto();
-
-        Subscription subscription = clientSubscription.getSubscription();
-        dto.setUnlimited(subscription.isUnlimited());
-
-        dto.setStartDate(clientSubscription.getStartDate());
-        dto.setEndDate(clientSubscription.getEndDate());
-
-        SubscriptionStatus status = subscriptionStatusRepository
-                .findBySubscriptionStatusName(clientSubscription.getSubscriptionStatus().getSubscriptionStatusName())
-                .orElseThrow(() -> new SubscriptionStatusNotFoundException("Subscription status is not found"));
-        dto.setSubscriptionStatus(status.getSubscriptionStatusName().name());
-
-        dto.setRemainingVisits(clientSubscription.getRemainingVisits());
-
-        return dto;
-    }
-
-    // Проверки на существование пользователя и тренировки происходят тут
-    // (внутри сервисов UserService и ScheduleService)
-    // Метод-маппер из BookingCreateDto в Booking
-    private Booking rewriteFromCreateDto(BookingCreateDto createDto){
-        Booking booking = new Booking();
-        User user = userService.getUser(createDto.getUserId());
-        Schedule schedule = scheduleService.getSchedule(createDto.getScheduleId());
-
-        BookingStatus status = bookingStatusRepository.findByBookingStatusName(BookingStatusEnum.PROCESSING)
-                .orElseThrow(() -> new BookingStatusNotFoundException("Статус бронирования не найден"));
-
-        booking.setClient(user);
-        booking.setBookingStatus(status);
-        booking.setSchedule(schedule);
-        booking.setCreatedAt(createDto.getCreatedAt());
-
-        return booking;
-    }
-
-    // Метод-маппер из CreateClientSubscriptionDto в ClientSubscription
-    private ClientSubscription rewriteFromSubscriptionCreateDto(CreateClientSubscriptionDto dto){
-        User client = userService.getUser(dto.getClientId());
-
-        Subscription subscription = subscriptionRepository.findSubscriptionById(dto.getSubscriptionId())
-                .orElseThrow(() -> new SubscriptionNotFoundException("Такой абонемент не найден"));
-        boolean isUnlimited = subscription.isUnlimited();
-
-        ClientSubscription clientSubscription = new ClientSubscription();
-
-        clientSubscription.setSubscription(subscription);
-        clientSubscription.setClient(client);
-        clientSubscription.setStartDate(LocalDate.now());
-
-        LocalDate endDate = LocalDate.now().plusDays(subscription.getDurationDays());
-        clientSubscription.setEndDate(endDate);
-
-        if (!isUnlimited){
-            clientSubscription.setRemainingVisits(subscription.getVisitsCount());
-        }else{
-            clientSubscription.setRemainingVisits(null);
-        }
-
-        return clientSubscription;
-    }
-
-
     // Отмена записи на тренировку - присваивание статуса CANCELLED
     @LogActivity(value = "Отмена бронирования тренировки")
     @Transactional
@@ -360,7 +210,7 @@ public class BookingService {
 
         return bookings
                 .map(this::setCompletedStatus)
-                .map(this::mapToShortResponseDto);
+                .map(mapper::mapToShortResponseDto);
     }
 
     // Применение статуса COMPLETED, если клиент посетил тренировку
@@ -382,7 +232,7 @@ public class BookingService {
 
         return bookingList
                 .stream()
-                .map(this::mapToUserScheduleDto)
+                .map(mapper::mapToUserScheduleDto)
                 .toList();
     }
 
@@ -403,14 +253,14 @@ public class BookingService {
     // Page будущих тренировок пользователя
     public Page<BookingResponseDto> futureBookings(UUID userId, Pageable pageable){
         return bookingRepository.findByClientIdAndScheduleStartTimeAfter(userId, LocalDateTime.now(), pageable)
-                .map(this::mapToResponseDto);
+                .map(mapper::mapToResponseDto);
     }
 
     // Page прошедших тренировок пользователя
     public Page<BookingResponseDto> pastBookings(UUID clientId, Pageable pageable){
         return bookingRepository.findByClientIdAndScheduleScheduleDateBefore(clientId, LocalDate.now(), pageable)
                 .map(this::setCompletedStatus)
-                .map(this::mapToResponseDto);
+                .map(mapper::mapToResponseDto);
     }
 
     // Самая близкая тренировка
@@ -418,21 +268,21 @@ public class BookingService {
         Booking booking = bookingRepository.findFirstByClientIdAndScheduleScheduleDateAfter(clientId, LocalDate.now())
                 .orElseThrow(() -> new BookingNotFoundException("Данная запись на тренировку не найдена"));
 
-        return mapToResponseDto(booking);
+        return mapper.mapToResponseDto(booking);
     }
 
     // Все абонементы клуба
     public List<SubscriptionResponseDto> allSubscriptions(){
         return subscriptionRepository.findAll()
                 .stream()
-                .map(this::mapToSubscriptionResponseDto)
+                .map(mapper::mapToSubscriptionResponseDto)
                 .toList();
     }
 
     // Покупка абонемента клиентом
     @Transactional
     public ClientSubscriptionResponseDto createClientSubscription(CreateClientSubscriptionDto createClientSubscriptionDto){
-        ClientSubscription clientSubscription = rewriteFromSubscriptionCreateDto(createClientSubscriptionDto);
+        ClientSubscription clientSubscription = mapper.rewriteFromSubscriptionCreateDto(createClientSubscriptionDto);
 
         // Находим активный абонемент у клуба
         ClientSubscription activeSub = clientSubscriptionRepository
@@ -454,7 +304,7 @@ public class BookingService {
 
         clientSubscriptionRepository.save(clientSubscription);
 
-        return mapToClientSubscriptionResponseDto(clientSubscription);
+        return mapper.mapToClientSubscriptionResponseDto(clientSubscription);
     }
 
     // Метод, который присваивает ClientSubscription статус LAPSED, если он просрочился
@@ -479,7 +329,7 @@ public class BookingService {
         setLapsedSubscriptionStatus(clientSubscription); // Ничего не произойдет,
         // если дата окончания действия абонемента после текущей
 
-        return mapToClientSubscriptionResponseDto(clientSubscription);
+        return mapper.mapToClientSubscriptionResponseDto(clientSubscription);
     }
 
     // Все прошлые абонементы пользователя
@@ -487,7 +337,7 @@ public class BookingService {
         Page<ClientSubscription> lapsedSubs = clientSubscriptionRepository
                 .findByClientIdAndSubscriptionStatus_SubscriptionStatusName(clientId, SubscriptionStatusEnum.LAPSED, pageable);
 
-        return lapsedSubs.map(this::mapToClientSubscriptionResponseDto);
+        return lapsedSubs.map(mapper::mapToClientSubscriptionResponseDto);
     }
 
     // Активный и будущие абонементы клиента
@@ -506,11 +356,11 @@ public class BookingService {
 
         // Маппим сущности в DTO
         ClientSubscriptionResponseDto activeDto = activeSubOpt
-                .map(this::mapToClientSubscriptionResponseDto)
+                .map(mapper::mapToClientSubscriptionResponseDto)
                 .orElse(null);
 
         List<ClientSubscriptionResponseDto> pendingDtos = pendingSubs.stream()
-                .map(this::mapToClientSubscriptionResponseDto)
+                .map(mapper::mapToClientSubscriptionResponseDto)
                 .toList();
 
         return new ClientActiveAndFutureSubscriptionsDto(activeDto, pendingDtos);

@@ -15,6 +15,7 @@ import com.nemchann.fitnessbackend.schedule.entity.Workout;
 import com.nemchann.fitnessbackend.schedule.entity.WorkoutType;
 import com.nemchann.fitnessbackend.schedule.enums.RoomEnum;
 import com.nemchann.fitnessbackend.schedule.enums.WorkoutTypeEnum;
+import com.nemchann.fitnessbackend.schedule.mapper.ScheduleMapper;
 import com.nemchann.fitnessbackend.schedule.repository.RoomRepository;
 import com.nemchann.fitnessbackend.schedule.repository.ScheduleRepository;
 import com.nemchann.fitnessbackend.schedule.repository.WorkoutRepository;
@@ -48,6 +49,7 @@ public class ScheduleService {
     private final BookingRepository bookingRepository;
     private final BookingStatusRepository bookingStatusRepository;
     private final ClientSubscriptionRepository clientSubscriptionRepository;
+    private final ScheduleMapper mapper;
 
     // Создать вид тренировки
     @Transactional
@@ -58,43 +60,16 @@ public class ScheduleService {
 
         if (typeOptional.isPresent()){
             WorkoutType type = typeOptional.get();
-            Workout workout = new Workout();
-            // Используем метод-маппер
-            rewriteWorkoutDtoToWorkout(workoutCreateDto, workout, type);
+            Workout workout = mapper.rewriteWorkoutDtoToWorkout(workoutCreateDto, type);
 
             workoutRepository.save(workout);
 
-            return mapWorkoutToResponseDto(workout);
+            return mapper.mapWorkoutToResponseDto(workout);
         }else{
             throw new EntityNotFoundException("Не найден тип тренировки");
         }
     }
 
-    // Метод конвертации WorkoutCreateDto в Workout
-    private void rewriteWorkoutDtoToWorkout(WorkoutCreateDto dto, Workout workout, WorkoutType type){
-
-        Optional<Workout> workoutOptional = workoutRepository.findByWorkoutName(dto.getWorkoutName());
-
-        if(workoutOptional.isEmpty()) {
-            workout.setWorkoutName(dto.getWorkoutName());
-            workout.setWorkoutType(type);
-            workout.setDescription(dto.getDescription());
-        }else{
-            throw new WorkoutAlreadyExistsException("Такой вид тренировки уже существует");
-        }
-    }
-
-    // Метод конвертации Workout в WorkoutResponseDto
-    private WorkoutResponseDto mapWorkoutToResponseDto(Workout workout){
-        WorkoutResponseDto dto = new WorkoutResponseDto();
-
-        dto.setId(workout.getId());
-        dto.setWorkoutName(workout.getWorkoutName());
-        dto.setWorkoutType(workout.getWorkoutTypeNameToString());
-        dto.setDescription(workout.getDescription());
-
-        return dto;
-    }
 
     // Метод создания тренировки
     @Transactional
@@ -138,11 +113,11 @@ public class ScheduleService {
 
         // Проверка, что указанный пользователь тренер
         if (userService.isTrainer(createDto.getTrainerId())){
-            Schedule schedule = rewriteCreateDtoToSchedule(createDto, workout, room);
+            Schedule schedule = mapper.rewriteCreateDtoToSchedule(createDto, workout, room);
 
             scheduleRepository.save(schedule);
 
-            return mapScheduleToResponse(schedule);
+            return mapper.mapScheduleToResponse(schedule);
 
         }else {
             throw new IsNotTrainerException("Данный пользователь не является тренером, он не умеет проводить тренировки");
@@ -150,66 +125,12 @@ public class ScheduleService {
 
     }
 
-    // Метод конвертации ScheduleCreateDto в Schedule
-    private Schedule rewriteCreateDtoToSchedule(ScheduleCreateDto dto, Workout workout, Room room){
-        Schedule schedule = new Schedule();
-
-        User trainer = userService.getUser(dto.getTrainerId());
-        LocalDateTime startTime = dto.getStartTime();
-        LocalDateTime endTime = dto.getEndTime();
-
-        Optional<Schedule> scheduleOptional = scheduleRepository
-                .findOverlappingTrainerSchedule(trainer.getId(), startTime, endTime);
-
-        if (scheduleOptional.isPresent()){
-            throw new TrainerIsBusyException("Тренер с логином " + trainer.getLogin() + " занят в данное время");
-        }
-
-        schedule.setWorkout(workout);
-        schedule.setScheduleDate(dto.getScheduleDate());
-        schedule.setTrainer(trainer);
-        schedule.setRoom(room);
-        schedule.setMaxParticipants(dto.getMaxParticipants());
-        schedule.setStartTime(dto.getStartTime());
-        schedule.setEndTime(dto.getEndTime());
-        schedule.setCurrentParticipants(0);
-        schedule.setActive(true);
-        schedule.setCreatedAt(dto.getCreatedAt());
-
-        return schedule;
-    }
-
-    // Метод конвертации Schedule в ScheduleResponseDto
-    private ScheduleResponseDto mapScheduleToResponse(Schedule schedule){
-        ScheduleResponseDto dto = new ScheduleResponseDto();
-
-        dto.setId(schedule.getId());
-        dto.setWorkoutName(schedule.getWorkout().getWorkoutName());
-        dto.setScheduleDate(schedule.getScheduleDate());
-
-        User trainer = schedule.getTrainer();
-        // Передаем в dto имя + фамилия тренера
-        if (trainer != null && trainer.getProfile() != null) {
-            String fullName = trainer.getProfile().getSurname() + " " + trainer.getProfile().getSelfname();
-            dto.setTrainerFullName(fullName);
-        }
-
-        dto.setStartTime(schedule.getStartTime());
-        dto.setEndTime(schedule.getEndTime());
-        dto.setMaxParticipants(schedule.getMaxParticipants());
-        dto.setCurrentParticipants(schedule.getCurrentParticipants());
-        dto.setDescription(schedule.getWorkout().getDescription());
-        dto.setWorkoutType(schedule.getWorkout().getWorkoutTypeNameToString());
-        dto.setRoom(schedule.getRoom().getRoomName().name());
-
-        return dto;
-    }
 
     // Список всех видом тренировок
     public List<WorkoutResponseDto> getAllWorkouts(){
         return workoutRepository.findAll()
                 .stream()
-                .map(this::mapWorkoutToResponseDto)
+                .map(mapper::mapWorkoutToResponseDto)
                 .toList();
     }
 
@@ -218,7 +139,7 @@ public class ScheduleService {
         Schedule schedule = scheduleRepository.findById(id)
                 .orElseThrow(() -> new ScheduleIsNotFoundException("Тренировка не найдена"));
 
-        return mapScheduleToResponse(schedule);
+        return mapper.mapScheduleToResponse(schedule);
     }
 
     // Найти вид тренировки по id
@@ -226,7 +147,7 @@ public class ScheduleService {
         Workout workout = workoutRepository.findById(id)
                 .orElseThrow(() -> new WorkoutIsNotFoundException("Данный вид тренировки не найден"));
 
-        return mapWorkoutToResponseDto(workout);
+        return mapper.mapWorkoutToResponseDto(workout);
     }
 
     // Метод для BookingService
@@ -258,7 +179,7 @@ public class ScheduleService {
             schedule.setTrainer(trainer);
             scheduleRepository.save(schedule);
 
-            return mapScheduleToResponse(schedule);
+            return mapper.mapScheduleToResponse(schedule);
 
         }else{
             throw new IsNotTrainerException("Данный пользователь не является тренером");
@@ -266,12 +187,12 @@ public class ScheduleService {
     }
 
     // Удаление тренировки
-    @Transactional
-    public void deleteSchedule(Integer id){
-        Schedule schedule = scheduleRepository.findById(id)
-                        .orElseThrow(() -> new ScheduleIsNotFoundException("Тренировка не найдена"));
-        scheduleRepository.delete(schedule);
-    }
+//    @Transactional
+//    public void deleteSchedule(Integer id){
+//        Schedule schedule = scheduleRepository.findById(id)
+//                        .orElseThrow(() -> new ScheduleIsNotFoundException("Тренировка не найдена"));
+//        scheduleRepository.delete(schedule);
+//    }
 
     // Деактивация тренировки
     @Transactional
@@ -323,7 +244,7 @@ public class ScheduleService {
         schedule.setStartTime(dto.getStartTime());
         schedule.setEndTime(dto.getEndTime());
 
-        return mapScheduleToResponse(schedule);
+        return mapper.mapScheduleToResponse(schedule);
     }
 
     // Изменение комнаты проведения тренировки
@@ -355,7 +276,7 @@ public class ScheduleService {
         schedule.setRoom(room);
         scheduleRepository.save(schedule);
 
-        return mapScheduleToResponse(schedule);
+        return mapper.mapScheduleToResponse(schedule);
 
     }
 
@@ -371,7 +292,7 @@ public class ScheduleService {
         schedule.setWorkout(workout);
         scheduleRepository.save(schedule);
 
-        return mapScheduleToResponse(schedule);
+        return mapper.mapScheduleToResponse(schedule);
     }
 
     // Получить тренировки данного дня. List - потому что тренировок не так много в один день
@@ -380,7 +301,7 @@ public class ScheduleService {
         List<Schedule> schedules = scheduleRepository.findByScheduleDateOrderByStartTimeAsc(date);
 
         return schedules.stream()
-                .map(this::mapScheduleToResponse)
+                .map(mapper::mapScheduleToResponse)
                 .toList();
     }
 
@@ -395,7 +316,7 @@ public class ScheduleService {
 
         return scheduleRepository.findAllByStartTimeBetweenOrderByStartTimeAsc(startOfWeek, startOfNextWeek)
                 .stream()
-                .map(this::mapScheduleToResponse)
+                .map(mapper::mapScheduleToResponse)
                 .toList();
     }
 
@@ -416,7 +337,7 @@ public class ScheduleService {
 
         return scheduleRepository.findAllByStartTimeBetweenOrderByStartTimeAsc(start, end)
                 .stream()
-                .map(this::mapScheduleToResponse)
+                .map(mapper::mapScheduleToResponse)
                 .toList();
     }
 
@@ -426,7 +347,7 @@ public class ScheduleService {
         LocalDateTime now = LocalDateTime.now();
 
         return scheduleRepository.findAvailableSchedules(now, pageable)
-                .map(this::mapScheduleToResponse);
+                .map(mapper::mapScheduleToResponse);
     }
 
     // Получить тренировки данного тренера
@@ -437,7 +358,7 @@ public class ScheduleService {
                     .orElseThrow(() -> new UserNotFoundException("Пользователь не найден"));
 
             return scheduleRepository.findAllByTrainer(trainer, pageable)
-                    .map(this::mapScheduleToResponse);
+                    .map(mapper::mapScheduleToResponse);
         }else{
             throw new IsNotTrainerException("Это не тренер");
         }
