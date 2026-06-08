@@ -99,9 +99,18 @@ export function ClassDetailsPage() {
     } catch (error: any) {
       console.error("Ошибка при бронировании:", error);
       setIsSuccess(false);
-      setBookingMessage(
-        error.response?.data?.message || "Не удалось записаться. Возможно, места закончились."
-      );
+      // Проверяем, вернул ли бэкенд текстовый ответ с ошибкой
+      if (error.response && typeof error.response.data === 'string') {
+        setBookingMessage(error.response.data);
+      } 
+      // Если бэкенд вернул JSON-ошибку с полем message 
+      else if (error.response?.data?.message) {
+        setBookingMessage(error.response.data.message);
+      } 
+      // Запасной вариант на случай, если бэкенд «упал» 
+      else {
+        setBookingMessage("Не удалось связаться с сервером. Попробуйте позже.");
+      }
     } finally {
       setIsBooking(false);
     }
