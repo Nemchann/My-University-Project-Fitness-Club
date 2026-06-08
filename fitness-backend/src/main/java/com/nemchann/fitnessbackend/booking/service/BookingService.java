@@ -47,7 +47,7 @@ public class BookingService {
         // Если эта тренировка есть, но со статусом CANCELLED, то можно записаться
         if (bookingRepository.existsByClientIdAndScheduleId(createDto.getUserId(), createDto.getScheduleId())){
             if (!booking.getBookingStatus().getBookingStatusName().equals(BookingStatusEnum.CANCELLED)){
-                throw new AlreadyBookedException("You've already booked this schedule");
+                throw new AlreadyBookedException("Вы уже записаны на эту тренировку");
             }
         }
 

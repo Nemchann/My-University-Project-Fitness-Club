@@ -20,7 +20,7 @@ public class UserActivityLoggingAspect {
         // Получаем имя метода бэкенда
         String methodName = joinPoint.getSignature().getName();
 
-        // Получаем аргументы, которые пришли в метод (например, DTO или UUID)
+        // Получаем аргументы, которые пришли в метод
         Object[] args = joinPoint.getArgs();
 
         // Достаем текст из аннотации
