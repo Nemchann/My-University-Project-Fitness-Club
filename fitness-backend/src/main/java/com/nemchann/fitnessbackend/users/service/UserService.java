@@ -173,8 +173,10 @@ public class UserService {
     // Метод-маппер для конвертации UserEditingDto в данные профиля
     private void rewriteFromUserEditingDtoToUser(UserEditingDto userEditingDto, User user){
         Profile profile = user.getProfile();
+        String actualEmail = profile.getEmail();
 
-        if(!isExistsEmail(userEditingDto.getEmail())) {
+        // Если email совпадает с текущим email пользователя или данный email не существует
+        if(!isExistsEmail(userEditingDto.getEmail()) || actualEmail.equals(userEditingDto.getEmail())) {
 
             profile.setSurname(userEditingDto.getSurname());
             profile.setSelfname(userEditingDto.getSelfname());
