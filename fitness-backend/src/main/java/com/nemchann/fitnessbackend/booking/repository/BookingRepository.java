@@ -26,6 +26,8 @@ public interface BookingRepository extends JpaRepository<Booking, UUID> {
 
     List<Booking> findAllByScheduleId(Integer scheduleId);
 
+    boolean existsByClientId(UUID clientId);
+
     // Находит будущие записи: дата в расписании больше текущей
     Page<Booking> findByClientIdAndScheduleStartTimeAfter(UUID clientId, LocalDateTime now, Pageable pageable);
 
