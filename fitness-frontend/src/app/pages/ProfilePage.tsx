@@ -220,7 +220,7 @@ export function ProfilePage() {
 
       if (!user) {
         try {
-          const userResponse = await api.get(`/fitness-club/users/get/${clientId}`);
+          const userResponse = await api.get(`/fitness-club/users/${clientId}`);
           const userData = userResponse.data;
           setUser({
             fullName: `${userData.surname} ${userData.selfname}`,
@@ -285,7 +285,7 @@ export function ProfilePage() {
         userId: userId
       };
 
-      await api.delete('/fitness-club/bookings/cancel_booking', { data: cancelPayload });
+      await api.delete('/fitness-club/bookings/cancel', { data: cancelPayload });
 
       alert("Запись успешно отменена");
       

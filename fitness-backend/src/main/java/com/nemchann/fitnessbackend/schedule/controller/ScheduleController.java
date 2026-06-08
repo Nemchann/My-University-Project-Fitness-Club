@@ -32,7 +32,7 @@ public class ScheduleController {
     private final ScheduleService service;
 
 
-    @PostMapping("/create_workout")
+    @PostMapping("/workout")
     @Operation(summary = "Создать вид тренировки")
     @ApiResponses(value = {
             @ApiResponse(
@@ -57,7 +57,7 @@ public class ScheduleController {
         return new ResponseEntity<>(workoutResponseDto, HttpStatus.CREATED);
     }
 
-    @PostMapping("/create_schedule")
+    @PostMapping("/schedule")
     @Operation(summary = "Создать тренировку")
     @ApiResponses(value = {
             @ApiResponse(
@@ -103,7 +103,7 @@ public class ScheduleController {
         return new ResponseEntity<>(responseDtos, HttpStatus.OK);
     }
 
-    @GetMapping("/get_workout/{id}")
+    @GetMapping("/workout/{id}")
     @Operation(summary = "Получить вид тренировки по id")
     @ApiResponses(value = {
             @ApiResponse(
@@ -123,7 +123,7 @@ public class ScheduleController {
         return new ResponseEntity<>(workoutResponseDto, HttpStatus.OK);
     }
 
-    @GetMapping("/get_schedule/{id}")
+    @GetMapping("/schedule/{id}")
     @Operation(summary = "Получить тренировку по id")
     @ApiResponses(value = {
             @ApiResponse(
@@ -162,7 +162,7 @@ public class ScheduleController {
 //        return new ResponseEntity<>(HttpStatus.NO_CONTENT);
 //    }
 
-    @DeleteMapping("/cancel_schedule/{id}")
+    @DeleteMapping("/cancel/{id}")
     @Operation(summary = "Отменить тренировку")
     @ApiResponses(value = {
             @ApiResponse(
@@ -212,7 +212,7 @@ public class ScheduleController {
         return new ResponseEntity<>(scheduleResponseDto, HttpStatus.OK);
     }
 
-    @PutMapping("/change_time/{id}")
+    @PutMapping("/change_time")
     @Operation(summary = "Поменять время у тренировки")
     @ApiResponses(value = {
             @ApiResponse(
@@ -242,7 +242,7 @@ public class ScheduleController {
         return new ResponseEntity<>(scheduleResponseDto, HttpStatus.OK);
     }
 
-    @PutMapping("/change_room/{id}")
+    @PutMapping("/change_room")
     @Operation(summary = "Поменять комнату проведения тренировки")
     @ApiResponses(value = {
             @ApiResponse(
@@ -259,6 +259,11 @@ public class ScheduleController {
                     responseCode = "409",
                     description = "Зал уже занят в это время",
                     content = @Content(schema = @Schema(implementation = String.class))
+            ),
+            @ApiResponse(
+                    responseCode = "422",
+                    description = "Вместимость зала меньше, чем количество желающих попасть на тренировку",
+                    content = @Content(schema = @Schema(implementation = String.class))
             )
     })
     public ResponseEntity<ScheduleResponseDto> changeRoom(@Valid @RequestBody ScheduleEditRoomDto editRoomDto){
@@ -267,7 +272,7 @@ public class ScheduleController {
         return new ResponseEntity<>(scheduleResponseDto, HttpStatus.OK);
     }
 
-    @PutMapping("/change_schedule_workout/{scheduleId}")
+    @PutMapping("/change_workout/{scheduleId}")
     @Operation(summary = "Поменять вид тренировки у проводимой тренировки")
     @ApiResponses(value = {
             @ApiResponse(
@@ -293,7 +298,7 @@ public class ScheduleController {
         return new ResponseEntity<>(scheduleResponseDto, HttpStatus.OK);
     }
 
-    @GetMapping("/get_schedules_by_week")
+    @GetMapping("/by_week")
     @Operation(summary = "Получить все тренировки на данной неделе")
     @ApiResponses(value = {
             @ApiResponse(
@@ -308,7 +313,7 @@ public class ScheduleController {
         return new ResponseEntity<>(scheduleResponseDtos, HttpStatus.OK);
     }
 
-    @GetMapping("/get_schedules_by_time_range")
+    @GetMapping("/by_time_range")
     @Operation(summary = "Получить все сегодняшние тренировки в заданном промежутке времени")
     @ApiResponses(value = {
             @ApiResponse(
@@ -328,7 +333,7 @@ public class ScheduleController {
         return new ResponseEntity<>(scheduleResponseDtos, HttpStatus.OK);
     }
 
-    @GetMapping("/get_schedules_by_date")
+    @GetMapping("/by_date")
     @Operation(summary = "Получить тренировки определенной даты")
     @ApiResponses(value = {
             @ApiResponse(
@@ -343,7 +348,7 @@ public class ScheduleController {
         return new ResponseEntity<>(responseDtos, HttpStatus.OK);
     }
 
-    @GetMapping("/get_available_schedules")
+    @GetMapping("/available")
     @Operation(summary = "Получить тренировки, на которые еще можно записаться")
     @ApiResponses(value = {
             @ApiResponse(
@@ -359,7 +364,7 @@ public class ScheduleController {
         return new ResponseEntity<>(scheduleResponseDtos, HttpStatus.OK);
     }
 
-    @GetMapping("/get_schedules_by_trainer/{trainerId}")
+    @GetMapping("/by_trainer/{trainerId}")
     @Operation(summary = "Тренировки данного тренера")
     @ApiResponses(value = {
             @ApiResponse(

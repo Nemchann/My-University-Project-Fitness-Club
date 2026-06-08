@@ -47,7 +47,7 @@ export function ClassDetailsPage() {
       try {
         setIsLoading(true);
         // Запрос к Java через Go-прокси
-        const response = await api.get(`/fitness-club/schedules/get_schedule/${id}`);
+        const response = await api.get(`/fitness-club/schedules/schedule/${id}`);
         setWorkout(response.data);
       } catch (error) {
         console.error("Ошибка при загрузке деталей тренировки:", error);
@@ -81,7 +81,7 @@ export function ClassDetailsPage() {
       };
 
       // Отправляем POST запрос на прокси
-      await api.post('/fitness-club/bookings/create_booking', bookingPayload);
+      await api.post('/fitness-club/bookings/book', bookingPayload);
       
       setIsSuccess(true);
       setBookingMessage("Вы успешно записались на занятие!");

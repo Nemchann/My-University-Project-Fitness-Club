@@ -28,7 +28,7 @@ import java.util.UUID;
 public class BookingController {
     private final BookingService service;
 
-    @PostMapping("/create_booking")
+    @PostMapping("/book")
     @Operation(summary = "Создать запись на тренировку")
     @ApiResponses(value = {
             @ApiResponse(
@@ -64,7 +64,7 @@ public class BookingController {
         return new ResponseEntity<>(responseDto, HttpStatus.CREATED);
     }
 
-    @DeleteMapping("/cancel_booking")
+    @DeleteMapping("/cancel")
     @Operation(summary = "Отменить запись на тренировку")
     @ApiResponses(value = {
             @ApiResponse(
@@ -88,7 +88,7 @@ public class BookingController {
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
 
-    @GetMapping("/get_clients_bookings/{clientId}")
+    @GetMapping("/{clientId}")
     @Operation(summary = "Все записи клиента")
     @ApiResponses(value = {
             @ApiResponse(
@@ -171,7 +171,7 @@ public class BookingController {
         return new ResponseEntity<>(dto, HttpStatus.OK);
     }
 
-    @GetMapping("/get_clients_by_schedule/{scheduleId}")
+    @GetMapping("/clients_by_schedule/{scheduleId}")
     @Operation(summary = "Посетители данной тренировки")
     @ApiResponses(value = {
             @ApiResponse(

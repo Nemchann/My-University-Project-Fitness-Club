@@ -21,7 +21,7 @@ public class PaymentController {
 
     private final PaymentService service;
 
-    @PostMapping("/create_payment/{clientId}")
+    @PostMapping("/pay/{clientId}")
     @Operation(summary = "Заглушка оплаты в одну копейку")
     public ResponseEntity<PaymentResponseDto> createPayment(@PathVariable UUID clientId){
         PaymentResponseDto dto = service.createPayment(clientId);

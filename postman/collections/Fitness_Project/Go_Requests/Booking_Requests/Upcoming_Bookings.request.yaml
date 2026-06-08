@@ -1,6 +1,6 @@
 $kind: http-request
 name: Upcoming_Bookings
-url: "{{proxyUrl}}/{{bookingControllerUrl}}/upcoming/5a5eb2cc-c54a-43cc-bcbc-590088610db8?page=0&size=10&sort=desc"
+url: "{{proxyUrl}}/{{bookingControllerUrl}}/upcoming/{{clientId}}?page=0&size=10&sort=desc"
 method: GET
 queryParams:
   page: "0"

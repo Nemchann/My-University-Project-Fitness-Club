@@ -1,6 +1,6 @@
 $kind: http-request
 name: Create Schedule
-url: "{{proxyUrl}}/api/fitness-club/schedules/create_schedule"
+url: "{{proxyUrl}}/api/fitness-club/schedules/schedule"
 method: POST
 body:
   type: json
@@ -8,19 +8,19 @@ body:
 
     \  \"workoutId\": 1,\r
 
-    \  \"scheduleDate\": \"2026-05-13\",\r
+    \  \"scheduleDate\": \"2026-06-13\",\r
 
     \  \"trainerId\": \"7893b38a-3827-4461-bf50-4bf1f60c7964\",\r
 
-    \  \"startTime\": \"2026-05-13T17:00:00.754Z\",\r
+    \  \"startTime\": \"2026-06-13T17:00:00.754Z\",\r
 
-    \  \"endTime\": \"2026-05-13T17:55:00.754Z\",\r
+    \  \"endTime\": \"2026-06-13T17:55:00.754Z\",\r
 
     \  \"maxParticipants\": 10,\r
 
     \  \"roomName\": \"BLUE\",\r
 
-    \  \"createdAt\": \"2026-05-07T17:26:03.754Z\"\r
+    \  \"createdAt\": \"2026-06-08T11:26:03.754Z\"\r
 
     }"
 order: 1778179101070

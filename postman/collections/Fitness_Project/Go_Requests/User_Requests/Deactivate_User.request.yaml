@@ -1,5 +1,6 @@
 $kind: http-request
 name: Deactivate_User
-url: "{{proxyUrl}}/{{userControllerUrl}}/deactivate/b0831861-2f09-4f89-8077-3ba8db0abe56"
+url: "{{proxyUrl}}/{{userControllerUrl}}/deactivate/b0831861-2f09-4f89-8077-3ba\
+  8db0abe56"
 method: DELETE
-order: 4503599118078618
+order: 4503335476839272

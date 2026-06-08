@@ -14,3 +14,7 @@ values:
     value: ''
   - key: fullProxyUrl
     value: ''
+  - key: clientId
+    value: ''
+  - key: trainerId
+    value: ''

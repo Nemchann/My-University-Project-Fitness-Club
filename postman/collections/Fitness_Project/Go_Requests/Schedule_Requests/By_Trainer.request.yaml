@@ -1,0 +1,10 @@
+$kind: http-request
+name: By_Trainer
+url: "{{proxyUrl}}/{{scheduleControllerUrl}}/by_trainer/{{trainerId}}?page=0&si\
+  ze=5&sort="
+method: GET
+queryParams:
+  page: "0"
+  size: "5"
+  sort: ""
+order: 4494203167738687

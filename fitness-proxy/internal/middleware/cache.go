@@ -16,11 +16,11 @@ type responseBodyWriter struct {
 }
 
 var cacheablePaths = []string{
-    "/api/fitness-club/users/get_all_clients",
-    "/api/fitness-club/schedules/get_schedules_by_week",
-	"/api/fitness-club/schedules/get_schedules_by_date",
+    "/api/fitness-club/users/clients",
+    "/api/fitness-club/schedules/by_week",
+	"/api/fitness-club/schedules/by_date",
     "/api/fitness-club/bookings/past",
-	"/api/fitness-club/users/get_all_trainers",
+	"/api/fitness-club/users/trainers",
 	"/api/fitness-club/users/get/",
 }
 

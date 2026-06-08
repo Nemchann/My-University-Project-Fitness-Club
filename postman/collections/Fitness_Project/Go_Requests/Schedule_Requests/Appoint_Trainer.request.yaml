@@ -1,0 +1,10 @@
+$kind: http-request
+name: Appoint_Trainer
+url: "{{proxyUrl}}/{{scheduleControllerUrl}}/appoint_trainer/952"
+method: PUT
+body:
+  type: json
+  content: "\r
+
+    \"b09ffc85-a2fd-48b1-895b-1b573f06a349\"\r\n"
+order: 4500674782809449

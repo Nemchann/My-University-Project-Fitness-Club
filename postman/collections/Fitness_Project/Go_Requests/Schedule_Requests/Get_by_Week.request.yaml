@@ -1,0 +1,7 @@
+$kind: http-request
+url: "{{proxyUrl}}/{{scheduleControllerUrl}}/by_week"
+method: GET
+body:
+  type: json
+  content: "{\r\n  \"date\": \"2026-06-08\"\r\n}"
+order: 4494179594160342

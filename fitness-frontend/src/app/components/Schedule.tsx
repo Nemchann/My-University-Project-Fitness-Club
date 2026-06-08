@@ -60,7 +60,7 @@ export function Schedule() {
         const formattedDate = format(selectedDate, 'yyyy-MM-dd');
         
         // Делаем реальный GET-запрос к Go/Java бэкенду
-        const response = await api.get(`/fitness-club/schedules/get_schedules_by_date?date=${formattedDate}`);
+        const response = await api.get(`/fitness-club/schedules/by_date?date=${formattedDate}`);
         
         // Кладем ответ бэкенда в стейт
         setClasses(response.data); 

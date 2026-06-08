@@ -1,0 +1,9 @@
+$kind: http-request
+name: Past_Bookings
+url: "{{proxyUrl}}/{{bookingControllerUrl}}/past/{{clientId}}?page=0&size=10&sort=desc"
+method: GET
+queryParams:
+  page: "0"
+  size: "10"
+  sort: desc
+order: 4503598929415405
