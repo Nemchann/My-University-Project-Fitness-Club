@@ -1,24 +1,24 @@
 $kind: http-request
 name: Edit_Profile
-url: "{{proxyUrl}}/{{userControllerUrl}}/edit_profile/b0831861-2f09-4f89-8077-3ba8db0abe24"
+url: "{{proxyUrl}}/{{userControllerUrl}}/edit_profile"
 method: PUT
 body:
   type: json
   content: "{\r
 
-    \  \"id\": \"b0831861-2f09-4f89-8077-3ba8db0abe24\",\r
+    \  \"id\": \"565a30d4-8d34-4bcb-9454-6c571c2dc24e\",\r
 
-    \  \"surname\": \"Vavilina\",\r
+    \  \"surname\": \"Иванова\",\r
 
-    \  \"selfname\": \"Natalia\",\r
+    \  \"selfname\": \"Марья\",\r
 
-    \  \"patronymic\": \"Alexandrovna\",\r
+    \  \"patronymic\": \"Ивановна\",\r
 
-    \  \"phone\": \"+79275522440\",\r
+    \  \"phone\": \"+79991234567\",\r
 
-    \  \"email\": \"wawdnatasha@mail.ru\",\r
+    \  \"email\": \"mariie@mail.ru\",\r
 
-    \  \"birthday\": \"1978-05-07\"\r
+    \  \"birthday\": \"1998-05-08\"\r
 
     }"
 order: 4503442522921380

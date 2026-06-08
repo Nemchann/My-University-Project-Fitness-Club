@@ -1,0 +1,4 @@
+$kind: http-request
+url: "{{proxyUrl}}/{{bookingControllerUrl}}/subscriptions/upcoming/{{clientId}}"
+method: GET
+order: 4503599626799124

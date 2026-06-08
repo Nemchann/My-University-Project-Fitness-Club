@@ -121,8 +121,8 @@ public class ScheduleService {
         long durationInMinutes = ChronoUnit.MINUTES.between(newStart, newEnd);
 
         // Проверка на длительность тренировки
-        if (durationInMinutes < 30) {
-            throw new InvalidScheduleDurationException("Длительность тренировки должна быть не менее 30 минут.");
+        if (durationInMinutes < 30 || durationInMinutes > 120) {
+            throw new InvalidScheduleDurationException("Длительность тренировки должна быть не менее 30 минут и не более двух часов");
         }
 
         boolean isRoomBusy = scheduleRepository
@@ -243,7 +243,6 @@ public class ScheduleService {
                 .orElseThrow(() -> new ScheduleIsNotFoundException("Тренировка не найдена"));
 
         if (userService.isTrainer(trainerId)){
-            schedule.setTrainer(trainer);
 
             LocalDateTime startTime = schedule.getStartTime();
             LocalDateTime endTime = schedule.getEndTime();
@@ -256,6 +255,7 @@ public class ScheduleService {
                 throw new TrainerIsBusyException("Тренер с логином " + trainer.getLogin() + " занят в данное время");
             }
 
+            schedule.setTrainer(trainer);
             scheduleRepository.save(schedule);
 
             return mapScheduleToResponse(schedule);
@@ -305,12 +305,15 @@ public class ScheduleService {
         long durationInMinutes = ChronoUnit.MINUTES.between(start, end);
 
         // Проверка на длительность тренировки
-        if (durationInMinutes < 30) {
-            throw new InvalidScheduleDurationException("Длительность тренировки должна быть не менее 30 минут.");
+        if (durationInMinutes < 30 || durationInMinutes > 120) {
+            throw new InvalidScheduleDurationException("Длительность тренировки должна быть не менее 30 минут и не более двух часов");
         }
 
+        LocalDateTime startDto = dto.getStartTime();
+        LocalDateTime endDto = dto.getEndTime();
+
         boolean isRoomBusy = scheduleRepository
-                .existsByRoomIdAndStartTimeBeforeAndEndTimeAfterAndIsActiveTrue(room.getId(), end, start);
+                .existsByRoomIdAndStartTimeBeforeAndEndTimeAfterAndIsActiveTrue(room.getId(), endDto, startDto);
 
         if (isRoomBusy) {
             throw new RoomAlreadyOccupiedException("Этот зал уже занят другой тренировкой в указанное время");
@@ -343,6 +346,10 @@ public class ScheduleService {
         // Проверка на занятость зала
         if (isRoomBusy) {
             throw new RoomAlreadyOccupiedException("Этот зал уже занят другой тренировкой в указанное время");
+        }
+
+        if (room.getCapacity() < schedule.getMaxParticipants()){
+            throw new RoomCapacityExceededException("Слишком много участников для данного зала");
         }
 
         schedule.setRoom(room);

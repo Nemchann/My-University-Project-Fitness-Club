@@ -1,0 +1,5 @@
+$kind: http-request
+name: Clients_on_Schedule
+url: "{{proxyUrl}}/{{bookingControllerUrl}}/clients_by_schedule/852"
+method: GET
+order: 4503599587713528

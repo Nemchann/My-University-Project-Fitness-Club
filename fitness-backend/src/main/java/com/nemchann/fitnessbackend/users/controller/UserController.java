@@ -66,25 +66,26 @@ public class UserController {
         return new ResponseEntity<>(userResponseDto, HttpStatus.CREATED);
     }
 
-    @DeleteMapping("/delete")
-    @Operation(summary = "Удалить пользователя")
-    @ApiResponses(value = {
-            @ApiResponse(
-                    responseCode = "204",
-                    description = "Пользователь успешно удален"
-            ),
-            @ApiResponse(
-                    responseCode = "404",
-                    description = "Пользователя с таким id не существует",
-                    content = @Content(schema = @Schema(implementation = String.class))
-            )
-    })
-    public ResponseEntity<Void> delete(@Valid @RequestBody UserEditingDto userEditingDto){
-        service.deleteUser(userEditingDto);
-        return new ResponseEntity<>(HttpStatus.NO_CONTENT);
-    }
+    // Данный метод опасен
+//    @DeleteMapping("/delete")
+//    @Operation(summary = "Удалить пользователя")
+//    @ApiResponses(value = {
+//            @ApiResponse(
+//                    responseCode = "204",
+//                    description = "Пользователь успешно удален"
+//            ),
+//            @ApiResponse(
+//                    responseCode = "404",
+//                    description = "Пользователя с таким id не существует",
+//                    content = @Content(schema = @Schema(implementation = String.class))
+//            )
+//    })
+//    public ResponseEntity<Void> delete(@Valid @RequestBody UserEditingDto userEditingDto){
+//        service.deleteUser(userEditingDto);
+//        return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+//    }
 
-    @GetMapping("/get/{id}")
+    @GetMapping("/{id}")
     @Operation(summary = "Получить пользователя по id")
     @ApiResponses(value = {
             @ApiResponse(
@@ -123,7 +124,7 @@ public class UserController {
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
 
-    @GetMapping("/get_users")
+    @GetMapping("/")
     @Operation(summary = "Все пользователи")
     @ApiResponses(value = {
             @ApiResponse(
@@ -140,7 +141,7 @@ public class UserController {
     }
 
     //Доработать
-    @GetMapping("/get_users_by_role")
+    @GetMapping("/by_role")
     @Operation(summary = "Получить пользователей по названию роли")
     @ApiResponses(value = {
             @ApiResponse(
@@ -161,7 +162,7 @@ public class UserController {
         return new ResponseEntity<>(responseDtos, HttpStatus.OK);
     }
 
-    @GetMapping("/get_all_clients")
+    @GetMapping("/clients")
     @Operation(summary = "Все клиенты")
     @ApiResponses(value = {
             @ApiResponse(
@@ -182,7 +183,7 @@ public class UserController {
         return new ResponseEntity<>(userResponseDtos, HttpStatus.OK);
     }
 
-    @GetMapping("/get_all_trainers")
+    @GetMapping("/trainers")
     @Operation(summary = "Все тренеры")
     @ApiResponses(value = {
             @ApiResponse(

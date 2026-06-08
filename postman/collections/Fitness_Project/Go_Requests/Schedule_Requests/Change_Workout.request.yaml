@@ -1,0 +1,7 @@
+$kind: http-request
+url: "{{proxyUrl}}/{{scheduleControllerUrl}}/change_workout/952"
+method: PUT
+body:
+  type: json
+  content: "{\r\n  \"workoutId\": 1\r\n}"
+order: 4503547149565693

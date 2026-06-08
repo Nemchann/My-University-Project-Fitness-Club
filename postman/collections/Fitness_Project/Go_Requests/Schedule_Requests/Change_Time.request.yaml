@@ -1,0 +1,17 @@
+$kind: http-request
+url: "{{proxyUrl}}/{{scheduleControllerUrl}}/change_time"
+method: PUT
+body:
+  type: json
+  content: "{\r
+
+    \  \"id\": 952,\r
+
+    \  \"scheduleDate\": \"2026-06-13\",\r
+
+    \  \"startTime\": \"2026-06-13T14:00:01.264Z\",\r
+
+    \  \"endTime\": \"2026-06-13T14:55:01.264Z\"\r
+
+    }"
+order: 4502710002645077
