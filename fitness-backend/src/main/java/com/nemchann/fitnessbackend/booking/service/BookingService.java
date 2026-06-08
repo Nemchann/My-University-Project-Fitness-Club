@@ -47,7 +47,7 @@ public class BookingService {
         // Если эта тренировка есть, но со статусом CANCELLED, то можно записаться
         if (bookingRepository.existsByClientIdAndScheduleId(createDto.getUserId(), createDto.getScheduleId())){
             if (!booking.getBookingStatus().getBookingStatusName().equals(BookingStatusEnum.CANCELLED)){
-                throw new AlreadyBookedException("Вы уже записаны на эту тренировку");
+                throw new AlreadyBookedException("Вы ужe записаны на эту тренировку");
             }
         }
 
@@ -63,11 +63,23 @@ public class BookingService {
             throw new ScheduleIsNotActiveException("На данную тренировку нельзя записаться, ее отменил админ");
         }
 
-        // Проверка на наличие активного абонемента
-        ClientSubscription currentSub = clientSubscriptionRepository
-                .findCurrentActiveSubscription(booking.getClient().getId(), createDto.getCreatedAt().toLocalDate())
-                .orElseThrow(() -> new VisitsEndedException("У Вас кончился абонемент." +
-                        " Пожалуйста, приобретите новый и можете сколь угодно ходить на наши тренировки!"));
+        // Проверка на наличие активного абонемента и проверка на нового клиента
+        boolean hasPriorBookings = bookingRepository.existsByClientId(createDto.getUserId());
+
+        ClientSubscription currentSub = null;
+
+        //
+        if (hasPriorBookings) {
+            currentSub = clientSubscriptionRepository
+                    .findCurrentActiveSubscription(booking.getClient().getId(), createDto.getCreatedAt().toLocalDate())
+                    .orElseThrow(() -> new VisitsEndedException("У Вас кончился абонемент." +
+                            " Пожалуйста, приобретите новый и можете сколь угодно ходить на наши тренировки!"));
+        }
+
+//        ClientSubscription currentSub = clientSubscriptionRepository
+//                .findCurrentActiveSubscription(booking.getClient().getId(), createDto.getCreatedAt().toLocalDate())
+//                .orElseThrow(() -> new VisitsEndedException("У Вас кончился абонемент." +
+//                        " Пожалуйста, приобретите новый и можете сколь угодно ходить на наши тренировки!"));
 
         // Можно получить исключение со стороны ScheduleService
         try {
@@ -79,7 +91,12 @@ public class BookingService {
             booking.setBookingStatus(acceptedStatus);
 
             // Обрабатываем списание занятия или переход на новый абонемент
-            handleSubscriptionProcessing(currentSub, booking.getClient().getId());
+            if (hasPriorBookings) { //
+                // Старый клиент: честно списываем занятие с абонемента
+                handleSubscriptionProcessing(currentSub, booking.getClient().getId()); //
+            } else {
+                System.out.println("Новый клиент записывается на занятие");
+            }
 
         } catch (IllegalStateException e) {
             // Если места кончились, отменяем бронь
