@@ -1,5 +1,6 @@
 package com.nemchann.fitnessbackend.booking.service;
 
+import com.nemchann.fitnessbackend.aop.annotations.LogActivity;
 import com.nemchann.fitnessbackend.booking.dto.*;
 import com.nemchann.fitnessbackend.booking.entity.*;
 import com.nemchann.fitnessbackend.booking.enums.BookingStatusEnum;
@@ -37,6 +38,7 @@ public class BookingService {
 
 
     // Создание записи на тренировку
+    @LogActivity(value = "Бронирование тренировки")
     @Transactional
     public BookingResponseDto createBooking(BookingCreateDto createDto){
 
@@ -305,6 +307,7 @@ public class BookingService {
 
 
     // Отмена записи на тренировку - присваивание статуса CANCELLED
+    @LogActivity(value = "Отмена бронирования тренировки")
     @Transactional
     public void cancelBooking(BookingCancelDto cancelDto){
 

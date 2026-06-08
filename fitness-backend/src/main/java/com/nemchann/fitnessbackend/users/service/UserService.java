@@ -253,6 +253,11 @@ public class UserService {
 
         if (userOpt.isPresent()){
             User user = userOpt.get();
+            // Если пользователь деактивирован
+            if (!user.isActive()){
+                throw new UserNotFoundException("Данный пользователь деактивирован");
+            }
+
             UserResponseDto userResponseDto = mapToResponseDto(user);
             String userHashedPassword = user.getPassword(); // Актуальный хеш пароля
 
