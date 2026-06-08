@@ -1,0 +1,14 @@
+$kind: http-request
+name: Change_Room
+url: "{{proxyUrl}}/{{scheduleControllerUrl}}/change_room"
+method: PUT
+body:
+  type: json
+  content: "{\r
+
+    \  \"id\": 952,\r
+
+    \  \"room\": \"GREEN\"\r
+
+    }"
+order: 4503488691936277

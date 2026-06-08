@@ -1,0 +1,5 @@
+$kind: http-request
+name: Cleint_Subscription
+url: "{{proxyUrl}}/{{bookingControllerUrl}}/client_subscription/202"
+method: GET
+order: 4503599620280852
