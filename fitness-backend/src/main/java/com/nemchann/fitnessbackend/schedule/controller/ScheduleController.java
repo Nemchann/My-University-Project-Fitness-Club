@@ -307,7 +307,7 @@ public class ScheduleController {
                     content = @Content(schema = @Schema(implementation = List.class))
             )
     })
-    public ResponseEntity<List<ScheduleResponseDto>> getSchedulesByWeek(@Valid @RequestBody WeeklyScheduleDto weeklyScheduleDto){
+    public ResponseEntity<List<ScheduleResponseDto>> getSchedulesByWeek(@Valid @ModelAttribute WeeklyScheduleDto weeklyScheduleDto){
         List<ScheduleResponseDto> scheduleResponseDtos = service.getWeeklySchedule(weeklyScheduleDto);
 
         return new ResponseEntity<>(scheduleResponseDtos, HttpStatus.OK);

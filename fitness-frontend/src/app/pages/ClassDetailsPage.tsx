@@ -15,6 +15,7 @@ import { Progress } from '../components/ui/progress';
 import { format, differenceInMinutes, parseISO } from 'date-fns';
 import { ru } from 'date-fns/locale';
 import { api } from "../../lib/api"; 
+import { AdminCancelModal } from './AdminCancelModal';
 
 // Интерфейс, совпадающий с Java ScheduleResponseDto
 interface ScheduleResponseDto {
@@ -40,6 +41,7 @@ export function ClassDetailsPage() {
   const [isBooking, setIsBooking] = useState(false);
   const [bookingMessage, setBookingMessage] = useState('');
   const [isSuccess, setIsSuccess] = useState(false);
+  const [isAdminCancelOpen, setIsAdminCancelOpen] = useState(false);
 
   // Получаем детали тренировки при загрузке страницы
   useEffect(() => {
@@ -141,6 +143,27 @@ export function ClassDetailsPage() {
 
   const spotsLeft = workout.maxParticipants - workout.currentParticipants;
   const fillPercentage = (workout.currentParticipants / workout.maxParticipants) * 100;
+
+  const executeSoftDelete = async () => {
+  if (!workout?.id) return;
+
+  try {
+
+    await api.delete(`/fitness-club/schedules/cancel/${workout.id}`);
+    
+    alert("Тренировка успешно переведена в статус удаленной (Soft Delete)!");
+    
+    // Перенаправляем пользователя обратно на главную страницу, 
+    // чтобы увидеть обновленное расписание
+    navigate('/');
+  } catch (error: any) {
+    console.error("Ошибка при мягком удалении тренировки:", error);
+    const serverMessage = typeof error.response?.data === 'string' 
+      ? error.response.data 
+      : error.response?.data?.message;
+    alert(`Не удалось отменить тренировку: ${serverMessage || 'Ошибка сервера'}`);
+  }
+};
 
   return (
     <div className="min-h-screen bg-gray-50 py-12">
@@ -262,10 +285,32 @@ export function ClassDetailsPage() {
                     </p>
                   )}
                 </div>
+
+                {/* ================= НОВЫЙ БЛОК: УПРАВЛЕНИЕ ДЛЯ АДМИНИСТРАТОРА ================= */}
+                <div className="mt-6 pt-6 border-t border-dashed border-gray-200">
+                  <div className="bg-gray-50 rounded-xl p-4 border border-gray-100">
+                    <div className="flex items-center gap-2 mb-3 text-xs font-bold text-gray-400 uppercase tracking-wider">
+                      <span className="w-2 h-2 rounded-full bg-red-400 animate-pulse" />
+                        Панель администратора
+                    </div>
+    
+                    <Button
+                      onClick={() => setIsAdminCancelOpen(true)} // ОТКРЫВАЕМ ОКНО АВТОРИЗАЦИИ
+                      variant="outline"
+                      className="w-full border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700 gap-2 cursor-pointer text-sm py-4 h-auto font-semibold"
+                    >
+                    Отменить (мягкое удаление)
+                    </Button>
+                  </div>
+                </div>
               </CardContent>
             </Card>
           </motion.div>
-
+          <AdminCancelModal 
+            isOpen={isAdminCancelOpen}
+            onClose={() => setIsAdminCancelOpen(false)}
+            onConfirm={executeSoftDelete} // Передаем функцию удаления
+          />
         </div>
       </div>
     </div>

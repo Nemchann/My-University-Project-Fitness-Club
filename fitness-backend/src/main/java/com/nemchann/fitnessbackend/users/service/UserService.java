@@ -7,6 +7,7 @@ import com.nemchann.fitnessbackend.users.entity.Profile;
 import com.nemchann.fitnessbackend.users.entity.Role;
 import com.nemchann.fitnessbackend.users.entity.User;
 import com.nemchann.fitnessbackend.users.enums.UserRole;
+import com.nemchann.fitnessbackend.users.mapper.UserMapper;
 import com.nemchann.fitnessbackend.users.repository.ProfileRepository;
 import com.nemchann.fitnessbackend.users.repository.RoleRepository;
 import com.nemchann.fitnessbackend.users.repository.UserRepository;
@@ -26,16 +27,15 @@ public class UserService {
     private final ProfileRepository profileRepository;
     private final RoleRepository roleRepository;
     private final UserRepository userRepository;
+    private final UserMapper mapper;
 
     // Создает обычного пользователя типа CLIENT
     @Transactional
     public UserResponseDto createUser(UserRegistrationDto userRegistrationDto){
-        User user = new User();
-        Profile profile = new Profile();
+        User user = mapper.rewriteUserDtoToUser(userRegistrationDto);
 
-        // Используем методы-мапперы
-        rewriteUserDtoToUser(userRegistrationDto, user);
-        rewriteUserDtoToProfile(userRegistrationDto, profile);
+        Profile profile = mapper.rewriteUserDtoToProfile(userRegistrationDto);
+
 
         Role defaultRole = roleRepository.findByRoleName(UserRole.CLIENT)
                 .orElseThrow(() -> new RoleNotFoundException("Role CLIENT not found"));
@@ -48,18 +48,37 @@ public class UserService {
         // Заодно сохраняем и профиль пользователя
         profileRepository.save(profile);
 
-        return mapToResponseDto(user);
+        return mapper.mapToResponseDto(user);
+    }
+
+    @Transactional
+    public UserResponseDto createAdmin(UserRegistrationDto userRegistrationDto){
+        User user = mapper.rewriteUserDtoToUser(userRegistrationDto);
+
+        Profile profile = mapper.rewriteUserDtoToProfile(userRegistrationDto);
+
+
+        Role defaultRole = roleRepository.findByRoleName(UserRole.ADMINISTRATOR)
+                .orElseThrow(() -> new RoleNotFoundException("Role ADMINISTRATOR not found"));
+
+        user.setRole(defaultRole);
+        profile.setUser(user);
+        user.setProfile(profile);
+
+        userRepository.save(user);
+        // Заодно сохраняем и профиль пользователя
+        profileRepository.save(profile);
+
+        return mapper.mapToResponseDto(user);
     }
 
 
     // Создает обычного пользователя типа TRAINER, такая же логика, как и у обычного клиента
     @Transactional
     public UserResponseDto createTrainer(UserRegistrationDto userRegistrationDto){
-        User user = new User();
-        Profile profile = new Profile();
+        User user = mapper.rewriteUserDtoToUser(userRegistrationDto);
 
-        rewriteUserDtoToUser(userRegistrationDto, user);
-        rewriteUserDtoToProfile(userRegistrationDto, profile);
+        Profile profile = mapper.rewriteUserDtoToProfile(userRegistrationDto);
 
         Role trainerRole = roleRepository.findByRoleName(UserRole.TRAINER)
                 .orElseThrow(() -> new RoleNotFoundException("Role TRAINER not found"));
@@ -72,52 +91,9 @@ public class UserService {
 
         profileRepository.save(profile);
 
-        return mapToResponseDto(user);
+        return mapper.mapToResponseDto(user);
     }
 
-    // Методы для переписания из dto в entity
-
-    // Метод для проверки UserRegistrationDto логина и присваивания пароля
-    // Метод хеширования пароля вызывается здесь
-    private void rewriteUserDtoToUser(UserRegistrationDto userRegistrationDto, User user){
-        if(!isExistsLogin(userRegistrationDto.getLogin())){
-            user.setLogin(userRegistrationDto.getLogin());
-
-            String hashedPassword = passwordHash(userRegistrationDto.getPassword());
-            user.setPassword(hashedPassword);
-        }else{
-            throw new UserAlreadyExistsException("Данный логин уже занят");
-        }
-    }
-
-    // Метод для конвертации UserRegistrationDto в данные профиля
-    private void rewriteUserDtoToProfile(UserRegistrationDto registrationDto, Profile profile){
-        if(!isExistsEmail(registrationDto.getEmail())){
-            profile.setSurname(registrationDto.getSurname());
-            profile.setSelfname(registrationDto.getSelfname());
-            profile.setPatronymic(registrationDto.getPatronymic());
-
-            profile.setBirthday(registrationDto.getBirthday());
-            profile.setPhone(registrationDto.getPhone());
-            profile.setEmail(registrationDto.getEmail());
-        }else{
-            throw new UserAlreadyExistsException("Данный email уже занят");
-        }
-    }
-
-    // Метод для преобразования обычного entity User в UserResponseDto
-    private UserResponseDto mapToResponseDto(User user){
-        UserResponseDto userResponseDto = new UserResponseDto();
-        Profile profile = user.getProfile();
-
-        userResponseDto.setId(user.getId());
-        userResponseDto.setSurname(profile.getSurname());
-        userResponseDto.setSelfname(profile.getSelfname());
-        userResponseDto.setLogin(user.getLogin());
-        userResponseDto.setEmail(profile.getEmail());
-
-        return userResponseDto;
-    }
 
 
     // Проверка на наличие таких же логина и электронной почты в бд
@@ -146,7 +122,7 @@ public class UserService {
         if(userOptional.isPresent()){
             User user = userOptional.get();
 
-            return mapToResponseDto(user);
+            return mapper.mapToResponseDto(user);
         }else{
             throw new UserNotFoundException("Данный пользователь не найден");
         }
@@ -158,11 +134,11 @@ public class UserService {
         Optional<User> userOptional = userRepository.findById(userEditingDto.getId());
         if(userOptional.isPresent()){
             User user = userOptional.get();
-            rewriteFromUserEditingDtoToUser(userEditingDto, user);
+            mapper.rewriteFromUserEditingDtoToUser(userEditingDto, user);
 
             userRepository.save(user);
 
-            return mapToResponseDto(user);
+            return mapper.mapToResponseDto(user);
 
         }else{
             throw new UserNotFoundException("Данный пользователь не найден");
@@ -170,32 +146,11 @@ public class UserService {
     }
 
 
-    // Метод-маппер для конвертации UserEditingDto в данные профиля
-    private void rewriteFromUserEditingDtoToUser(UserEditingDto userEditingDto, User user){
-        Profile profile = user.getProfile();
-        String actualEmail = profile.getEmail();
-
-        // Если email совпадает с текущим email пользователя или данный email не существует
-        if(!isExistsEmail(userEditingDto.getEmail()) || actualEmail.equals(userEditingDto.getEmail())) {
-
-            profile.setSurname(userEditingDto.getSurname());
-            profile.setSelfname(userEditingDto.getSelfname());
-            profile.setPatronymic(userEditingDto.getPatronymic());
-            profile.setBirthday(userEditingDto.getBirthday());
-            profile.setPhone(userEditingDto.getPhone());
-            profile.setEmail(userEditingDto.getEmail());
-
-            profileRepository.save(profile);
-        }else{
-            throw new UserAlreadyExistsException("Данный email уже занят");
-        }
-    }
-
     // Page всех пользователей, в т.ч. тренеров и админом
     @Transactional
     public Page<UserResponseDto> findAllUsers(Pageable pageable){
         return userRepository.findAllByIsActiveTrue(pageable)
-                .map(this::mapToResponseDto);
+                .map(mapper::mapToResponseDto);
     }
 
 
@@ -258,7 +213,7 @@ public class UserService {
                 throw new UserNotFoundException("Данный пользователь деактивирован");
             }
 
-            UserResponseDto userResponseDto = mapToResponseDto(user);
+            UserResponseDto userResponseDto = mapper.mapToResponseDto(user);
             String userHashedPassword = user.getPassword(); // Актуальный хеш пароля
 
             // Хеш введенного пароля
@@ -331,7 +286,7 @@ public class UserService {
                 .orElseThrow(() -> new RoleNotFoundException("Данная роль не найдена"));
 
         return userRepository.findAllByRole(pageable, role)
-                .map(this::mapToResponseDto);
+                .map(mapper::mapToResponseDto);
 
     }
 
@@ -341,7 +296,7 @@ public class UserService {
                 .orElseThrow(() -> new RoleNotFoundException("Данная роль не найдена"));
 
         return userRepository.findAllByRole(pageable, role)
-                .map(this::mapToResponseDto);
+                .map(mapper::mapToResponseDto);
     }
 
     // Получить Page тренеров
@@ -350,7 +305,7 @@ public class UserService {
                 .orElseThrow(() -> new RoleNotFoundException("Данная роль не найдена"));
 
         return userRepository.findAllByRole(pageable, role)
-                .map(this::mapToResponseDto);
+                .map(mapper::mapToResponseDto);
     }
 
 }

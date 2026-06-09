@@ -47,6 +47,25 @@ public class UserController {
         return new ResponseEntity<>(userResponseDto, HttpStatus.CREATED);
     }
 
+    @PostMapping("/register_admin")
+    @Operation(summary = "Создать админа")
+    @ApiResponses(value = {
+            @ApiResponse(
+                    responseCode = "201",
+                    description = "Пользователь успешно зарегистрировался",
+                    content = @Content(schema = @Schema(implementation = UserResponseDto.class))
+            ),
+            @ApiResponse(
+                    responseCode = "409",
+                    description = "Пользователь с таким логином или email уже существует",
+                    content = @Content(schema = @Schema(implementation = String.class))
+            )
+    })
+    public ResponseEntity<UserResponseDto> registerAdmin(@Valid @RequestBody UserRegistrationDto userRegistrationDto){
+        UserResponseDto userResponseDto = service.createAdmin(userRegistrationDto);
+        return new ResponseEntity<>(userResponseDto, HttpStatus.CREATED);
+    }
+
     @PostMapping("/register_trainer")
     @Operation(summary = "Зарегистрировать тренера")
     @ApiResponses(value = {

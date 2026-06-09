@@ -26,10 +26,8 @@ public class UserActivityLoggingAspect {
         // Достаем текст из аннотации
         String actionDescription = logActivity.value();
 
-        log.info("============== [AOP АУДИТ ДЕЙСТВИЙ] ==============");
         log.info("Действие: {}", actionDescription);
         log.info("Вызван метод сервиса: {}", methodName);
         log.info("Входные параметры: {}", Arrays.toString(args));
-        log.info("==================================================");
     }
 }
