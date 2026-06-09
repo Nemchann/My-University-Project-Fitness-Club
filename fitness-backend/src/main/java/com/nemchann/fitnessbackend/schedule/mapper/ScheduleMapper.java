@@ -20,6 +20,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.Optional;
 
 @Component
@@ -82,7 +83,7 @@ public class ScheduleMapper {
         schedule.setEndTime(dto.getEndTime());
         schedule.setCurrentParticipants(0);
         schedule.setActive(true);
-        schedule.setCreatedAt(dto.getCreatedAt());
+        schedule.setCreatedAt(OffsetDateTime.now());
 
         return schedule;
     }

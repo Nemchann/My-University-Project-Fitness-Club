@@ -51,6 +51,27 @@ public class UserService {
         return mapper.mapToResponseDto(user);
     }
 
+    @Transactional
+    public UserResponseDto createAdmin(UserRegistrationDto userRegistrationDto){
+        User user = mapper.rewriteUserDtoToUser(userRegistrationDto);
+
+        Profile profile = mapper.rewriteUserDtoToProfile(userRegistrationDto);
+
+
+        Role defaultRole = roleRepository.findByRoleName(UserRole.ADMINISTRATOR)
+                .orElseThrow(() -> new RoleNotFoundException("Role ADMINISTRATOR not found"));
+
+        user.setRole(defaultRole);
+        profile.setUser(user);
+        user.setProfile(profile);
+
+        userRepository.save(user);
+        // Заодно сохраняем и профиль пользователя
+        profileRepository.save(profile);
+
+        return mapper.mapToResponseDto(user);
+    }
+
 
     // Создает обычного пользователя типа TRAINER, такая же логика, как и у обычного клиента
     @Transactional
